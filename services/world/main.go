@@ -1,10 +1,6 @@
 package main
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-)
+import "time"
 
 type World struct {
 	Width  int
@@ -18,25 +14,46 @@ type Tile struct {
 	Sensor         SensorReading
 }
 
-func loadMap() {
-	file, err := os.Open("map")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		
-	}
-
-	var level [][]Tile
+func (t *Tile) update() {
+	t.Sensor.Update()
 }
 
 func main() {
-	fmt.Println("Hello world")
+	world := NewWorld(20, 20)
+	world.init()
+
+	for {
+		world.update()
+		time.Sleep(2 * time.Second)
+	}
 }
 
-func update() {
+func NewWorld(width int, height int) World {
+	tiles := make([][]Tile, height)
+	for y := range tiles {
+		tiles[y] = make([]Tile, width)
+	}
+	return World{
+		Width:  width,
+		Height: height,
+		Tiles:  tiles,
+	}
+}
 
+func (w *World) init() {
+	for i := 0; i < len(w.Tiles); i++ {
+		for j := 0; j < len(w.Tiles[i]); j++ {
+			t := w.Tiles[i][j]
+			t.Sensor.Init()
+		}
+	}
+}
+
+func (w *World) update() {
+	for i := 0; i < len(w.Tiles); i++ {
+		for j := 0; j < len(w.Tiles[i]); j++ {
+			t := w.Tiles[i][j]
+			t.Sensor.Update()
+		}
+	}
 }
