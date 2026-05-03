@@ -9,6 +9,14 @@ import (
 
 var SEPARATOR = []byte("\r\n")
 
+type HeaderKey string
+
+const (
+	ContentLength HeaderKey = "Content-Length"
+	ContentType   HeaderKey = "Content-Type"
+	Connection    HeaderKey = "Connection"
+)
+
 type Headers struct {
 	headers map[string]string
 }
