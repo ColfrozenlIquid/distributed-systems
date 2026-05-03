@@ -62,9 +62,9 @@ func (s StatusCode) ReasonPhrase() string {
 
 func GetDefaultHeaders(contentLength int) *headers.Headers {
 	h := headers.NewHeaders()
-	h.Set("Content-Length", strconv.Itoa(contentLength))
-	h.Set("Connection", "close")
-	h.Set("Content-Type", "text/plain")
+	h.Set(string(headers.ContentLength), strconv.Itoa(contentLength))
+	h.Set(string(headers.Connection), "close")
+	h.Set(string(headers.ContentType), "text/plain")
 	return h
 }
 
