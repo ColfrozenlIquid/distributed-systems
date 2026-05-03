@@ -26,7 +26,7 @@ const (
 )
 
 func (s StatusCode) String() string {
-	return string(rune(s))
+	return strconv.Itoa(int(s))
 }
 
 func (s StatusCode) ReasonPhrase() string {
