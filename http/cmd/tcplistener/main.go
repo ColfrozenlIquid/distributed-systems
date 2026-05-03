@@ -19,7 +19,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		req, err := request.RequestFromReader(conn)
+		req, err := request.FromReader(conn)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -33,7 +33,5 @@ func main() {
 		})
 		fmt.Printf("Body:\n")
 		fmt.Printf("%s\n", req.Body)
-
 	}
-
 }

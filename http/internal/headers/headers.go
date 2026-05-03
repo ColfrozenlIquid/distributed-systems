@@ -3,6 +3,7 @@ package headers
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -32,44 +33,28 @@ func (h *Headers) Set(key, value string) {
 	}
 }
 
+func (h *Headers) Replace(key, value string) {
+	key = strings.ToLower(key)
+	h.headers[key] = value
+}
+
+func (h *Headers) GetInt(key string, defaultValue int) int {
+	valueStr, exists := h.Get(key)
+	if !exists {
+		return defaultValue
+	}
+
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
 func (h *Headers) ForEach(cb func(key, value string)) {
 	for key, value := range h.headers {
 		cb(key, value)
 	}
-}
-
-func isToken(str string) bool {
-	for _, c := range str {
-		found := false
-		if 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9' {
-			found = true
-		}
-		switch c {
-		case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~':
-			found = true
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-func parseHeader(fieldLine []byte) (key string, value string, err error) {
-	parts := bytes.SplitN(fieldLine, []byte(":"), 2)
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("malformed field-line")
-	}
-
-	name := parts[0]
-	if bytes.HasSuffix(name, []byte(" ")) {
-		return "", "", fmt.Errorf("malformed field-name: %s", name)
-	}
-
-	key = string(name)
-	value = string(bytes.TrimSpace(parts[1]))
-
-	return
 }
 
 func (h *Headers) Parse(data []byte) (n int, done bool, err error) {
@@ -100,4 +85,38 @@ func (h *Headers) Parse(data []byte) (n int, done bool, err error) {
 		h.Set(key, value)
 	}
 	return
+}
+
+func parseHeader(fieldLine []byte) (key string, value string, err error) {
+	parts := bytes.SplitN(fieldLine, []byte(":"), 2)
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("malformed field-line")
+	}
+
+	name := parts[0]
+	if bytes.HasSuffix(name, []byte(" ")) {
+		return "", "", fmt.Errorf("malformed field-name: %s", name)
+	}
+
+	key = string(name)
+	value = string(bytes.TrimSpace(parts[1]))
+
+	return
+}
+
+func isToken(str string) bool {
+	for _, c := range str {
+		found := false
+		if 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9' {
+			found = true
+		}
+		switch c {
+		case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~':
+			found = true
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }

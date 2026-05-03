@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"http/internal/headers"
 	"io"
-	"strconv"
 )
 
 type Request struct {
@@ -16,49 +15,43 @@ type Request struct {
 	state       parserState
 }
 
-func getInt(headers *headers.Headers, key string, defaultValue int) int {
-	valueStr, exists := headers.Get(key)
-	if !exists {
-		return defaultValue
-	}
-
-	value, err := strconv.Atoi(valueStr)
-	if err != nil {
-		return defaultValue
-	}
-	return value
-}
-
-func (r *Request) hasBody() bool {
-	length := getInt(r.Headers, "Content-Length", 0)
-	return length > 0
-}
-
-func newRequest() *Request {
-	return &Request{
-		state:   StateInit,
-		Headers: headers.NewHeaders(),
-		Body:    []byte(""),
-	}
-}
-
 type RequestLine struct {
 	Method        string
 	RequestTarget string
 	HttpVersion   string
 }
 
+type parserState string
+
+const (
+	StateInit    parserState = "initialized"
+	StateHeaders parserState = "headers"
+	StateBody    parserState = "body"
+	StateDone    parserState = "done"
+	StateError   parserState = "error"
+)
+
+func (r *Request) hasBody() bool {
+	length := r.Headers.GetInt("Content-Length", 0)
+	return length > 0
+}
+
 var SEPARATOR = []byte("\r\n")
 var ErrorMalformedRequestLine = fmt.Errorf("malformed request-line")
 var ErrorUnsupportedHttpVersion = fmt.Errorf("unsupported HTTP version")
+
 var ErrorRequestInErrorState = fmt.Errorf("request in error state")
 
-func RequestFromReader(reader io.Reader) (*Request, error) {
-	request := newRequest()
+func FromReader(reader io.Reader) (*Request, error) {
+	request := &Request{
+		state:   StateInit,
+		Headers: headers.NewHeaders(),
+		Body:    []byte(""),
+	}
 
 	buf := make([]byte, 1024)
 	bufLen := 0
-	for !request.done() {
+	for !(request.state == StateDone || request.state == StateError) {
 		// read into buffer
 		numBytesRead, err := reader.Read(buf[bufLen:])
 		if err != nil {
@@ -81,16 +74,6 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	}
 	return request, nil
 }
-
-type parserState string
-
-const (
-	StateInit    parserState = "initialized"
-	StateHeaders parserState = "headers"
-	StateBody    parserState = "body"
-	StateDone    parserState = "done"
-	StateError   parserState = "error"
-)
 
 func (r *Request) parse(data []byte) (int, error) {
 	read := 0
@@ -135,7 +118,7 @@ outer:
 				}
 			}
 		case StateBody:
-			length := getInt(r.Headers, "Content-Length", 0)
+			length := r.Headers.GetInt("Content-Length", 0)
 			if length == 0 {
 				r.state = StateDone
 				break
@@ -153,10 +136,6 @@ outer:
 		}
 	}
 	return read, nil
-}
-
-func (r *Request) done() bool {
-	return r.state == StateDone || r.state == StateError
 }
 
 func parseRequestLine(line []byte) (*RequestLine, int, error) {
