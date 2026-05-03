@@ -3,7 +3,6 @@ package main
 import (
 	"http/internal/request"
 	"http/internal/response"
-	"http/internal/server"
 	"log"
 	"os"
 	"os/signal"
@@ -13,7 +12,7 @@ import (
 const port = 8080
 
 func main() {
-	server, err := server.Serve(port, func(w *response.Writer, req *request.Request) {
+	server, err := Serve(port, func(w *response.Writer, req *request.Request) {
 
 		body := []byte("Hello, world!")
 		headers := response.GetDefaultHeaders(len(body))
