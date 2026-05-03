@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"http/internal/headers"
 	"io"
+	"strconv"
 )
 
 type Request struct {
@@ -15,10 +16,29 @@ type Request struct {
 	state       parserState
 }
 
+func getInt(headers *headers.Headers, key string, defaultValue int) int {
+	valueStr, exists := headers.Get(key)
+	if !exists {
+		return defaultValue
+	}
+
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func (r *Request) hasBody() bool {
+	length := getInt(r.Headers, "Content-Length", 0)
+	return length > 0
+}
+
 func newRequest() *Request {
 	return &Request{
 		state:   StateInit,
 		Headers: headers.NewHeaders(),
+		Body:    []byte(""),
 	}
 }
 
@@ -67,6 +87,7 @@ type parserState string
 const (
 	StateInit    parserState = "initialized"
 	StateHeaders parserState = "headers"
+	StateBody    parserState = "body"
 	StateDone    parserState = "done"
 	StateError   parserState = "error"
 )
@@ -76,6 +97,9 @@ func (r *Request) parse(data []byte) (int, error) {
 outer:
 	for {
 		currentData := data[read:]
+		if len(currentData) == 0 {
+			break
+		}
 		switch r.state {
 		case StateError:
 			return 0, ErrorRequestInErrorState
@@ -104,6 +128,22 @@ outer:
 			}
 			read += n
 			if done {
+				if r.hasBody() {
+					r.state = StateBody
+				} else {
+					r.state = StateDone
+				}
+			}
+		case StateBody:
+			length := getInt(r.Headers, "Content-Length", 0)
+			if length == 0 {
+				r.state = StateDone
+				break
+			}
+			remaining := min(length-len(r.Body), len(currentData))
+			r.Body = append(r.Body, currentData[:remaining]...)
+			read += remaining
+			if len(r.Body) == length {
 				r.state = StateDone
 			}
 		case StateDone:
