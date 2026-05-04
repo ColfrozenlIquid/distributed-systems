@@ -15,6 +15,7 @@ const (
 
 const (
 	NoInfrastructure InfrastructureType = iota - 1
+	ControlCenter
 	Bridge
 	Port
 	ChargingStation
@@ -44,11 +45,11 @@ type VibrationSensor struct {
 	smoothing         float32
 }
 
-func (s WaterSensor) Read() float32 { return s.WaterLevelCm }
+func (s *WaterSensor) Read() float32 { return s.WaterLevelCm }
 
-func (s VibrationSensor) Read() float32 { return s.VibrationIndex }
+func (s *VibrationSensor) Read() float32 { return s.VibrationIndex }
 
-func (s WaterSensor) Update() {
+func (s *WaterSensor) Update() {
 	if rand.Float32() < 0.02 {
 		s.target = s.randomTarget()
 	}
@@ -69,13 +70,35 @@ func (w *VibrationSensor) Init() {
 }
 
 func (s *VibrationSensor) randomTarget() float32 {
-	return s.MinVibrationIndex + rand.Float32()*(s.MinVibrationIndex-s.MinVibrationIndex)
+	return s.MinVibrationIndex + rand.Float32()*(s.MaxVibrationIndex-s.MinVibrationIndex)
 }
 
-func (s VibrationSensor) Update() {
+func (s *VibrationSensor) Update() {
 	if rand.Float32() < 0.02 {
 		s.target = s.randomTarget()
 	}
 
 	s.VibrationIndex += (s.target - s.VibrationIndex) * s.smoothing
+}
+
+func NewWaterSensor() *WaterSensor {
+	s := &WaterSensor{
+		WaterLevelCm:  50.0,
+		MaxWaterLevel: 100.0,
+		MinWaterLevel: 0.0,
+		smoothing:     0.05,
+	}
+	s.Init()
+	return s
+}
+
+func NewVibrationSensor() *VibrationSensor {
+	s := &VibrationSensor{
+		VibrationIndex:    0.0,
+		MaxVibrationIndex: 10.0,
+		MinVibrationIndex: 0.0,
+		smoothing:         0.05,
+	}
+	s.Init()
+	return s
 }

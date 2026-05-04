@@ -1,17 +1,15 @@
 package main
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 type World struct {
 	Width  int
 	Height int
 	Tiles  [][]Tile
-}
-
-type Tile struct {
-	Terrain        TerrainType
-	Infrastructure InfrastructureType
-	Sensor         SensorReading
 }
 
 func (t *Tile) update() {
@@ -20,18 +18,39 @@ func (t *Tile) update() {
 
 func main() {
 	world := NewWorld(20, 20)
-	world.init()
 
 	for {
 		world.update()
+		fmt.Print("\033[H\033[2J")
+		fmt.Print(world.DrawMap())
 		time.Sleep(2 * time.Second)
 	}
 }
 
+func (w *World) DrawMap() string {
+	var sb strings.Builder
+
+	for y := 0; y < len(w.Tiles); y++ {
+		for x := 0; x < len(w.Tiles[y]); x++ {
+			tile := w.Tiles[y][x]
+
+			vis := RenderTile(tile.Terrain, tile.Infrastructure, 20)
+
+			sb.WriteString(vis.BG)
+			sb.WriteString(vis.FG)
+			sb.WriteRune(vis.Char)
+			sb.WriteString("\033[0m")
+		}
+		sb.WriteByte('\n')
+	}
+	return sb.String()
+}
+
 func NewWorld(width int, height int) World {
 	tiles := make([][]Tile, height)
-	for y := range tiles {
-		tiles[y] = make([]Tile, width)
+	tiles, err := GenerateTiles()
+	if err != nil {
+		panic("world is nil")
 	}
 	return World{
 		Width:  width,
@@ -40,20 +59,24 @@ func NewWorld(width int, height int) World {
 	}
 }
 
-func (w *World) init() {
-	for i := 0; i < len(w.Tiles); i++ {
-		for j := 0; j < len(w.Tiles[i]); j++ {
-			t := w.Tiles[i][j]
-			t.Sensor.Init()
-		}
-	}
-}
-
 func (w *World) update() {
 	for i := 0; i < len(w.Tiles); i++ {
 		for j := 0; j < len(w.Tiles[i]); j++ {
 			t := w.Tiles[i][j]
-			t.Sensor.Update()
+			if t.Sensor != nil {
+				t.Sensor.Update()
+			}
+		}
+	}
+}
+
+func (w *World) display() {
+	for i := 0; i < len(w.Tiles); i++ {
+		for j := 0; j < len(w.Tiles[i]); j++ {
+			t := w.Tiles[i][j]
+			if t.Sensor != nil {
+				t.Sensor.Update()
+			}
 		}
 	}
 }
