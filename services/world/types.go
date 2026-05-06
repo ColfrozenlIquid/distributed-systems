@@ -27,6 +27,7 @@ type SensorReading interface {
 	Read() float32
 	Update()
 	Init()
+	Color() uint8
 }
 
 type WaterSensor struct {
@@ -43,6 +44,28 @@ type VibrationSensor struct {
 	MinVibrationIndex float32
 	target            float32
 	smoothing         float32
+}
+
+func (s *WaterSensor) Color() uint8 {
+	reading := (s.WaterLevelCm - s.MinWaterLevel) / (s.MaxWaterLevel - s.MinWaterLevel)
+	if reading < 0 {
+		reading = 0
+	}
+	if reading > 1 {
+		reading = 1
+	}
+	return uint8(reading * 255)
+}
+
+func (s *VibrationSensor) Color() uint8 {
+	reading := (s.VibrationIndex - s.MinVibrationIndex) / (s.MaxVibrationIndex - s.MinVibrationIndex)
+	if reading < 0 {
+		reading = 0
+	}
+	if reading > 1 {
+		reading = 1
+	}
+	return uint8(reading * 255)
 }
 
 func (s *WaterSensor) Read() float32 { return s.WaterLevelCm }
@@ -86,7 +109,7 @@ func NewWaterSensor() *WaterSensor {
 		WaterLevelCm:  50.0,
 		MaxWaterLevel: 100.0,
 		MinWaterLevel: 0.0,
-		smoothing:     0.05,
+		smoothing:     0.001,
 	}
 	s.Init()
 	return s
@@ -97,7 +120,7 @@ func NewVibrationSensor() *VibrationSensor {
 		VibrationIndex:    0.0,
 		MaxVibrationIndex: 10.0,
 		MinVibrationIndex: 0.0,
-		smoothing:         0.05,
+		smoothing:         0.001,
 	}
 	s.Init()
 	return s

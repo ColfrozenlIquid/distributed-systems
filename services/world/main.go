@@ -23,7 +23,7 @@ func main() {
 		world.update()
 		fmt.Print("\033[H\033[2J")
 		fmt.Print(world.DrawMap())
-		time.Sleep(2 * time.Second)
+		time.Sleep(2000 * time.Millisecond)
 	}
 }
 
@@ -34,7 +34,12 @@ func (w *World) DrawMap() string {
 		for x := 0; x < len(w.Tiles[y]); x++ {
 			tile := w.Tiles[y][x]
 
-			vis := RenderTile(tile.Terrain, tile.Infrastructure, 20)
+			var reading uint8 = 0
+			if tile.Sensor != nil {
+				reading = tile.Sensor.Color()
+			}
+
+			vis := RenderTile(tile.Terrain, tile.Infrastructure, reading)
 
 			sb.WriteString(vis.BG)
 			sb.WriteString(vis.FG)
@@ -62,7 +67,7 @@ func NewWorld(width int, height int) World {
 func (w *World) update() {
 	for i := 0; i < len(w.Tiles); i++ {
 		for j := 0; j < len(w.Tiles[i]); j++ {
-			t := w.Tiles[i][j]
+			t := &w.Tiles[i][j]
 			if t.Sensor != nil {
 				t.Sensor.Update()
 			}
