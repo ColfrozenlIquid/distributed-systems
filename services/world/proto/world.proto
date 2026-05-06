@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+service WorldService {
+  rpc SensorReading(SensorReadingRequest) returns (SensorReadingResponse);
+}
+
+message SensorReadingRequest {
+  int32 x_pos = 1;
+  int32 y_pos = 2;
+}
+
+message SensorReadingResponse {
+  SensorType sensor_type = 1;
+  float sensor_reading = 2;
+}
+
+enum SensorType {
+  SENSOR_TYPE_UNSPECIFIED = 0;
+  SENSOR_TYPE_VIBRATION = 1;
+  SENSOR_TYPE_WATER_LEVEL = 2;
+  SENSOR_TYPE_SUPPLY_LEVEL = 3;
+  
+}
