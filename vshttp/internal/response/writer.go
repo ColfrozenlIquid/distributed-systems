@@ -2,8 +2,8 @@ package response
 
 import (
 	"fmt"
-	"http/internal/headers"
 	"io"
+	"vshttp/internal/headers"
 )
 
 type Writer struct {

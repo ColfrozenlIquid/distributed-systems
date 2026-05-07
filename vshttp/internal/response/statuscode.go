@@ -1,12 +1,8 @@
 package response
 
 import (
-	"http/internal/headers"
 	"strconv"
 )
-
-type Response struct {
-}
 
 type StatusCode int
 
@@ -58,17 +54,4 @@ func (s StatusCode) ReasonPhrase() string {
 		reasonPhrase = "Not Implemented"
 	}
 	return reasonPhrase
-}
-
-func GetDefaultHeaders(contentLength int) *headers.Headers {
-	h := headers.NewHeaders()
-	h.Set(string(headers.ContentLength), strconv.Itoa(contentLength))
-	h.Set(string(headers.Connection), "close")
-	h.Set(string(headers.ContentType), "text/plain")
-	return h
-}
-
-type HandlerError struct {
-	StatusCode StatusCode
-	Message    string
 }
