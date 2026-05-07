@@ -1,4 +1,4 @@
-module http
+module vshttp
 
 go 1.26
 
