@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"http/internal/headers"
 	"io"
+	"vshttp/internal/headers"
 )
 
 type Request struct {
@@ -32,20 +32,20 @@ const (
 )
 
 func (r *Request) hasBody() bool {
-	length := r.Headers.GetInt("Content-Length", 0)
+	length := r.Headers.GetInt(string(headers.ContentLength), 0)
 	return length > 0
 }
 
 var SEPARATOR = []byte("\r\n")
+
 var ErrorMalformedRequestLine = fmt.Errorf("malformed request-line")
 var ErrorUnsupportedHttpVersion = fmt.Errorf("unsupported HTTP version")
-
 var ErrorRequestInErrorState = fmt.Errorf("request in error state")
 
 func FromReader(reader io.Reader) (*Request, error) {
 	request := &Request{
 		state:   StateInit,
-		Headers: headers.NewHeaders(),
+		Headers: headers.New(),
 		Body:    []byte(""),
 	}
 
