@@ -9,13 +9,21 @@ import (
 type Tile struct {
 	Terrain        TerrainType
 	Infrastructure InfrastructureType
-	Sensor         SensorReading
+	Sensors        map[SensorType]Simulatable
 }
 
 type TileVisual struct {
 	Char rune
 	FG   string
 	BG   string
+}
+
+func (t *Tile) Read(sensor SensorType) (float32, bool) {
+	sim, ok := t.Sensors[sensor]
+	if !ok {
+		return 0, false
+	}
+	return sim.Read(), true
 }
 
 func RenderTile(t TerrainType, i InfrastructureType, sensor uint8) TileVisual {
@@ -63,12 +71,6 @@ func SensorColor(sensor uint8) string {
 	return fmt.Sprintf("\033[48;5;%dm", color)
 }
 
-func (t *Tile) print() {
-	if t.Sensor != nil {
-
-	}
-}
-
 func GenerateTiles() ([][]Tile, error) {
 	data, err := os.Open("terrain.map")
 	if err != nil {
@@ -88,49 +90,55 @@ func GenerateTiles() ([][]Tile, error) {
 				row = append(row, Tile{
 					Terrain:        Water,
 					Infrastructure: NoInfrastructure,
-					Sensor:         NewWaterSensor(),
+					Sensors: map[SensorType]Simulatable{
+						SensorWaterLevel: NewWaterLevelSim(),
+					},
 				})
 			case '#': //Land
 				row = append(row, Tile{
 					Terrain:        Land,
 					Infrastructure: NoInfrastructure,
-					Sensor:         NewVibrationSensor(),
+					Sensors: map[SensorType]Simulatable{
+						SensorVibration: NewVibrationSim(),
+					},
 				})
 			case 'C': //Control Station
 				row = append(row, Tile{
 					Terrain:        Land,
 					Infrastructure: ControlCenter,
-					Sensor:         NewWaterSensor(),
+					Sensors: map[SensorType]Simulatable{
+						SensorWaterLevel: NewWaterLevelSim(),
+					},
 				})
 			case 'B': //Bridge
 				row = append(row, Tile{
 					Terrain:        Land,
 					Infrastructure: Bridge,
-					Sensor:         nil,
+					Sensors:        nil,
 				})
 			case 'P': //Port
 				row = append(row, Tile{
 					Terrain:        Land,
 					Infrastructure: Port,
-					Sensor:         nil,
+					Sensors:        nil,
 				})
 			case 'S': //ChargingStation
 				row = append(row, Tile{
 					Terrain:        Land,
 					Infrastructure: ChargingStation,
-					Sensor:         nil,
+					Sensors:        nil,
 				})
 			case 'L': //LandingStrip
 				row = append(row, Tile{
 					Terrain:        Land,
 					Infrastructure: LandingStrip,
-					Sensor:         nil,
+					Sensors:        nil,
 				})
 			case 'D': //Depot
 				row = append(row, Tile{
 					Terrain:        Land,
 					Infrastructure: Depot,
-					Sensor:         nil,
+					Sensors:        nil,
 				})
 			}
 		}

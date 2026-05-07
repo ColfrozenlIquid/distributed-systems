@@ -2,11 +2,20 @@ package main
 
 import (
 	"math/rand"
+	pb "world/gen/proto"
 )
 
 type TerrainType int
 
 type InfrastructureType int
+
+type SensorType int
+
+const (
+	SensorVibration SensorType = iota
+	SensorWaterLevel
+	SensorSupplyLevel
+)
 
 const (
 	Land TerrainType = iota
@@ -23,7 +32,8 @@ const (
 	Depot
 )
 
-type SensorReading interface {
+type Simulatable interface {
+	Type() pb.SensorType
 	Read() float32
 	Update()
 	Init()
@@ -45,6 +55,10 @@ type VibrationSensor struct {
 	target            float32
 	smoothing         float32
 }
+
+func (s *WaterSensor) Type() pb.SensorType { return pb.SensorType_SENSOR_TYPE_WATER_LEVEL }
+
+func (s *VibrationSensor) Type() pb.SensorType { return pb.SensorType_SENSOR_TYPE_VIBRATION }
 
 func (s *WaterSensor) Color() uint8 {
 	reading := (s.WaterLevelCm - s.MinWaterLevel) / (s.MaxWaterLevel - s.MinWaterLevel)
@@ -104,7 +118,7 @@ func (s *VibrationSensor) Update() {
 	s.VibrationIndex += (s.target - s.VibrationIndex) * s.smoothing
 }
 
-func NewWaterSensor() *WaterSensor {
+func NewWaterLevelSim() *WaterSensor {
 	s := &WaterSensor{
 		WaterLevelCm:  50.0,
 		MaxWaterLevel: 100.0,
@@ -115,7 +129,7 @@ func NewWaterSensor() *WaterSensor {
 	return s
 }
 
-func NewVibrationSensor() *VibrationSensor {
+func NewVibrationSim() *VibrationSensor {
 	s := &VibrationSensor{
 		VibrationIndex:    0.0,
 		MaxVibrationIndex: 10.0,
