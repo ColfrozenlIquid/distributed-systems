@@ -9,19 +9,18 @@ import (
 
 var SEPARATOR = []byte("\r\n")
 
+type Headers struct {
+	headers map[string]string
+}
+
 type HeaderKey string
 
 const (
 	ContentLength HeaderKey = "Content-Length"
 	ContentType   HeaderKey = "Content-Type"
-	Connection    HeaderKey = "Connection"
 )
 
-type Headers struct {
-	headers map[string]string
-}
-
-func NewHeaders() *Headers {
+func New() *Headers {
 	return &Headers{
 		headers: make(map[string]string),
 	}
