@@ -1,11 +1,13 @@
 package main
 
 import (
+	"simulation/world"
+
 	"go.uber.org/zap"
 )
 
 func main() {
-	world := NewWorld(20, 20)
+	world := world.NewWorld(20, 20)
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {

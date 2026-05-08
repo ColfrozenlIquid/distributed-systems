@@ -9,8 +9,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"world/gen/proto"
-	pb "world/gen/proto"
+	pb "simulation/gen/proto"
+	"simulation/sensors"
+	"simulation/world"
 )
 
 type GRPCServer struct {
@@ -21,11 +22,11 @@ type GRPCServer struct {
 
 type grpcServer struct {
 	pb.UnimplementedWorldServiceServer
-	world  *World
+	world  *world.World
 	logger *zap.Logger
 }
 
-func NewGRPCServer(world *World, logger *zap.Logger) (*GRPCServer, error) {
+func NewGRPCServer(world *world.World, logger *zap.Logger) (*GRPCServer, error) {
 	lis, err := net.Listen("tcp", "localhost:50051")
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen for gRPC: %w", err)
@@ -55,7 +56,7 @@ func (g *GRPCServer) Serve() error {
 func (g *grpcServer) TileReading(ctx context.Context, req *pb.TileReadingRequest) (*pb.TileReadingResponse, error) {
 	tile := g.world.GetTile(int(req.GetXPos()), int(req.GetYPos()))
 
-	sensorType, err := ToDomainSensorType(req.GetSensorType())
+	sensorType, err := sensors.ToDomainSensorType(req.GetSensorType())
 	if err != nil {
 		return nil, fmt.Errorf("unknown sensor type: %w", err)
 	}
@@ -73,30 +74,4 @@ func (g *grpcServer) TileReading(ctx context.Context, req *pb.TileReadingRequest
 
 func (g *grpcServer) TileUpdate(ctx context.Context, in *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
 	panic("unimplemented")
-}
-
-func ToDomainSensorType(s pb.SensorType) (SensorType, error) {
-	switch s {
-	case proto.SensorType_SENSOR_TYPE_SUPPLY_LEVEL:
-		return SensorSupplyLevel, nil
-	case proto.SensorType_SENSOR_TYPE_VIBRATION:
-		return SensorVibration, nil
-	case proto.SensorType_SENSOR_TYPE_WATER_LEVEL:
-		return SensorWaterLevel, nil
-	default:
-		return 0, fmt.Errorf("unknown or unspecified sensor type: %v", s)
-	}
-}
-
-func ToProtoSensorType(s SensorType) (pb.SensorType, error) {
-	switch s {
-	case SensorSupplyLevel:
-		return pb.SensorType_SENSOR_TYPE_SUPPLY_LEVEL, nil
-	case SensorVibration:
-		return pb.SensorType_SENSOR_TYPE_VIBRATION, nil
-	case SensorWaterLevel:
-		return pb.SensorType_SENSOR_TYPE_WATER_LEVEL, nil
-	default:
-		return pb.SensorType_SENSOR_TYPE_UNSPECIFIED, fmt.Errorf("unknown sensor type: %v", s)
-	}
 }

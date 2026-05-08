@@ -24,10 +24,11 @@ const (
 type SensorType int32
 
 const (
-	SensorType_SENSOR_TYPE_UNSPECIFIED  SensorType = 0
-	SensorType_SENSOR_TYPE_VIBRATION    SensorType = 1
-	SensorType_SENSOR_TYPE_WATER_LEVEL  SensorType = 2
-	SensorType_SENSOR_TYPE_SUPPLY_LEVEL SensorType = 3
+	SensorType_SENSOR_TYPE_UNSPECIFIED       SensorType = 0
+	SensorType_SENSOR_TYPE_VIBRATION         SensorType = 1
+	SensorType_SENSOR_TYPE_WATER_LEVEL       SensorType = 2
+	SensorType_SENSOR_TYPE_SUPPLY_LEVEL      SensorType = 3
+	SensorType_SENSOR_TYPE_PERSON_CONFIDENCE SensorType = 4
 )
 
 // Enum value maps for SensorType.
@@ -37,12 +38,14 @@ var (
 		1: "SENSOR_TYPE_VIBRATION",
 		2: "SENSOR_TYPE_WATER_LEVEL",
 		3: "SENSOR_TYPE_SUPPLY_LEVEL",
+		4: "SENSOR_TYPE_PERSON_CONFIDENCE",
 	}
 	SensorType_value = map[string]int32{
-		"SENSOR_TYPE_UNSPECIFIED":  0,
-		"SENSOR_TYPE_VIBRATION":    1,
-		"SENSOR_TYPE_WATER_LEVEL":  2,
-		"SENSOR_TYPE_SUPPLY_LEVEL": 3,
+		"SENSOR_TYPE_UNSPECIFIED":       0,
+		"SENSOR_TYPE_VIBRATION":         1,
+		"SENSOR_TYPE_WATER_LEVEL":       2,
+		"SENSOR_TYPE_SUPPLY_LEVEL":      3,
+		"SENSOR_TYPE_PERSON_CONFIDENCE": 4,
 	}
 )
 
@@ -318,13 +321,14 @@ const file_proto_world_proto_rawDesc = "" +
 	"sensorType\x12\x14\n" +
 	"\x05value\x18\x04 \x01(\x02R\x05value\".\n" +
 	"\x12TileUpdateResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*\x7f\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess*\xa2\x01\n" +
 	"\n" +
 	"SensorType\x12\x1b\n" +
 	"\x17SENSOR_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SENSOR_TYPE_VIBRATION\x10\x01\x12\x1b\n" +
 	"\x17SENSOR_TYPE_WATER_LEVEL\x10\x02\x12\x1c\n" +
-	"\x18SENSOR_TYPE_SUPPLY_LEVEL\x10\x032\x7f\n" +
+	"\x18SENSOR_TYPE_SUPPLY_LEVEL\x10\x03\x12!\n" +
+	"\x1dSENSOR_TYPE_PERSON_CONFIDENCE\x10\x042\x7f\n" +
 	"\fWorldService\x128\n" +
 	"\vTileReading\x12\x13.TileReadingRequest\x1a\x14.TileReadingResponse\x125\n" +
 	"\n" +

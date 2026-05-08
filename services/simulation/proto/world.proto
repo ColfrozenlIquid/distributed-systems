@@ -24,6 +24,7 @@ enum SensorType {
   SENSOR_TYPE_VIBRATION = 1;
   SENSOR_TYPE_WATER_LEVEL = 2;
   SENSOR_TYPE_SUPPLY_LEVEL = 3;
+  SENSOR_TYPE_PERSON_CONFIDENCE = 4;
 }
 
 message TileUpdateRequest {

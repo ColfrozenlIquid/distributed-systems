@@ -1,15 +1,17 @@
-package main
+package world
 
 import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"simulation/sensors"
 )
 
 type Tile struct {
-	Terrain        TerrainType
-	Infrastructure InfrastructureType
-	Sensors        map[SensorType]Simulatable
+	Terrain        sensors.TerrainType
+	Infrastructure sensors.InfrastructureType
+	Sensors        map[sensors.SensorType]sensors.Simulatable
 }
 
 type TileVisual struct {
@@ -18,7 +20,7 @@ type TileVisual struct {
 	BG   string
 }
 
-func (t *Tile) Read(sensor SensorType) (float32, bool) {
+func (t *Tile) Read(sensor sensors.SensorType) (float32, bool) {
 	sim, ok := t.Sensors[sensor]
 	if !ok {
 		return 0, false
@@ -26,24 +28,24 @@ func (t *Tile) Read(sensor SensorType) (float32, bool) {
 	return sim.Read(), true
 }
 
-func RenderTile(t TerrainType, i InfrastructureType, sensor uint8) TileVisual {
+func RenderTile(t sensors.TerrainType, i sensors.InfrastructureType, sensor uint8) TileVisual {
 	v := TileVisual{
 		FG: "\033[37m",
 	}
 
 	switch i {
-	case ControlCenter:
+	case sensors.ControlCenter:
 		v.Char = 'C'
-	case Bridge:
+	case sensors.Bridge:
 		v.Char = 'B'
-	case ChargingStation:
+	case sensors.ChargingStation:
 		v.Char = 'S'
-	case Port:
+	case sensors.Port:
 		v.Char = 'P'
-	case Depot:
+	case sensors.Depot:
 		v.Char = 'D'
 	default:
-		if t == Land {
+		if t == sensors.Land {
 			v.Char = '.'
 		} else {
 			v.Char = '~'
@@ -72,7 +74,7 @@ func SensorColor(sensor uint8) string {
 }
 
 func GenerateTiles() ([][]Tile, error) {
-	data, err := os.Open("terrain.map")
+	data, err := os.Open("world/terrain.map")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
@@ -88,56 +90,56 @@ func GenerateTiles() ([][]Tile, error) {
 			switch ch {
 			case '~': //Water
 				row = append(row, Tile{
-					Terrain:        Water,
-					Infrastructure: NoInfrastructure,
-					Sensors: map[SensorType]Simulatable{
-						SensorWaterLevel: NewWaterLevelSim(),
+					Terrain:        sensors.Water,
+					Infrastructure: sensors.NoInfrastructure,
+					Sensors: map[sensors.SensorType]sensors.Simulatable{
+						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(),
 					},
 				})
 			case '#': //Land
 				row = append(row, Tile{
-					Terrain:        Land,
-					Infrastructure: NoInfrastructure,
-					Sensors: map[SensorType]Simulatable{
-						SensorVibration: NewVibrationSim(),
+					Terrain:        sensors.Land,
+					Infrastructure: sensors.NoInfrastructure,
+					Sensors: map[sensors.SensorType]sensors.Simulatable{
+						sensors.SensorVibration: sensors.NewVibrationSim(),
 					},
 				})
 			case 'C': //Control Station
 				row = append(row, Tile{
-					Terrain:        Land,
-					Infrastructure: ControlCenter,
-					Sensors: map[SensorType]Simulatable{
-						SensorWaterLevel: NewWaterLevelSim(),
+					Terrain:        sensors.Land,
+					Infrastructure: sensors.ControlCenter,
+					Sensors: map[sensors.SensorType]sensors.Simulatable{
+						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(),
 					},
 				})
 			case 'B': //Bridge
 				row = append(row, Tile{
-					Terrain:        Land,
-					Infrastructure: Bridge,
+					Terrain:        sensors.Land,
+					Infrastructure: sensors.Bridge,
 					Sensors:        nil,
 				})
 			case 'P': //Port
 				row = append(row, Tile{
-					Terrain:        Land,
-					Infrastructure: Port,
+					Terrain:        sensors.Land,
+					Infrastructure: sensors.Port,
 					Sensors:        nil,
 				})
 			case 'S': //ChargingStation
 				row = append(row, Tile{
-					Terrain:        Land,
-					Infrastructure: ChargingStation,
+					Terrain:        sensors.Land,
+					Infrastructure: sensors.ChargingStation,
 					Sensors:        nil,
 				})
 			case 'L': //LandingStrip
 				row = append(row, Tile{
-					Terrain:        Land,
-					Infrastructure: LandingStrip,
+					Terrain:        sensors.Land,
+					Infrastructure: sensors.LandingStrip,
 					Sensors:        nil,
 				})
 			case 'D': //Depot
 				row = append(row, Tile{
-					Terrain:        Land,
-					Infrastructure: Depot,
+					Terrain:        sensors.Land,
+					Infrastructure: sensors.Depot,
 					Sensors:        nil,
 				})
 			}

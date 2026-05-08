@@ -1,4 +1,4 @@
-package main
+package world
 
 import (
 	"sync"
@@ -10,6 +10,19 @@ type World struct {
 	Height int
 	Tiles  [][]Tile
 	mu     sync.RWMutex
+}
+
+func NewWorld(width int, height int) World {
+	tiles := make([][]Tile, height)
+	tiles, err := GenerateTiles()
+	if err != nil {
+		panic("world is nil")
+	}
+	return World{
+		Width:  width,
+		Height: height,
+		Tiles:  tiles,
+	}
 }
 
 func (w *World) RunWorldLoop() {
@@ -43,19 +56,6 @@ func (w *World) RunWorldLoop() {
 // 	}
 // 	return sb.String()
 // }
-
-func NewWorld(width int, height int) World {
-	tiles := make([][]Tile, height)
-	tiles, err := GenerateTiles()
-	if err != nil {
-		panic("world is nil")
-	}
-	return World{
-		Width:  width,
-		Height: height,
-		Tiles:  tiles,
-	}
-}
 
 func (w *World) GetTile(xpos int, ypos int) Tile {
 	w.mu.RLock()
