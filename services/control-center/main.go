@@ -29,12 +29,12 @@ func main() {
 func routing(router *vshttp.Router) {
 	var name string
 
-	router.Get("/name", func(c *vshttp.Context) error {
+	router.Post("/name", func(c *vshttp.Context) error {
 		name = c.Query("name")
 		return c.NoContent()
 	})
 
-	router.Post("/name", func(c *vshttp.Context) error {
+	router.Get("/name", func(c *vshttp.Context) error {
 		return c.JSON(vshttp.OK, map[string]string{
 			"message": fmt.Sprintf("Hello, %s!", name),
 		})
