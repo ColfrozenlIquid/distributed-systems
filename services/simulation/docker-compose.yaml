@@ -1,0 +1,14 @@
+services:
+  simulation:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "50051:50051"
+    deploy:
+      resources:
+        limits:
+          cpus: "8.0"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 64M

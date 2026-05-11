@@ -2,11 +2,15 @@ package world
 
 import (
 	"bufio"
+	"bytes"
+	_ "embed"
 	"fmt"
-	"os"
 
 	"simulation/sensors"
 )
+
+//go:embed terrain.map
+var terrainMap []byte
 
 type Tile struct {
 	Terrain        sensors.TerrainType
@@ -74,15 +78,9 @@ func SensorColor(sensor uint8) string {
 }
 
 func GenerateTiles() ([][]Tile, error) {
-	data, err := os.Open("world/terrain.map")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-	defer data.Close()
-
 	var tiles [][]Tile
 
-	scanner := bufio.NewScanner(data)
+	scanner := bufio.NewScanner(bytes.NewReader(terrainMap))
 	for scanner.Scan() {
 		line := scanner.Text()
 		var row []Tile

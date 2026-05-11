@@ -17,11 +17,11 @@ func main() {
 	grpcSrv, err := NewGRPCServer(&world, logger)
 
 	if err != nil {
-		logger.Fatal("initializze grpc server", zap.Error(err))
+		logger.Fatal("initialize grpc server", zap.Error(err))
 	}
 
 	go func() {
-		logger.Info("grpc server running...", zap.String("address", "localhost:50051"))
+		logger.Info("grpc server running...", zap.String("address", "0.0.0.0:50051"))
 		if err := grpcSrv.Serve(); err != nil {
 			logger.Fatal("gRPC serve error", zap.Error(err))
 		}

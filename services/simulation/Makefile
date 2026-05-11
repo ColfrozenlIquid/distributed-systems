@@ -9,4 +9,6 @@ TileX ?= 1
 TileY ?= 1
 
 get-tile:
-	grpcurl -v -plaintext -emit-defaults -d '{"x_pos": $(TileX), "y_pos": $(TileY), "sensor_type": 2}' localhost:50051 WorldService/TileReading
+	grpcurl -v -plaintext -emit-defaults
+	-d '{"x_pos": $(TileX), "y_pos": $(TileY), "sensor_type": 2}'
+	localhost:50051 WorldService/TileReading
