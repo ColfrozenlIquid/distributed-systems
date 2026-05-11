@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sensors/config"
+	"shared"
 	"time"
 
 	pb "sensors/gen/proto"
@@ -47,7 +48,7 @@ func (w *WaterLevelSensor) Interval() time.Duration {
 	return w.sensor.interval
 }
 
-func (w *WaterLevelSensor) Read() (*Reading, error) {
+func (w *WaterLevelSensor) Read() (*shared.SensorReading, error) {
 	req := &pb.TileReadingRequest{
 		XPos:       int32(w.sensor.xpos),
 		YPos:       int32(w.sensor.ypos),
@@ -62,10 +63,13 @@ func (w *WaterLevelSensor) Read() (*Reading, error) {
 		return nil, fmt.Errorf("failed to get tile reading: %w", err)
 	}
 
-	return &Reading{
-		timstamp: time.Now(),
-		value: map[string]any{
-			"reading": resp.SensorReading,
+	return &shared.SensorReading{
+		Timestamp: time.Now(),
+		Value:     resp.SensorReading,
+		Sensor: shared.SensorInfo{
+			Id:         "",
+			Position:   shared.Position{},
+			SensorType: "",
 		},
 	}, nil
 }

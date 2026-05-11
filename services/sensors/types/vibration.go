@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sensors/config"
 	pb "sensors/gen/proto"
+	"shared"
 	"time"
 )
 
@@ -46,7 +47,7 @@ func (v *VibrationSensor) Interval() time.Duration {
 	return v.sensor.interval
 }
 
-func (v *VibrationSensor) Read() (*Reading, error) {
+func (v *VibrationSensor) Read() (*shared.SensorReading, error) {
 	req := &pb.TileReadingRequest{
 		XPos:       int32(v.sensor.xpos),
 		YPos:       int32(v.sensor.ypos),
@@ -61,10 +62,13 @@ func (v *VibrationSensor) Read() (*Reading, error) {
 		return nil, fmt.Errorf("failed to get tile reading: %w", err)
 	}
 
-	return &Reading{
-		timstamp: time.Now(),
-		value: map[string]any{
-			"reading": resp.SensorReading,
+	return &shared.SensorReading{
+		Timestamp: time.Now(),
+		Value:     resp.SensorReading,
+		Sensor: shared.SensorInfo{
+			Id:         "",
+			Position:   shared.Position{},
+			SensorType: "",
 		},
 	}, nil
 }

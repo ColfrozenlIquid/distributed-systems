@@ -1,11 +1,8 @@
 package client
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"sensors/types"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -30,22 +27,22 @@ func (c *Client) Close() error {
 	return c.grpcConn.Close()
 }
 
-func (c *Client) SendReading(endpoint string, reading types.Reading) error {
-	data, err := json.Marshal(reading)
-	if err != nil {
-		return fmt.Errorf("failed to marshal reading: %w", err)
-	}
-	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(data))
-	if err != nil {
-		return fmt.Errorf("failed to send reading %w", err)
-	}
-	defer resp.Body.Close()
+// func (c *Client) SendReading(endpoint string, reading types.Reading) error {
+// 	data, err := json.Marshal(reading)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to marshal reading: %w", err)
+// 	}
+// 	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(data))
+// 	if err != nil {
+// 		return fmt.Errorf("failed to send reading %w", err)
+// 	}
+// 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status: %d", resp.StatusCode)
-	}
-	return nil
-}
+// 	if resp.StatusCode != http.StatusOK {
+// 		return fmt.Errorf("unexpected status: %d", resp.StatusCode)
+// 	}
+// 	return nil
+// }
 
 func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
 	conn, err := grpc.NewClient(cfg.GrpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))

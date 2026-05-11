@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"sensors/config"
+	"shared"
 	"time"
 
 	pb "sensors/gen/proto"
@@ -11,18 +12,8 @@ import (
 type Sensor interface {
 	ID() string
 	Type() string
-	Read() (*Reading, error)
+	Read() (*shared.SensorReading, error)
 	Interval() time.Duration
-}
-
-type Reading struct {
-	timstamp time.Time
-	value    map[string]any
-}
-
-type Incident struct {
-	timestamp time.Time
-	value     map[string]any
 }
 
 func NewSensor(cfg config.SensorConfig, simulation pb.WorldServiceClient) (Sensor, error) {

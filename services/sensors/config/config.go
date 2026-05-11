@@ -11,8 +11,8 @@ const SENSOR_TYPE string = "SENSOR_TYPE"
 const SENSOR_INTERVAL_MS string = "SENSOR_INTERVAL_MS"
 const SENSOR_POSITION_X string = "SENSOR_POSITION_X"
 const SENSOR_POSITION_Y string = "SENSOR_POSITION_Y"
-const SENSOR_BASE_STATION_ENDPOINT string = "SENSOR_BASE_STATION_ENDPOINT"
-const SENSOR_WORLD_SIMULATION_ENDPOINT string = "SENSOR_WORLD_SIMULATION_ENDPOINT"
+const SENSOR_BASE_STATION_HOST string = "SENSOR_BASE_STATION_HOST"
+const SENSOR_WORLD_SIMULATION_HOST string = "SENSOR_WORLD_SIMULATION_HOST"
 
 type SensorConfig struct {
 	Id                      string        // Sensor ID
@@ -35,8 +35,8 @@ func LoadConfig() (*SensorConfig, error) {
 		IntervalMs:              time.Duration(intervalMS) * time.Millisecond,
 		XPosition:               int32(xPos),
 		YPosition:               int32(yPos),
-		BaseStationEndpoint:     os.Getenv(SENSOR_BASE_STATION_ENDPOINT),
-		WorldSimulationEndpoint: os.Getenv(SENSOR_WORLD_SIMULATION_ENDPOINT),
+		BaseStationEndpoint:     os.Getenv(SENSOR_BASE_STATION_HOST),
+		WorldSimulationEndpoint: os.Getenv(SENSOR_WORLD_SIMULATION_HOST),
 	}
 	return cfg, nil
 }
