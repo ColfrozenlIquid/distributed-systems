@@ -31,6 +31,15 @@ func main() {
 	client, err := client.NewClient(clientCfg, logger)
 	defer client.Close()
 
+	sensor, err := types.NewSensor(*sensorCfg, client.Grpc)
+	if err != nil {
+		logger.Fatal("failed to create new sensor", zap.Error(err))
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	Run(ctx, sensor, clientCfg.HttpAddress)
 }
 
 func Run(ctx context.Context, s types.Sensor, endpoint string) {

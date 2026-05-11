@@ -20,10 +20,10 @@ type ClientConfig struct {
 }
 
 type Client struct {
-	http     *http.Client
+	Http     *http.Client
 	grpcConn *grpc.ClientConn
-	grpc     pb.WorldServiceClient
-	logger   *zap.Logger
+	Grpc     pb.WorldServiceClient
+	Logger   *zap.Logger
 }
 
 func (c *Client) Close() error {
@@ -54,9 +54,9 @@ func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
 	}
 
 	return &Client{
-		http:     &http.Client{},
+		Http:     &http.Client{},
 		grpcConn: conn,
-		grpc:     pb.NewWorldServiceClient(conn),
-		logger:   logger,
+		Grpc:     pb.NewWorldServiceClient(conn),
+		Logger:   logger,
 	}, nil
 }
