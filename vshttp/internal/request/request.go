@@ -157,7 +157,7 @@ func parseRequestLine(line []byte) (*RequestLine, int, error) {
 	}
 
 	switch string(httpVersionParts[1]) {
-	case "1.1", "2", "3": // valid HTTP versions
+	case "1.0", "1.1", "2", "3": // valid HTTP versions
 	default:
 		return nil, 0, ErrorUnsupportedHttpVersion
 	}
