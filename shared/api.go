@@ -14,13 +14,21 @@ const (
 	WaterLevelAlert
 	SupplyCritical
 	PersonDetected
-	BlockedRoute
+)
+
+type SensorType string
+
+const (
+	VibrationSensor        SensorType = "vibration"
+	WaterLevelSensor       SensorType = "water_level"
+	SupplyLevelSensor      SensorType = "supply_level"
+	PersonConfidenceSensor SensorType = "person_confidence"
 )
 
 type SensorInfo struct {
-	Id         string   `json:"id"`
-	Position   Position `json:"position"`
-	SensorType string   `json:"sensor_type"`
+	Id         string     `json:"id"`
+	Position   Position   `json:"position"`
+	SensorType SensorType `json:"sensor_type"`
 }
 
 type SensorRegistration struct {
