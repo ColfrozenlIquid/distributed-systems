@@ -46,3 +46,41 @@ type SensorIncident struct {
 	Sensor    SensorInfo `json:"sensor"`
 	Incident  Incident   `json:"incident"`
 }
+
+func (r *SensorReading) IsCritical() bool {
+	switch r.Sensor.SensorType {
+	case VibrationSensor:
+		return r.Value > 4
+	case WaterLevelSensor:
+		return r.Value > 80
+	case SupplyLevelSensor:
+		return r.Value < 20
+	case PersonConfidenceSensor:
+		return r.Value > 0.8
+	default:
+		return false
+	}
+}
+
+func (r *SensorReading) ToIncident() SensorIncident {
+	return SensorIncident{
+		Sensor:    r.Sensor,
+		Timestamp: r.Timestamp,
+		Incident:  r.Sensor.SensorType.IncidentForSensorType(),
+	}
+}
+
+func (r SensorType) IncidentForSensorType() Incident {
+	switch r {
+	case VibrationSensor:
+		return VibrationTooHigh
+	case WaterLevelSensor:
+		return WaterLevelAlert
+	case SupplyLevelSensor:
+		return SupplyCritical
+	case PersonConfidenceSensor:
+		return PersonDetected
+	default:
+		return -1
+	}
+}
