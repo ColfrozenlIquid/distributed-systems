@@ -67,9 +67,9 @@ func (w *WaterLevelSensor) Read() (*shared.SensorReading, error) {
 		Timestamp: time.Now(),
 		Value:     resp.SensorReading,
 		Sensor: shared.SensorInfo{
-			Id:         "",
-			Position:   shared.Position{},
-			SensorType: "",
+			Id:         w.sensor.id,
+			Position:   shared.Position{X: w.sensor.xpos, Y: w.sensor.ypos},
+			SensorType: shared.WaterLevelSensor,
 		},
 	}, nil
 }

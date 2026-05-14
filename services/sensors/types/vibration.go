@@ -66,9 +66,9 @@ func (v *VibrationSensor) Read() (*shared.SensorReading, error) {
 		Timestamp: time.Now(),
 		Value:     resp.SensorReading,
 		Sensor: shared.SensorInfo{
-			Id:         "",
-			Position:   shared.Position{},
-			SensorType: "",
+			Id:         v.sensor.id,
+			Position:   shared.Position{X: v.sensor.xpos, Y: v.sensor.ypos},
+			SensorType: shared.VibrationSensor,
 		},
 	}, nil
 }
