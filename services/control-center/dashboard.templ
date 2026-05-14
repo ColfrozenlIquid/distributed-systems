@@ -1,0 +1,181 @@
+package main
+
+import "fmt"
+
+templ DashboardPage(props DashboardPageData) {
+	@BaseLayout(props.Title) {
+		<main class="dashboard-shell" data-testid="dashboard-page">
+			<header class="dashboard-header">
+				<div>
+					<h1 class="dashboard-title">{ props.Title }</h1>
+					<p class="dashboard-meta">
+						{ props.Width }x{ props.Height } island grid - updated { props.GeneratedAt.Format("15:04:05") }
+					</p>
+				</div>
+				<nav class="dashboard-actions" aria-label="Dashboard actions">
+					<a class="dashboard-link" href="/map" aria-current="page">Map</a>
+					<a class="dashboard-link" href="/status">Status JSON</a>
+				</nav>
+			</header>
+			<div class="dashboard-grid">
+				@MapPanel(props)
+				@SidePanel(props)
+			</div>
+			@templ.JSONScript("dashboard-map-data", props.MapData)
+		</main>
+	}
+}
+
+templ MapPanel(props DashboardPageData) {
+	<section class="map-panel" aria-labelledby="map-heading" data-testid="map-panel">
+		<div class="map-toolbar">
+			<h2 id="map-heading" class="map-heading">World map</h2>
+			@Legend(props.Legend)
+		</div>
+		@templ.Fragment("world-map") {
+			<div
+				class="world-map"
+				role="grid"
+				aria-label="20 by 20 world tile map"
+				data-dashboard-map
+				data-testid="world-map"
+			>
+				for _, row := range props.Tiles {
+					@MapRow(row)
+				}
+			</div>
+		}
+	</section>
+}
+
+templ MapRow(row []DashboardTile) {
+	for _, tile := range row {
+		@MapTile(tile)
+	}
+}
+
+templ MapTile(tile DashboardTile) {
+	<button
+		type="button"
+		role="gridcell"
+		aria-pressed="false"
+		class={
+			"map-tile",
+			templ.KV("is-land", tile.Terrain == "land"),
+			templ.KV("is-water", tile.Terrain == "water"),
+			templ.KV("has-infrastructure", tile.HasInfrastructure),
+			templ.KV("has-sensor", tile.HasSensor),
+			templ.KV("has-incident", tile.HasIncident),
+			templ.KV("reading-warning", tile.ReadingTone == "warning"),
+			templ.KV("reading-critical", tile.ReadingTone == "critical"),
+		}
+		{ tileAttributes(tile)... }
+	>
+		if tile.HasInfrastructure {
+			<span aria-hidden="true">{ tile.InfrastructureShort }</span>
+		}
+		if tile.ReadingLabel != "" {
+			<span class="tile-reading">{ tile.ReadingLabel }</span>
+		}
+	</button>
+}
+
+templ Legend(items []LegendItem) {
+	<dl class="legend" aria-label="Map legend">
+		for _, item := range items {
+			<div class="legend-item">
+				<dt><span class={ "legend-swatch", item.Class }></span></dt>
+				<dd>{ item.Label }</dd>
+			</div>
+		}
+	</dl>
+}
+
+templ SidePanel(props DashboardPageData) {
+	<aside class="side-panel" aria-label="System overview" data-testid="side-panel">
+		@SummaryCards(props.Summary)
+		@ReadingsFeed(props.Readings)
+		@IncidentsFeed(props.Incidents)
+		@SensorsFeed(props.Sensors)
+	</aside>
+}
+
+templ SummaryCards(summary DashboardSummary) {
+	<section class="summary-grid" aria-label="Map summary" data-testid="summary-grid">
+		@MetricCard("Land tiles", fmt.Sprintf("%d", summary.LandTiles), "reachable ground")
+		@MetricCard("Water tiles", fmt.Sprintf("%d", summary.WaterTiles), "flooded terrain")
+		@MetricCard("Sensors", fmt.Sprintf("%d", summary.SensorCount), "registered sources")
+		@MetricCard("Incidents", fmt.Sprintf("%d", summary.IncidentCount), "critical events")
+	</section>
+}
+
+templ MetricCard(label string, value string, detail string) {
+	<div class="status-card" data-testid={ "metric-" + label }>
+		<span class="metric-value">{ value }</span>
+		<span class="metric-label">{ label } - { detail }</span>
+	</div>
+}
+
+templ ReadingsFeed(readings []ReadingListItem) {
+	<section class="feed-card" data-testid="readings-feed">
+		<h2 class="feed-title">Latest readings</h2>
+		if len(readings) == 0 {
+			<p class="feed-empty">No readings received</p>
+		} else {
+			<ul class="feed-list">
+				for _, reading := range readings {
+					<li class="feed-item">
+						<div>
+							<div class={ "feed-primary", templ.KV("critical-text", reading.Critical) }>
+								{ reading.Type } - { reading.Value }
+							</div>
+							<div class="feed-secondary">{ reading.SensorID } at { reading.Position }</div>
+						</div>
+						<time class="feed-time">{ reading.Timestamp }</time>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}
+
+templ IncidentsFeed(incidents []IncidentListItem) {
+	<section class="feed-card" data-testid="incidents-feed">
+		<h2 class="feed-title">Incident queue</h2>
+		if len(incidents) == 0 {
+			<p class="feed-empty">No incidents detected</p>
+		} else {
+			<ul class="feed-list">
+				for _, incident := range incidents {
+					<li class="feed-item">
+						<div>
+							<div class="feed-primary critical-text">{ incident.Type }</div>
+							<div class="feed-secondary">{ incident.SensorID } at { incident.Position }</div>
+						</div>
+						<time class="feed-time">{ incident.Timestamp }</time>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}
+
+templ SensorsFeed(sensors []SensorListItem) {
+	<section class="feed-card" data-testid="sensors-feed">
+		<h2 class="feed-title">Registered sensors</h2>
+		if len(sensors) == 0 {
+			<p class="feed-empty">No sensors registered</p>
+		} else {
+			<ul class="feed-list">
+				for _, sensor := range sensors {
+					<li class="feed-item">
+						<div>
+							<div class="feed-primary">{ sensor.ID }</div>
+							<div class="feed-secondary">{ sensor.Type } at { sensor.Position }</div>
+						</div>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}
