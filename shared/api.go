@@ -3,8 +3,8 @@ package shared
 import "time"
 
 type Position struct {
-	x int
-	y int
+	X int `json:"x"`
+	Y int `json:"y"`
 }
 
 type Incident int
