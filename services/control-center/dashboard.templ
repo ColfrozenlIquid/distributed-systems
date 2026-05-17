@@ -102,17 +102,17 @@ templ SidePanel(props DashboardPageData) {
 
 templ SummaryCards(summary DashboardSummary) {
 	<section class="summary-grid" aria-label="Map summary" data-testid="summary-grid">
-		@MetricCard("Land tiles", fmt.Sprintf("%d", summary.LandTiles), "reachable ground")
-		@MetricCard("Water tiles", fmt.Sprintf("%d", summary.WaterTiles), "flooded terrain")
-		@MetricCard("Sensors", fmt.Sprintf("%d", summary.SensorCount), "registered sources")
-		@MetricCard("Incidents", fmt.Sprintf("%d", summary.IncidentCount), "critical events")
+		@MetricCard("Land tiles", fmt.Sprintf("%d", summary.LandTiles))
+		@MetricCard("Water tiles", fmt.Sprintf("%d", summary.WaterTiles))
+		@MetricCard("Sensors", fmt.Sprintf("%d", summary.SensorCount))
+		@MetricCard("Incidents", fmt.Sprintf("%d", summary.IncidentCount))
 	</section>
 }
 
-templ MetricCard(label string, value string, detail string) {
+templ MetricCard(label string, value string) {
 	<div class="status-card" data-testid={ "metric-" + label }>
 		<span class="metric-value">{ value }</span>
-		<span class="metric-label">{ label } - { detail }</span>
+		<span class="metric-label">{ label }</span>
 	</div>
 }
 
