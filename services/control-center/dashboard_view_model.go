@@ -134,7 +134,7 @@ func NewDashboardPageData(status SystemStatusSnapshot, island *world.World) Dash
 	}
 
 	return DashboardPageData{
-		Title:       "Disaster Simulation Dashboard",
+		Title:       "Sturmflut Nordsee",
 		GeneratedAt: time.Now(),
 		Width:       island.Width,
 		Height:      island.Height,
@@ -183,7 +183,7 @@ func NewDashboardTile(x int, y int, tile world.Tile, sensor shared.SensorInfo, h
 		view.SensorLabel = sensorTypeLabel(sensor.SensorType)
 	}
 	if hasReading {
-		view.ReadingLabel = fmt.Sprintf("%.1f", reading.Value)
+		view.ReadingLabel = formatReadingValue(reading)
 		view.ReadingTone = readingTone(reading)
 		if view.SensorLabel == "" {
 			view.SensorLabel = sensorTypeLabel(reading.Sensor.SensorType)
