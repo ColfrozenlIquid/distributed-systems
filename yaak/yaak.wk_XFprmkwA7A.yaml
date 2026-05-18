@@ -1,0 +1,15 @@
+type: workspace
+model: workspace
+id: wk_XFprmkwA7A
+createdAt: 2025-04-18T18:32:36.101809
+updatedAt: 2026-05-18T10:14:14.535577
+authentication: {}
+authenticationType: null
+description: Verteilte Systeme Praktikum (Latz & Stoklosa, SS26)
+headers: []
+name: VS P
+encryptionKeyChallenge: null
+settingValidateCertificates: true
+settingFollowRedirects: true
+settingRequestTimeout: 0
+settingDnsOverrides: []
