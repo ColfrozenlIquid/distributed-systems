@@ -88,7 +88,7 @@ func (s *App) Register() error {
 
 func (s *App) Reading(reading float32) error {
 	payload := shared.SensorReading{
-		Timestamp: time.Time{},
+		Timestamp: time.Now(),
 		Sensor: shared.SensorInfo{
 			Id: s.sensor.ID(),
 			Position: shared.Position{
