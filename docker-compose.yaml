@@ -1,8 +1,10 @@
+name: vs-praktikum
 services:
   world-simulation:
     build:
       context: .
       dockerfile: ./services/simulation/Dockerfile
+    container_name: world-simulation
     ports:
       - "50051:50051"
     healthcheck:
@@ -16,6 +18,7 @@ services:
     build:
       context: .
       dockerfile: ./services/control-center/Dockerfile
+    container_name: control-center
     ports:
       - "8080:8080"
     depends_on:
@@ -31,6 +34,7 @@ services:
     build:
       context: .
       dockerfile: ./services/sensors/Dockerfile
+    container_name: sensor-1
     environment:
       SENSOR_ID: "sensor-1"
       SENSOR_TYPE: "water_level"
