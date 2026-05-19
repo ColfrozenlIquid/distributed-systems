@@ -92,9 +92,9 @@ const (
 )
 
 type ActorInfo struct {
-	Id         string     `json:"id"`
-	Position   Position   `json:"position"`
-	SensorType SensorType `json:"actor_type"`
+	Id        string    `json:"id"`
+	Position  Position  `json:"position"`
+	ActorType ActorType `json:"actor_type"`
 }
 
 type ActorRegistration struct {
