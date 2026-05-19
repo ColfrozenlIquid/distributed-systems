@@ -1,3 +1,6 @@
+build:
+	go build -o sensor ./cmd/sensors/
+
 generate-proto:
 	mkdir -p gen
 	protoc --proto_path=proto \

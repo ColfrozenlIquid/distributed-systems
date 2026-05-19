@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option go_package = "./proto";
+
+service WorldService {
+  rpc TileReading(TileReadingRequest) returns (TileReadingResponse);
+
+  rpc TileUpdate(TileUpdateRequest) returns (TileUpdateResponse);
+}
+
+message TileReadingRequest {
+  int32 x_pos = 1;
+  int32 y_pos = 2;
+  SensorType sensor_type = 3;
+}
+
+message TileReadingResponse {
+  SensorType sensor_type = 1;
+  float sensor_reading = 2;
+}
+
+enum SensorType {
+  SENSOR_TYPE_UNSPECIFIED = 0;
+  SENSOR_TYPE_VIBRATION = 1;
+  SENSOR_TYPE_WATER_LEVEL = 2;
+  SENSOR_TYPE_SUPPLY_LEVEL = 3;
+  SENSOR_TYPE_PERSON_CONFIDENCE = 4;
+}
+
+message TileUpdateRequest {
+  int32 x_pos = 1;
+  int32 y_pos = 2;
+  SensorType sensor_type = 3;
+  float value = 4;
+}
+
+message TileUpdateResponse {
+  bool success = 1;
+}

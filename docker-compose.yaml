@@ -42,3 +42,19 @@ services:
     depends_on:
       - world-simulation
       - control-center
+
+  actor-1:
+    build:
+      context: .
+      dockerfile: ./services/actors/Dockerfile
+    environment:
+      ACTOR_ID: "actor-1"
+      ACTOR_TYPE: "rescue_vehicle"
+      ACTOR_INTERVAL_MS: "1000"
+      ACTOR_POSITION_X: "10"
+      ACTOR_POSITION_Y: "10"
+      ACTOR_BASE_STATION_HOST: "http://control-center:8080"
+      ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+    depends_on:
+      - world-simulation
+      - control-center
