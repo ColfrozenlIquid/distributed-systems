@@ -5,8 +5,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-
-	"simulation/sensors"
+	"simulation/internal/sensors"
 )
 
 //go:embed terrain.map

@@ -1,12 +1,12 @@
-package types
+package sensor
 
 import (
 	"fmt"
-	"sensors/config"
 	"shared"
 	"time"
 
-	pb "sensors/gen/proto"
+	pb "sensors/gen"
+	"sensors/internal/config"
 )
 
 type Position struct {

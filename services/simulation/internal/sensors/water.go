@@ -2,8 +2,8 @@ package sensors
 
 import (
 	"math/rand"
-	"simulation/config"
-	pb "simulation/gen/proto"
+	pb "simulation/gen"
+	"simulation/internal/config"
 )
 
 var _ Simulatable = (*WaterSim)(nil)

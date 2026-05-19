@@ -1,10 +1,10 @@
-package types
+package sensor
 
 import (
 	"context"
 	"fmt"
-	"sensors/config"
-	pb "sensors/gen/proto"
+	pb "sensors/gen"
+	"sensors/internal/config"
 	"shared"
 	"time"
 )

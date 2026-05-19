@@ -2,8 +2,8 @@ package sensors
 
 import (
 	"fmt"
-	"simulation/gen/proto"
-	pb "simulation/gen/proto"
+	pb "simulation/gen"
+	proto "simulation/gen"
 )
 
 type TerrainType int

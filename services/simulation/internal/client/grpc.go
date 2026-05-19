@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
-	pb "simulation/gen/proto"
-	"simulation/sensors"
-	"simulation/world"
+	pb "simulation/gen"
+	"simulation/internal/sensors"
+	"simulation/internal/world"
 )
 
 type GRPCServer struct {

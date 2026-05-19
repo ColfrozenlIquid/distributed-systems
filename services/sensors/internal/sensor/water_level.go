@@ -1,13 +1,13 @@
-package types
+package sensor
 
 import (
 	"context"
 	"fmt"
-	"sensors/config"
+	"sensors/internal/config"
 	"shared"
 	"time"
 
-	pb "sensors/gen/proto"
+	pb "sensors/gen"
 )
 
 var _ Sensor = (*WaterLevelSensor)(nil)

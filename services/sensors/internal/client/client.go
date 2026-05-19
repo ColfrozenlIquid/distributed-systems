@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "sensors/gen/proto"
+	pb "sensors/gen"
 )
 
 type ClientConfig struct {
@@ -48,23 +48,6 @@ type Response struct {
 func (c *GRPCClient) Close() error {
 	return c.grpcConn.Close()
 }
-
-// func (c *Client) SendReading(endpoint string, reading types.Reading) error {
-// 	data, err := json.Marshal(reading)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to marshal reading: %w", err)
-// 	}
-// 	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(data))
-// 	if err != nil {
-// 		return fmt.Errorf("failed to send reading %w", err)
-// 	}
-// 	defer resp.Body.Close()
-
-// 	if resp.StatusCode != http.StatusOK {
-// 		return fmt.Errorf("unexpected status: %d", resp.StatusCode)
-// 	}
-// 	return nil
-// }
 
 func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
 	conn, err := grpc.NewClient(cfg.GrpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))

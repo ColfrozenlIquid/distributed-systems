@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sensors/client"
-	"sensors/config"
-	"sensors/types"
+	"sensors/internal/client"
+	"sensors/internal/config"
+	"sensors/internal/sensor"
 	"shared"
 	"time"
 
@@ -17,7 +17,7 @@ import (
 type App struct {
 	logger *zap.Logger
 	client client.Client
-	sensor types.Sensor
+	sensor sensor.Sensor
 }
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	client, err := client.NewClient(clientCfg, logger)
 	defer client.Grpc.Close()
 
-	sensor, err := types.NewSensor(*sensorCfg, client.Grpc.Grpc)
+	sensor, err := sensor.NewSensor(*sensorCfg, client.Grpc.Grpc)
 	if err != nil {
 		logger.Fatal("failed to create new sensor", zap.Error(err))
 	}
@@ -112,7 +112,7 @@ func (s *App) Reading(reading float32) error {
 	return nil
 }
 
-func (s *App) Run(ctx context.Context, sensor types.Sensor, endpoint string) {
+func (s *App) Run(ctx context.Context, sensor sensor.Sensor, endpoint string) {
 	ticker := time.NewTicker(sensor.Interval())
 	defer ticker.Stop()
 
