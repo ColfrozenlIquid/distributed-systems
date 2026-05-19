@@ -38,4 +38,8 @@ func Routes(router *vshttp.Router) {
 	router.Get("/status", func(c *vshttp.Context) error {
 		return c.JSON(vshttp.OK, systemStatus.Snapshot())
 	})
+
+	router.Get("/health", func(c *vshttp.Context) error {
+		return c.Text(vshttp.OK, "control-center is healthy")
+	})
 }
