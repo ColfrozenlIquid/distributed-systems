@@ -9,7 +9,7 @@ RUN go mod download
 COPY services/sensors/ .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-s -w -extldflags '-static'" -o sensor .
+    go build -ldflags="-s -w -extldflags '-static'" -o sensor ./cmd/sensors/
 
 FROM scratch
 

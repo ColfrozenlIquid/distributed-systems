@@ -9,7 +9,7 @@ RUN go mod download
 COPY services/simulation/ .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-s -w -extldflags '-static'" -o app .
+    go build -ldflags="-s -w -extldflags '-static'" -o app ./cmd/simulation/
 
 RUN wget -qO /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.28/grpc_health_probe-linux-amd64 \
     && chmod +x /bin/grpc_health_probe
