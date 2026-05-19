@@ -7,12 +7,22 @@ import (
 	"strings"
 	"time"
 
+	pb "control-center/gen"
 	"shared"
-	"simulation/sensors"
-	"simulation/world"
 
 	"github.com/a-h/templ"
 )
+
+type World struct {
+	Width  int
+	Height int
+	Tiles  [][]Tile
+}
+
+type Tile struct {
+	Terrain        pb.TerrainType
+	Infrastructure pb.InfrastructureType
+}
 
 type DashboardPageData struct {
 	Title       string
@@ -89,7 +99,7 @@ type DashboardMapData struct {
 	UpdatedAt string          `json:"updated_at"`
 }
 
-func NewDashboardPageData(status SystemStatusSnapshot, island *world.World) DashboardPageData {
+func NewDashboardPageData(status SystemStatusSnapshot, island *World) DashboardPageData {
 	latestReadings := latestReadingsByPosition(status.Readings)
 	incidents := incidentsByPosition(status.Incidents)
 	sensorsByTile := sensorsByPosition(status.Sensors)
@@ -159,7 +169,7 @@ func NewDashboardPageData(status SystemStatusSnapshot, island *world.World) Dash
 	}
 }
 
-func NewDashboardTile(x int, y int, tile world.Tile, sensor shared.SensorInfo, hasSensor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
+func NewDashboardTile(x int, y int, tile Tile, sensor shared.SensorInfo, hasSensor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
 	terrain := terrainLabel(tile.Terrain)
 	infra := infrastructureLabel(tile.Infrastructure)
 	short := infrastructureShortLabel(tile.Infrastructure)
@@ -245,45 +255,45 @@ func sensorsByPosition(sensors []shared.SensorInfo) map[string]shared.SensorInfo
 	return byPosition
 }
 
-func terrainLabel(terrain sensors.TerrainType) string {
-	if terrain == sensors.Water {
+func terrainLabel(terrain pb.TerrainType) string {
+	if terrain == pb.TerrainType_TERRAIN_TYPE_WATER {
 		return "water"
 	}
 	return "land"
 }
 
-func infrastructureLabel(infrastructure sensors.InfrastructureType) string {
+func infrastructureLabel(infrastructure pb.InfrastructureType) string {
 	switch infrastructure {
-	case sensors.ControlCenter:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_CONTROL_CENTER:
 		return "control center"
-	case sensors.Bridge:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_BRIDGE:
 		return "bridge"
-	case sensors.Port:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_PORT:
 		return "port"
-	case sensors.ChargingStation:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_CHARGING_STATION:
 		return "charging station"
-	case sensors.LandingStrip:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_LANDING_STRIP:
 		return "landing field"
-	case sensors.Depot:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_DEPOT:
 		return "depot"
 	default:
 		return "none"
 	}
 }
 
-func infrastructureShortLabel(infrastructure sensors.InfrastructureType) string {
+func infrastructureShortLabel(infrastructure pb.InfrastructureType) string {
 	switch infrastructure {
-	case sensors.ControlCenter:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_CONTROL_CENTER:
 		return "C"
-	case sensors.Bridge:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_BRIDGE:
 		return "B"
-	case sensors.Port:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_PORT:
 		return "P"
-	case sensors.ChargingStation:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_CHARGING_STATION:
 		return "S"
-	case sensors.LandingStrip:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_LANDING_STRIP:
 		return "L"
-	case sensors.Depot:
+	case pb.InfrastructureType_INFRASTRUCTURE_TYPE_DEPOT:
 		return "D"
 	default:
 		return ""

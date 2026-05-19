@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"shared"
-	"simulation/world"
 	"vshttp"
 )
 
 func Routes(router *vshttp.Router) {
 	systemStatus := SystemStatus{}
-	island := world.NewWorld(20, 20)
+	island := World{
+		Width:  0,
+		Height: 0,
+		Tiles:  nil,
+	}
 
 	router.Post("/reading", func(c *vshttp.Context) error {
 		var request shared.SensorReading
