@@ -25,7 +25,7 @@ type world struct {
 }
 
 func (w *world) TileReading(req *pb.TileReadingRequest) (*pb.TileReadingResponse, error) {
-	tile := w.GetTile(int(req.GetXPos()), int(req.GetYPos()))
+	tile := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
 
 	sensorType, err := simulatables.ToDomainSensorType(req.GetSensorType())
 	if err != nil {
@@ -44,7 +44,7 @@ func (w *world) TileReading(req *pb.TileReadingRequest) (*pb.TileReadingResponse
 }
 
 func (w *world) TileUpdate(req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
-	tile := w.GetTile(int(req.GetXPos()), int(req.GetYPos()))
+	tile := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
 
 	sensorType, err := simulatables.ToDomainSensorType(req.GetSensorType())
 	if err != nil {
@@ -88,7 +88,7 @@ func (w *world) RunWorldLoop(ctx context.Context) {
 	}
 }
 
-func (w *world) GetTile(xpos int, ypos int) Tile {
+func (w *world) getTile(xpos int, ypos int) Tile {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	return w.Tiles[ypos][xpos]
