@@ -21,7 +21,7 @@ services:
     depends_on:
       - world-simulation
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http.localhost:8080/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 5s
       timeout: 3s
       retries: 5
