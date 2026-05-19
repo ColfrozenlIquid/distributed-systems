@@ -14,6 +14,7 @@ type World interface {
 	RunWorldLoop(ctx context.Context)
 	TileReading(req *pb.TileReadingRequest) (*pb.TileReadingResponse, error)
 	TileUpdate(req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error)
+	WorldData() (*pb.WorldDataResponse, error)
 }
 
 type world struct {
@@ -58,6 +59,28 @@ func (w *world) TileUpdate(req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, e
 
 	return &pb.TileUpdateResponse{
 		Success: true,
+	}, nil
+}
+
+func (w *world) WorldData() (*pb.WorldDataResponse, error) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+
+	tiles := make([]*pb.TileState, 0, w.Width*w.Height)
+	for _, row := range w.Tiles {
+		for _, tile := range row {
+			pbTile := &pb.TileState{
+				Terrain:        simulatables.ToProtoTerrainType(tile.Terrain),
+				Infrastructure: simulatables.ToProtoInfrastructureType(tile.Infrastructure),
+			}
+			tiles = append(tiles, pbTile)
+		}
+	}
+
+	return &pb.WorldDataResponse{
+		Width:  int32(w.Width),
+		Height: int32(w.Height),
+		Tiles:  tiles,
 	}, nil
 }
 

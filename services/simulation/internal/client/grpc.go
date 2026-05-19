@@ -65,3 +65,7 @@ func (g *grpcServer) TileReading(ctx context.Context, req *pb.TileReadingRequest
 func (g *grpcServer) TileUpdate(ctx context.Context, req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
 	return g.world.TileUpdate(req)
 }
+
+func (g *grpcServer) WorldData(ctx context.Context, req *pb.WorldDataRequest) (*pb.WorldDataResponse, error) {
+	return g.world.WorldData()
+}

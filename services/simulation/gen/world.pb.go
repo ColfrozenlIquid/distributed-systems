@@ -76,6 +76,119 @@ func (SensorType) EnumDescriptor() ([]byte, []int) {
 	return file_world_proto_rawDescGZIP(), []int{0}
 }
 
+type TerrainType int32
+
+const (
+	TerrainType_TERRAIN_TYPE_UNSPECIFIED TerrainType = 0
+	TerrainType_TERRAIN_TYPE_LAND        TerrainType = 1
+	TerrainType_TERRAIN_TYPE_WATER       TerrainType = 2
+)
+
+// Enum value maps for TerrainType.
+var (
+	TerrainType_name = map[int32]string{
+		0: "TERRAIN_TYPE_UNSPECIFIED",
+		1: "TERRAIN_TYPE_LAND",
+		2: "TERRAIN_TYPE_WATER",
+	}
+	TerrainType_value = map[string]int32{
+		"TERRAIN_TYPE_UNSPECIFIED": 0,
+		"TERRAIN_TYPE_LAND":        1,
+		"TERRAIN_TYPE_WATER":       2,
+	}
+)
+
+func (x TerrainType) Enum() *TerrainType {
+	p := new(TerrainType)
+	*p = x
+	return p
+}
+
+func (x TerrainType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TerrainType) Descriptor() protoreflect.EnumDescriptor {
+	return file_world_proto_enumTypes[1].Descriptor()
+}
+
+func (TerrainType) Type() protoreflect.EnumType {
+	return &file_world_proto_enumTypes[1]
+}
+
+func (x TerrainType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TerrainType.Descriptor instead.
+func (TerrainType) EnumDescriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{1}
+}
+
+type InfrastructureType int32
+
+const (
+	InfrastructureType_INFRASTRUCTURE_TYPE_UNSPECIFIED      InfrastructureType = 0
+	InfrastructureType_INFRASTRUCTURE_TYPE_NONE             InfrastructureType = 1
+	InfrastructureType_INFRASTRUCTURE_TYPE_CONTROL_CENTER   InfrastructureType = 2
+	InfrastructureType_INFRASTRUCTURE_TYPE_BRIDGE           InfrastructureType = 3
+	InfrastructureType_INFRASTRUCTURE_TYPE_CHARGING_STATION InfrastructureType = 4
+	InfrastructureType_INFRASTRUCTURE_TYPE_PORT             InfrastructureType = 5
+	InfrastructureType_INFRASTRUCTURE_TYPE_DEPOT            InfrastructureType = 6
+	InfrastructureType_INFRASTRUCTURE_TYPE_LANDING_STRIP    InfrastructureType = 7
+)
+
+// Enum value maps for InfrastructureType.
+var (
+	InfrastructureType_name = map[int32]string{
+		0: "INFRASTRUCTURE_TYPE_UNSPECIFIED",
+		1: "INFRASTRUCTURE_TYPE_NONE",
+		2: "INFRASTRUCTURE_TYPE_CONTROL_CENTER",
+		3: "INFRASTRUCTURE_TYPE_BRIDGE",
+		4: "INFRASTRUCTURE_TYPE_CHARGING_STATION",
+		5: "INFRASTRUCTURE_TYPE_PORT",
+		6: "INFRASTRUCTURE_TYPE_DEPOT",
+		7: "INFRASTRUCTURE_TYPE_LANDING_STRIP",
+	}
+	InfrastructureType_value = map[string]int32{
+		"INFRASTRUCTURE_TYPE_UNSPECIFIED":      0,
+		"INFRASTRUCTURE_TYPE_NONE":             1,
+		"INFRASTRUCTURE_TYPE_CONTROL_CENTER":   2,
+		"INFRASTRUCTURE_TYPE_BRIDGE":           3,
+		"INFRASTRUCTURE_TYPE_CHARGING_STATION": 4,
+		"INFRASTRUCTURE_TYPE_PORT":             5,
+		"INFRASTRUCTURE_TYPE_DEPOT":            6,
+		"INFRASTRUCTURE_TYPE_LANDING_STRIP":    7,
+	}
+)
+
+func (x InfrastructureType) Enum() *InfrastructureType {
+	p := new(InfrastructureType)
+	*p = x
+	return p
+}
+
+func (x InfrastructureType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (InfrastructureType) Descriptor() protoreflect.EnumDescriptor {
+	return file_world_proto_enumTypes[2].Descriptor()
+}
+
+func (InfrastructureType) Type() protoreflect.EnumType {
+	return &file_world_proto_enumTypes[2]
+}
+
+func (x InfrastructureType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use InfrastructureType.Descriptor instead.
+func (InfrastructureType) EnumDescriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{2}
+}
+
 type TileReadingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	XPos          int32                  `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
@@ -300,6 +413,154 @@ func (x *TileUpdateResponse) GetSuccess() bool {
 	return false
 }
 
+type WorldDataRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorldDataRequest) Reset() {
+	*x = WorldDataRequest{}
+	mi := &file_world_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorldDataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorldDataRequest) ProtoMessage() {}
+
+func (x *WorldDataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_world_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorldDataRequest.ProtoReflect.Descriptor instead.
+func (*WorldDataRequest) Descriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{4}
+}
+
+type TileState struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Terrain        TerrainType            `protobuf:"varint,1,opt,name=terrain,proto3,enum=TerrainType" json:"terrain,omitempty"`
+	Infrastructure InfrastructureType     `protobuf:"varint,2,opt,name=infrastructure,proto3,enum=InfrastructureType" json:"infrastructure,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *TileState) Reset() {
+	*x = TileState{}
+	mi := &file_world_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TileState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TileState) ProtoMessage() {}
+
+func (x *TileState) ProtoReflect() protoreflect.Message {
+	mi := &file_world_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TileState.ProtoReflect.Descriptor instead.
+func (*TileState) Descriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *TileState) GetTerrain() TerrainType {
+	if x != nil {
+		return x.Terrain
+	}
+	return TerrainType_TERRAIN_TYPE_UNSPECIFIED
+}
+
+func (x *TileState) GetInfrastructure() InfrastructureType {
+	if x != nil {
+		return x.Infrastructure
+	}
+	return InfrastructureType_INFRASTRUCTURE_TYPE_UNSPECIFIED
+}
+
+type WorldDataResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Width         int32                  `protobuf:"varint,1,opt,name=width,proto3" json:"width,omitempty"`
+	Height        int32                  `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
+	Tiles         []*TileState           `protobuf:"bytes,3,rep,name=tiles,proto3" json:"tiles,omitempty"` // row-major: index = y*width + x
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorldDataResponse) Reset() {
+	*x = WorldDataResponse{}
+	mi := &file_world_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorldDataResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorldDataResponse) ProtoMessage() {}
+
+func (x *WorldDataResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_world_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorldDataResponse.ProtoReflect.Descriptor instead.
+func (*WorldDataResponse) Descriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *WorldDataResponse) GetWidth() int32 {
+	if x != nil {
+		return x.Width
+	}
+	return 0
+}
+
+func (x *WorldDataResponse) GetHeight() int32 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
+}
+
+func (x *WorldDataResponse) GetTiles() []*TileState {
+	if x != nil {
+		return x.Tiles
+	}
+	return nil
+}
+
 var File_world_proto protoreflect.FileDescriptor
 
 const file_world_proto_rawDesc = "" +
@@ -321,18 +582,41 @@ const file_world_proto_rawDesc = "" +
 	"sensorType\x12\x14\n" +
 	"\x05value\x18\x04 \x01(\x02R\x05value\".\n" +
 	"\x12TileUpdateResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*\xa2\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x12\n" +
+	"\x10WorldDataRequest\"p\n" +
+	"\tTileState\x12&\n" +
+	"\aterrain\x18\x01 \x01(\x0e2\f.TerrainTypeR\aterrain\x12;\n" +
+	"\x0einfrastructure\x18\x02 \x01(\x0e2\x13.InfrastructureTypeR\x0einfrastructure\"c\n" +
+	"\x11WorldDataResponse\x12\x14\n" +
+	"\x05width\x18\x01 \x01(\x05R\x05width\x12\x16\n" +
+	"\x06height\x18\x02 \x01(\x05R\x06height\x12 \n" +
+	"\x05tiles\x18\x03 \x03(\v2\n" +
+	".TileStateR\x05tiles*\xa2\x01\n" +
 	"\n" +
 	"SensorType\x12\x1b\n" +
 	"\x17SENSOR_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SENSOR_TYPE_VIBRATION\x10\x01\x12\x1b\n" +
 	"\x17SENSOR_TYPE_WATER_LEVEL\x10\x02\x12\x1c\n" +
 	"\x18SENSOR_TYPE_SUPPLY_LEVEL\x10\x03\x12!\n" +
-	"\x1dSENSOR_TYPE_PERSON_CONFIDENCE\x10\x042\x7f\n" +
+	"\x1dSENSOR_TYPE_PERSON_CONFIDENCE\x10\x04*Z\n" +
+	"\vTerrainType\x12\x1c\n" +
+	"\x18TERRAIN_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11TERRAIN_TYPE_LAND\x10\x01\x12\x16\n" +
+	"\x12TERRAIN_TYPE_WATER\x10\x02*\xad\x02\n" +
+	"\x12InfrastructureType\x12#\n" +
+	"\x1fINFRASTRUCTURE_TYPE_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18INFRASTRUCTURE_TYPE_NONE\x10\x01\x12&\n" +
+	"\"INFRASTRUCTURE_TYPE_CONTROL_CENTER\x10\x02\x12\x1e\n" +
+	"\x1aINFRASTRUCTURE_TYPE_BRIDGE\x10\x03\x12(\n" +
+	"$INFRASTRUCTURE_TYPE_CHARGING_STATION\x10\x04\x12\x1c\n" +
+	"\x18INFRASTRUCTURE_TYPE_PORT\x10\x05\x12\x1d\n" +
+	"\x19INFRASTRUCTURE_TYPE_DEPOT\x10\x06\x12%\n" +
+	"!INFRASTRUCTURE_TYPE_LANDING_STRIP\x10\a2\xb3\x01\n" +
 	"\fWorldService\x128\n" +
 	"\vTileReading\x12\x13.TileReadingRequest\x1a\x14.TileReadingResponse\x125\n" +
 	"\n" +
-	"TileUpdate\x12\x12.TileUpdateRequest\x1a\x13.TileUpdateResponseB\tZ\a./protob\x06proto3"
+	"TileUpdate\x12\x12.TileUpdateRequest\x1a\x13.TileUpdateResponse\x122\n" +
+	"\tWorldData\x12\x11.WorldDataRequest\x1a\x12.WorldDataResponseB\tZ\a./protob\x06proto3"
 
 var (
 	file_world_proto_rawDescOnce sync.Once
@@ -346,28 +630,38 @@ func file_world_proto_rawDescGZIP() []byte {
 	return file_world_proto_rawDescData
 }
 
-var file_world_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_world_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_world_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_world_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_world_proto_goTypes = []any{
 	(SensorType)(0),             // 0: SensorType
-	(*TileReadingRequest)(nil),  // 1: TileReadingRequest
-	(*TileReadingResponse)(nil), // 2: TileReadingResponse
-	(*TileUpdateRequest)(nil),   // 3: TileUpdateRequest
-	(*TileUpdateResponse)(nil),  // 4: TileUpdateResponse
+	(TerrainType)(0),            // 1: TerrainType
+	(InfrastructureType)(0),     // 2: InfrastructureType
+	(*TileReadingRequest)(nil),  // 3: TileReadingRequest
+	(*TileReadingResponse)(nil), // 4: TileReadingResponse
+	(*TileUpdateRequest)(nil),   // 5: TileUpdateRequest
+	(*TileUpdateResponse)(nil),  // 6: TileUpdateResponse
+	(*WorldDataRequest)(nil),    // 7: WorldDataRequest
+	(*TileState)(nil),           // 8: TileState
+	(*WorldDataResponse)(nil),   // 9: WorldDataResponse
 }
 var file_world_proto_depIdxs = []int32{
 	0, // 0: TileReadingRequest.sensor_type:type_name -> SensorType
 	0, // 1: TileReadingResponse.sensor_type:type_name -> SensorType
 	0, // 2: TileUpdateRequest.sensor_type:type_name -> SensorType
-	1, // 3: WorldService.TileReading:input_type -> TileReadingRequest
-	3, // 4: WorldService.TileUpdate:input_type -> TileUpdateRequest
-	2, // 5: WorldService.TileReading:output_type -> TileReadingResponse
-	4, // 6: WorldService.TileUpdate:output_type -> TileUpdateResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1, // 3: TileState.terrain:type_name -> TerrainType
+	2, // 4: TileState.infrastructure:type_name -> InfrastructureType
+	8, // 5: WorldDataResponse.tiles:type_name -> TileState
+	3, // 6: WorldService.TileReading:input_type -> TileReadingRequest
+	5, // 7: WorldService.TileUpdate:input_type -> TileUpdateRequest
+	7, // 8: WorldService.WorldData:input_type -> WorldDataRequest
+	4, // 9: WorldService.TileReading:output_type -> TileReadingResponse
+	6, // 10: WorldService.TileUpdate:output_type -> TileUpdateResponse
+	9, // 11: WorldService.WorldData:output_type -> WorldDataResponse
+	9, // [9:12] is the sub-list for method output_type
+	6, // [6:9] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_world_proto_init() }
@@ -380,8 +674,8 @@ func file_world_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_world_proto_rawDesc), len(file_world_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   4,
+			NumEnums:      3,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

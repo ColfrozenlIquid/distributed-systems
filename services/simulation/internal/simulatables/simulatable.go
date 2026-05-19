@@ -72,3 +72,35 @@ func ToProtoSensorType(s SimulatableType) (pb.SensorType, error) {
 		return pb.SensorType_SENSOR_TYPE_UNSPECIFIED, fmt.Errorf("unknown sensor type: %v", s)
 	}
 }
+
+func ToProtoTerrainType(t TerrainType) pb.TerrainType {
+	switch t {
+	case Land:
+		return pb.TerrainType_TERRAIN_TYPE_LAND
+	case Water:
+		return pb.TerrainType_TERRAIN_TYPE_WATER
+	default:
+		return pb.TerrainType_TERRAIN_TYPE_UNSPECIFIED
+	}
+}
+
+func ToProtoInfrastructureType(t InfrastructureType) pb.InfrastructureType {
+	switch t {
+	case NoInfrastructure:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_NONE
+	case ControlCenter:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_CONTROL_CENTER
+	case Bridge:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_BRIDGE
+	case Port:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_PORT
+	case ChargingStation:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_CHARGING_STATION
+	case LandingStrip:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_LANDING_STRIP
+	case Depot:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_DEPOT
+	default:
+		return pb.InfrastructureType_INFRASTRUCTURE_TYPE_UNSPECIFIED
+	}
+}
