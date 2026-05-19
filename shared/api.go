@@ -84,3 +84,19 @@ func (r SensorType) IncidentForSensorType() Incident {
 		return -1
 	}
 }
+
+type ActorType string
+
+const (
+	RescueVehicleActor ActorType = "rescue_vehicle"
+)
+
+type ActorInfo struct {
+	Id         string     `json:"id"`
+	Position   Position   `json:"position"`
+	SensorType SensorType `json:"actor_type"`
+}
+
+type ActorRegistration struct {
+	Actor ActorInfo `json:"actor"`
+}
