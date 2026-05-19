@@ -32,6 +32,16 @@ func (t *Tile) Read(sensor sensors.SensorType) (float32, bool) {
 	return sim.Read(), true
 }
 
+func (t *Tile) Set(sensor sensors.SensorType, value float32) bool {
+	sim, ok := t.Sensors[sensor]
+	if !ok {
+		return false
+	}
+	sim.Set(value)
+
+	return true
+}
+
 func RenderTile(t sensors.TerrainType, i sensors.InfrastructureType, sensor uint8) TileVisual {
 	v := TileVisual{
 		FG: "\033[37m",

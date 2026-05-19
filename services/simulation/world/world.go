@@ -27,35 +27,8 @@ func NewWorld(width int, height int) World {
 
 func (w *World) RunWorldLoop() {
 	w.update()
-	// fmt.Print("\033[H\033[2J")
-	// fmt.Print(w.DrawMap())
 	time.Sleep(2000 * time.Millisecond)
 }
-
-// No longer works with multiple sensors implementation
-// func (w *World) DrawMap() string {
-// 	var sb strings.Builder
-
-// 	for y := 0; y < len(w.Tiles); y++ {
-// 		for x := 0; x < len(w.Tiles[y]); x++ {
-// 			tile := w.Tiles[y][x]
-
-// 			var reading uint8 = 0
-// 			if tile.Sensors != nil {
-// 				reading = tile.Sensor.Color()
-// 			}
-
-// 			vis := RenderTile(tile.Terrain, tile.Infrastructure, reading)
-
-// 			sb.WriteString(vis.BG)
-// 			sb.WriteString(vis.FG)
-// 			sb.WriteRune(vis.Char)
-// 			sb.WriteString("\033[0m")
-// 		}
-// 		sb.WriteByte('\n')
-// 	}
-// 	return sb.String()
-// }
 
 func (w *World) GetTile(xpos int, ypos int) Tile {
 	w.mu.RLock()

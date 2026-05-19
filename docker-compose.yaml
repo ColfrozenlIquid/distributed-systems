@@ -1,0 +1,44 @@
+services:
+  world-simulation:
+    build:
+      context: .
+      dockerfile: ./services/simulation/Dockerfile
+    ports:
+      - "50051:50051"
+    healthcheck:
+      test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  control-center:
+    build:
+      context: .
+      dockerfile: ./services/control-center/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - world-simulation
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http.localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  sensor-1:
+    build:
+      context: .
+      dockerfile: ./services/sensors/Dockerfile
+    environment:
+      SENSOR_ID: "sensor-1"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "1000"
+      SENSOR_POSITION_X: "3"
+      SENSOR_POSITION_Y: "3"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+    depends_on:
+      - world-simulation
+      - control-center

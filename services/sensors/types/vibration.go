@@ -17,10 +17,13 @@ type VibrationSensor struct {
 	sensor     vibrationSensor
 }
 
+func (v *VibrationSensor) Position() Position {
+	return v.sensor.position
+}
+
 type vibrationSensor struct {
 	id       string
-	xpos     int
-	ypos     int
+	position Position
 	interval time.Duration
 	reading  float32
 }
@@ -30,9 +33,11 @@ func NewVibrationSensor(cfg config.SensorConfig, simulation pb.WorldServiceClien
 		cfg:        cfg,
 		simulation: simulation,
 		sensor: vibrationSensor{
-			id:       cfg.Id,
-			xpos:     int(cfg.XPosition),
-			ypos:     int(cfg.YPosition),
+			id: cfg.Id,
+			position: Position{
+				X: int(cfg.XPosition),
+				Y: int(cfg.YPosition),
+			},
 			interval: cfg.IntervalMs,
 			reading:  0,
 		},
@@ -49,8 +54,8 @@ func (v *VibrationSensor) Interval() time.Duration {
 
 func (v *VibrationSensor) Read() (*shared.SensorReading, error) {
 	req := &pb.TileReadingRequest{
-		XPos:       int32(v.sensor.xpos),
-		YPos:       int32(v.sensor.ypos),
+		XPos:       int32(v.sensor.position.X),
+		YPos:       int32(v.sensor.position.Y),
 		SensorType: pb.SensorType_SENSOR_TYPE_VIBRATION,
 	}
 
@@ -67,7 +72,7 @@ func (v *VibrationSensor) Read() (*shared.SensorReading, error) {
 		Value:     resp.SensorReading,
 		Sensor: shared.SensorInfo{
 			Id:         v.sensor.id,
-			Position:   shared.Position{X: v.sensor.xpos, Y: v.sensor.ypos},
+			Position:   shared.Position{X: v.sensor.position.X, Y: v.sensor.position.Y},
 			SensorType: shared.VibrationSensor,
 		},
 	}, nil

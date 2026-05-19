@@ -9,11 +9,17 @@ import (
 	pb "sensors/gen/proto"
 )
 
+type Position struct {
+	X int
+	Y int
+}
+
 type Sensor interface {
 	ID() string
 	Type() string
 	Read() (*shared.SensorReading, error)
 	Interval() time.Duration
+	Position() Position
 }
 
 func NewSensor(cfg config.SensorConfig, simulation pb.WorldServiceClient) (Sensor, error) {

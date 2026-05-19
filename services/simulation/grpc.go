@@ -7,6 +7,8 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
 	pb "simulation/gen/proto"
@@ -34,6 +36,10 @@ func NewGRPCServer(world *world.World, logger *zap.Logger) (*GRPCServer, error) 
 
 	srv := grpc.NewServer()
 	reflection.Register(srv)
+
+	healthSrv := health.NewServer()
+	healthpb.RegisterHealthServer(srv, healthSrv)
+	healthSrv.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
 	handler := &grpcServer{
 		world:  world,
@@ -72,6 +78,20 @@ func (g *grpcServer) TileReading(ctx context.Context, req *pb.TileReadingRequest
 	}, nil
 }
 
-func (g *grpcServer) TileUpdate(ctx context.Context, in *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
-	panic("unimplemented")
+func (g *grpcServer) TileUpdate(ctx context.Context, req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
+	tile := g.world.GetTile(int(req.GetXPos()), int(req.GetYPos()))
+
+	sensorType, err := sensors.ToDomainSensorType(req.GetSensorType())
+	if err != nil {
+		return nil, fmt.Errorf("unknown sensor type %w", err)
+	}
+
+	ok := tile.Set(sensorType, req.Value)
+	if !ok {
+		return nil, fmt.Errorf("cannot set value of tile")
+	}
+
+	return &pb.TileUpdateResponse{
+		Success: true,
+	}, nil
 }

@@ -2,14 +2,23 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"sensors/client"
 	"sensors/config"
 	"sensors/types"
+	"shared"
 	"time"
 
 	"go.uber.org/zap"
 )
+
+type App struct {
+	logger *zap.Logger
+	client client.Client
+	sensor types.Sensor
+}
 
 func main() {
 	logger, err := zap.NewDevelopment()
@@ -29,21 +38,82 @@ func main() {
 	}
 
 	client, err := client.NewClient(clientCfg, logger)
-	defer client.Close()
+	defer client.Grpc.Close()
 
-	sensor, err := types.NewSensor(*sensorCfg, client.Grpc)
+	sensor, err := types.NewSensor(*sensorCfg, client.Grpc.Grpc)
 	if err != nil {
 		logger.Fatal("failed to create new sensor", zap.Error(err))
+	}
+
+	app := App{
+		logger: logger,
+		client: *client,
+		sensor: sensor,
+	}
+
+	err = app.Register()
+	if err != nil {
+		logger.Fatal("failed to register sensor")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	Run(ctx, sensor, clientCfg.HttpAddress)
+	app.Run(ctx, sensor, clientCfg.HttpAddress)
 }
 
-func Run(ctx context.Context, s types.Sensor, endpoint string) {
-	ticker := time.NewTicker(s.Interval())
+func (s *App) Register() error {
+	payload := shared.SensorRegistration{
+		Sensor: shared.SensorInfo{
+			Id: s.sensor.ID(),
+			Position: shared.Position{
+				X: s.sensor.Position().X,
+				Y: s.sensor.Position().Y,
+			},
+			SensorType: shared.SensorType(s.sensor.Type()),
+		},
+	}
+
+	resp, err := s.client.Http.Post("/register/sensor", payload)
+	if err != nil {
+		return fmt.Errorf("post register sensor: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		s.logger.Error("registration failed", zap.Any("response", resp))
+	}
+
+	return nil
+}
+
+func (s *App) Reading(reading float32) error {
+	payload := shared.SensorReading{
+		Timestamp: time.Time{},
+		Sensor: shared.SensorInfo{
+			Id: s.sensor.ID(),
+			Position: shared.Position{
+				X: s.sensor.Position().X,
+				Y: s.sensor.Position().Y,
+			},
+			SensorType: shared.SensorType(s.sensor.Type()),
+		},
+		Value: reading,
+	}
+
+	resp, err := s.client.Http.Post("/reading", payload)
+	if err != nil {
+		return fmt.Errorf("post sensor reading: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		s.logger.Error("sensor reading failed", zap.Any("response", resp))
+	}
+
+	return nil
+}
+
+func (s *App) Run(ctx context.Context, sensor types.Sensor, endpoint string) {
+	ticker := time.NewTicker(sensor.Interval())
 	defer ticker.Stop()
 
 	for {
@@ -51,10 +121,14 @@ func Run(ctx context.Context, s types.Sensor, endpoint string) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			_, err := s.Read()
+			reading, err := sensor.Read()
 			if err != nil {
-				log.Printf("[%s] read error: %v", s.ID(), err)
+				log.Printf("[%s] read error: %v", sensor.ID(), err)
 				continue
+			}
+			err = s.Reading(reading.Value)
+			if err != nil {
+				s.logger.Error("failed to send sensor reading", zap.Error(err))
 			}
 		}
 	}

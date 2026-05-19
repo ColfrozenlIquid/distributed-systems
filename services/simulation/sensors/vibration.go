@@ -16,6 +16,11 @@ type VibrationSim struct {
 	smoothing         float32
 }
 
+func (s *VibrationSim) Set(value float32) {
+	s.target = s.randomTarget()
+	s.VibrationIndex = config.STARTING_VIBRATION_INDEX
+}
+
 func NewVibrationSim() *VibrationSim {
 	s := &VibrationSim{
 		VibrationIndex:    config.STARTING_VIBRATION_INDEX,

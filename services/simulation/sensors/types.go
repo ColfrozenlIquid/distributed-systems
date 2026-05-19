@@ -40,6 +40,7 @@ type Simulatable interface {
 	Update()
 	Init()
 	Color() uint8
+	Set(value float32)
 }
 
 func ToDomainSensorType(s pb.SensorType) (SensorType, error) {

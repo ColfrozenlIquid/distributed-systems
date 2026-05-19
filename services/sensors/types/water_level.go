@@ -18,10 +18,13 @@ type WaterLevelSensor struct {
 	sensor     waterLevelSensor
 }
 
+func (w *WaterLevelSensor) Position() Position {
+	return w.sensor.position
+}
+
 type waterLevelSensor struct {
 	id       string
-	xpos     int
-	ypos     int
+	position Position
 	interval time.Duration
 	reading  float32
 }
@@ -31,9 +34,11 @@ func NewWaterLevelSensor(cfg config.SensorConfig, simulation pb.WorldServiceClie
 		cfg:        cfg,
 		simulation: simulation,
 		sensor: waterLevelSensor{
-			id:       cfg.Id,
-			xpos:     int(cfg.XPosition),
-			ypos:     int(cfg.YPosition),
+			id: cfg.Id,
+			position: Position{
+				X: int(cfg.XPosition),
+				Y: int(cfg.YPosition),
+			},
 			interval: cfg.IntervalMs,
 			reading:  0,
 		},
@@ -50,8 +55,8 @@ func (w *WaterLevelSensor) Interval() time.Duration {
 
 func (w *WaterLevelSensor) Read() (*shared.SensorReading, error) {
 	req := &pb.TileReadingRequest{
-		XPos:       int32(w.sensor.xpos),
-		YPos:       int32(w.sensor.ypos),
+		XPos:       int32(w.sensor.position.X),
+		YPos:       int32(w.sensor.position.Y),
 		SensorType: pb.SensorType_SENSOR_TYPE_WATER_LEVEL,
 	}
 
@@ -68,7 +73,7 @@ func (w *WaterLevelSensor) Read() (*shared.SensorReading, error) {
 		Value:     resp.SensorReading,
 		Sensor: shared.SensorInfo{
 			Id:         w.sensor.id,
-			Position:   shared.Position{X: w.sensor.xpos, Y: w.sensor.ypos},
+			Position:   shared.Position{X: w.sensor.position.X, Y: w.sensor.position.Y},
 			SensorType: shared.WaterLevelSensor,
 		},
 	}, nil

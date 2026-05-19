@@ -16,6 +16,11 @@ type WaterSim struct {
 	smoothing     float32
 }
 
+func (s *WaterSim) Set(value float32) {
+	s.target = s.randomTarget()
+	s.WaterLevelCm = config.STARTING_WATER_LEVEL_CM
+}
+
 func NewWaterLevelSim() *WaterSim {
 	s := &WaterSim{
 		WaterLevelCm:  config.STARTING_WATER_LEVEL_CM,
