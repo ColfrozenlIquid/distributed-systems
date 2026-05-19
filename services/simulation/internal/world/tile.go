@@ -5,6 +5,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"simulation/internal/config"
 	"simulation/internal/sensors"
 )
 
@@ -86,7 +87,7 @@ func SensorColor(sensor uint8) string {
 	return fmt.Sprintf("\033[48;5;%dm", color)
 }
 
-func GenerateTiles() ([][]Tile, error) {
+func GenerateTiles(cfg config.Config) ([][]Tile, error) {
 	var tiles [][]Tile
 
 	scanner := bufio.NewScanner(bytes.NewReader(terrainMap))
@@ -100,7 +101,7 @@ func GenerateTiles() ([][]Tile, error) {
 					Terrain:        sensors.Water,
 					Infrastructure: sensors.NoInfrastructure,
 					Sensors: map[sensors.SensorType]sensors.Simulatable{
-						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(),
+						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(cfg),
 					},
 				})
 			case '#': //Land
@@ -108,7 +109,7 @@ func GenerateTiles() ([][]Tile, error) {
 					Terrain:        sensors.Land,
 					Infrastructure: sensors.NoInfrastructure,
 					Sensors: map[sensors.SensorType]sensors.Simulatable{
-						sensors.SensorVibration: sensors.NewVibrationSim(),
+						sensors.SensorVibration: sensors.NewVibrationSim(cfg),
 					},
 				})
 			case 'C': //Control Station
@@ -116,7 +117,7 @@ func GenerateTiles() ([][]Tile, error) {
 					Terrain:        sensors.Land,
 					Infrastructure: sensors.ControlCenter,
 					Sensors: map[sensors.SensorType]sensors.Simulatable{
-						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(),
+						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(cfg),
 					},
 				})
 			case 'B': //Bridge

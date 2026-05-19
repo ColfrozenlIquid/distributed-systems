@@ -1,14 +1,21 @@
 package main
 
 import (
+	"log"
 	"simulation/internal/client"
+	"simulation/internal/config"
 	"simulation/internal/world"
 
 	"go.uber.org/zap"
 )
 
 func main() {
-	world := world.NewWorld(20, 20)
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	world := world.NewWorld(20, 20, *cfg)
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {

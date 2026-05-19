@@ -1,6 +1,7 @@
 package world
 
 import (
+	"simulation/internal/config"
 	"sync"
 	"time"
 )
@@ -12,9 +13,9 @@ type World struct {
 	mu     sync.RWMutex
 }
 
-func NewWorld(width int, height int) World {
+func NewWorld(width int, height int, cfg config.Config) World {
 	tiles := make([][]Tile, height)
-	tiles, err := GenerateTiles()
+	tiles, err := GenerateTiles(cfg)
 	if err != nil {
 		panic("world is nil")
 	}

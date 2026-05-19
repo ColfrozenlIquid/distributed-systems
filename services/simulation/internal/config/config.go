@@ -1,11 +1,21 @@
 package config
 
-const MAX_WATER_LEVEL_CM float32 = 100.0
-const MIN_WATER_LEVEL_CM float32 = 0.0
-const STARTING_WATER_LEVEL_CM float32 = 50.0
-const WATER_LEVEL_SMOOTHING float32 = 0.001
+import (
+	"github.com/spf13/viper"
+)
 
-const MAX_VIBRATION_INDEX float32 = 10.0
-const MIN_VIBRATION_INDEX float32 = 0.0
-const STARTING_VIBRATION_INDEX float32 = 0.0
-const VIBRATION_INDEX_SMOOTHING float32 = 0.001
+type Config struct {
+	Water     *WaterSimulatableConfig
+	Vibration *VibrationSimulatableConfig
+}
+
+func LoadConfig() (*Config, error) {
+	v := viper.New()
+	v.AutomaticEnv()
+
+	cfg := &Config{}
+	cfg.Water = loadWaterConfig(v)
+	cfg.Vibration = loadVibrationConfig(v)
+
+	return cfg, nil
+}

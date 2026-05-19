@@ -21,12 +21,12 @@ func (s *WaterSim) Set(value float32) {
 	s.WaterLevelCm = config.STARTING_WATER_LEVEL_CM
 }
 
-func NewWaterLevelSim() *WaterSim {
+func NewWaterLevelSim(cfg config.Config) *WaterSim {
 	s := &WaterSim{
-		WaterLevelCm:  config.STARTING_WATER_LEVEL_CM,
-		MaxWaterLevel: config.MAX_WATER_LEVEL_CM,
-		MinWaterLevel: config.MIN_WATER_LEVEL_CM,
-		smoothing:     config.WATER_LEVEL_SMOOTHING,
+		WaterLevelCm:  cfg.Water.StartingWaterLevelCM,
+		MaxWaterLevel: cfg.Water.MaxWaterLevelCM,
+		MinWaterLevel: cfg.Water.MinWaterLevelCM,
+		smoothing:     cfg.Water.WaterLevelSmoothing,
 	}
 	s.Init()
 	return s

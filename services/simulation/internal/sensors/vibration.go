@@ -21,12 +21,12 @@ func (s *VibrationSim) Set(value float32) {
 	s.VibrationIndex = config.STARTING_VIBRATION_INDEX
 }
 
-func NewVibrationSim() *VibrationSim {
+func NewVibrationSim(cfg config.Config) *VibrationSim {
 	s := &VibrationSim{
-		VibrationIndex:    config.STARTING_VIBRATION_INDEX,
-		MaxVibrationIndex: config.MAX_VIBRATION_INDEX,
-		MinVibrationIndex: config.MIN_VIBRATION_INDEX,
-		smoothing:         config.VIBRATION_INDEX_SMOOTHING,
+		VibrationIndex:    cfg.Vibration.StartingVibrationIndex,
+		MaxVibrationIndex: cfg.Vibration.MaxVibrationIndex,
+		MinVibrationIndex: cfg.Vibration.MinVibrationIndex,
+		smoothing:         cfg.Vibration.VibrationIndexSmoothing,
 	}
 	s.Init()
 	return s
