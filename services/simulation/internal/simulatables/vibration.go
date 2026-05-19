@@ -1,4 +1,4 @@
-package sensors
+package simulatables
 
 import (
 	"math/rand"

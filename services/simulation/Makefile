@@ -1,3 +1,6 @@
+build:
+	go build -o simulation ./cmd/simulation/
+
 generate-proto:
 	mkdir -p gen
 	protoc --proto_path=proto \

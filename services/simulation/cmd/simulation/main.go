@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"simulation/internal/client"
 	"simulation/internal/config"
@@ -22,7 +23,7 @@ func main() {
 		logger.Fatal("failed to initialize zap logger")
 	}
 
-	grpcSrv, err := client.NewGRPCServer(&world, logger)
+	grpcSrv, err := client.NewGRPCServer(world, logger)
 
 	if err != nil {
 		logger.Fatal("initialize grpc server", zap.Error(err))
@@ -35,7 +36,8 @@ func main() {
 		}
 	}()
 
-	for {
-		world.RunWorldLoop()
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	world.RunWorldLoop(ctx)
 }

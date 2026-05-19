@@ -6,16 +6,16 @@ import (
 	_ "embed"
 	"fmt"
 	"simulation/internal/config"
-	"simulation/internal/sensors"
+	sim "simulation/internal/simulatables"
 )
 
 //go:embed terrain.map
 var terrainMap []byte
 
 type Tile struct {
-	Terrain        sensors.TerrainType
-	Infrastructure sensors.InfrastructureType
-	Sensors        map[sensors.SensorType]sensors.Simulatable
+	Terrain        sim.TerrainType
+	Infrastructure sim.InfrastructureType
+	Sensors        map[sim.SimulatableType]sim.Simulatable
 }
 
 type TileVisual struct {
@@ -24,7 +24,7 @@ type TileVisual struct {
 	BG   string
 }
 
-func (t *Tile) Read(sensor sensors.SensorType) (float32, bool) {
+func (t *Tile) Read(sensor sim.SimulatableType) (float32, bool) {
 	sim, ok := t.Sensors[sensor]
 	if !ok {
 		return 0, false
@@ -32,7 +32,7 @@ func (t *Tile) Read(sensor sensors.SensorType) (float32, bool) {
 	return sim.Read(), true
 }
 
-func (t *Tile) Set(sensor sensors.SensorType, value float32) bool {
+func (t *Tile) Set(sensor sim.SimulatableType, value float32) bool {
 	sim, ok := t.Sensors[sensor]
 	if !ok {
 		return false
@@ -42,24 +42,24 @@ func (t *Tile) Set(sensor sensors.SensorType, value float32) bool {
 	return true
 }
 
-func RenderTile(t sensors.TerrainType, i sensors.InfrastructureType, sensor uint8) TileVisual {
+func RenderTile(t sim.TerrainType, i sim.InfrastructureType, sensor uint8) TileVisual {
 	v := TileVisual{
 		FG: "\033[37m",
 	}
 
 	switch i {
-	case sensors.ControlCenter:
+	case sim.ControlCenter:
 		v.Char = 'C'
-	case sensors.Bridge:
+	case sim.Bridge:
 		v.Char = 'B'
-	case sensors.ChargingStation:
+	case sim.ChargingStation:
 		v.Char = 'S'
-	case sensors.Port:
+	case sim.Port:
 		v.Char = 'P'
-	case sensors.Depot:
+	case sim.Depot:
 		v.Char = 'D'
 	default:
-		if t == sensors.Land {
+		if t == sim.Land {
 			v.Char = '.'
 		} else {
 			v.Char = '~'
@@ -98,56 +98,56 @@ func GenerateTiles(cfg config.Config) ([][]Tile, error) {
 			switch ch {
 			case '~': //Water
 				row = append(row, Tile{
-					Terrain:        sensors.Water,
-					Infrastructure: sensors.NoInfrastructure,
-					Sensors: map[sensors.SensorType]sensors.Simulatable{
-						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(cfg),
+					Terrain:        sim.Water,
+					Infrastructure: sim.NoInfrastructure,
+					Sensors: map[sim.SimulatableType]sim.Simulatable{
+						sim.WaterLevel: sim.NewWaterLevelSim(cfg),
 					},
 				})
 			case '#': //Land
 				row = append(row, Tile{
-					Terrain:        sensors.Land,
-					Infrastructure: sensors.NoInfrastructure,
-					Sensors: map[sensors.SensorType]sensors.Simulatable{
-						sensors.SensorVibration: sensors.NewVibrationSim(cfg),
+					Terrain:        sim.Land,
+					Infrastructure: sim.NoInfrastructure,
+					Sensors: map[sim.SimulatableType]sim.Simulatable{
+						sim.Vibration: sim.NewVibrationSim(cfg),
 					},
 				})
 			case 'C': //Control Station
 				row = append(row, Tile{
-					Terrain:        sensors.Land,
-					Infrastructure: sensors.ControlCenter,
-					Sensors: map[sensors.SensorType]sensors.Simulatable{
-						sensors.SensorWaterLevel: sensors.NewWaterLevelSim(cfg),
+					Terrain:        sim.Land,
+					Infrastructure: sim.ControlCenter,
+					Sensors: map[sim.SimulatableType]sim.Simulatable{
+						sim.WaterLevel: sim.NewWaterLevelSim(cfg),
 					},
 				})
 			case 'B': //Bridge
 				row = append(row, Tile{
-					Terrain:        sensors.Land,
-					Infrastructure: sensors.Bridge,
+					Terrain:        sim.Land,
+					Infrastructure: sim.Bridge,
 					Sensors:        nil,
 				})
 			case 'P': //Port
 				row = append(row, Tile{
-					Terrain:        sensors.Land,
-					Infrastructure: sensors.Port,
+					Terrain:        sim.Land,
+					Infrastructure: sim.Port,
 					Sensors:        nil,
 				})
 			case 'S': //ChargingStation
 				row = append(row, Tile{
-					Terrain:        sensors.Land,
-					Infrastructure: sensors.ChargingStation,
+					Terrain:        sim.Land,
+					Infrastructure: sim.ChargingStation,
 					Sensors:        nil,
 				})
 			case 'L': //LandingStrip
 				row = append(row, Tile{
-					Terrain:        sensors.Land,
-					Infrastructure: sensors.LandingStrip,
+					Terrain:        sim.Land,
+					Infrastructure: sim.LandingStrip,
 					Sensors:        nil,
 				})
 			case 'D': //Depot
 				row = append(row, Tile{
-					Terrain:        sensors.Land,
-					Infrastructure: sensors.Depot,
+					Terrain:        sim.Land,
+					Infrastructure: sim.Depot,
 					Sensors:        nil,
 				})
 			}

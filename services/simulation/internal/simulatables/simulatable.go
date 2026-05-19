@@ -1,4 +1,4 @@
-package sensors
+package simulatables
 
 import (
 	"fmt"
@@ -10,13 +10,13 @@ type TerrainType int
 
 type InfrastructureType int
 
-type SensorType int
+type SimulatableType int
 
 const (
-	SensorVibration SensorType = iota
-	SensorWaterLevel
-	SensorSupplyLevel
-	SensorPersonConfidence
+	Vibration SimulatableType = iota
+	WaterLevel
+	SupplyLevel
+	PersonConfidence
 )
 
 const (
@@ -43,30 +43,30 @@ type Simulatable interface {
 	Set(value float32)
 }
 
-func ToDomainSensorType(s pb.SensorType) (SensorType, error) {
+func ToDomainSensorType(s pb.SensorType) (SimulatableType, error) {
 	switch s {
 	case proto.SensorType_SENSOR_TYPE_SUPPLY_LEVEL:
-		return SensorSupplyLevel, nil
+		return SupplyLevel, nil
 	case proto.SensorType_SENSOR_TYPE_VIBRATION:
-		return SensorVibration, nil
+		return Vibration, nil
 	case proto.SensorType_SENSOR_TYPE_WATER_LEVEL:
-		return SensorWaterLevel, nil
+		return WaterLevel, nil
 	case proto.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE:
-		return SensorPersonConfidence, nil
+		return PersonConfidence, nil
 	default:
 		return 0, fmt.Errorf("unknown or unspecified sensor type: %v", s)
 	}
 }
 
-func ToProtoSensorType(s SensorType) (pb.SensorType, error) {
+func ToProtoSensorType(s SimulatableType) (pb.SensorType, error) {
 	switch s {
-	case SensorSupplyLevel:
+	case SupplyLevel:
 		return pb.SensorType_SENSOR_TYPE_SUPPLY_LEVEL, nil
-	case SensorVibration:
+	case Vibration:
 		return pb.SensorType_SENSOR_TYPE_VIBRATION, nil
-	case SensorWaterLevel:
+	case WaterLevel:
 		return pb.SensorType_SENSOR_TYPE_WATER_LEVEL, nil
-	case SensorPersonConfidence:
+	case PersonConfidence:
 		return pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE, nil
 	default:
 		return pb.SensorType_SENSOR_TYPE_UNSPECIFIED, fmt.Errorf("unknown sensor type: %v", s)

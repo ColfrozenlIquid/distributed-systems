@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	pb "simulation/gen"
-	"simulation/internal/sensors"
 	"simulation/internal/world"
 )
 
@@ -24,11 +23,11 @@ type GRPCServer struct {
 
 type grpcServer struct {
 	pb.UnimplementedWorldServiceServer
-	world  *world.World
+	world  world.World
 	logger *zap.Logger
 }
 
-func NewGRPCServer(world *world.World, logger *zap.Logger) (*GRPCServer, error) {
+func NewGRPCServer(world world.World, logger *zap.Logger) (*GRPCServer, error) {
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen for gRPC: %w", err)
@@ -60,38 +59,9 @@ func (g *GRPCServer) Serve() error {
 }
 
 func (g *grpcServer) TileReading(ctx context.Context, req *pb.TileReadingRequest) (*pb.TileReadingResponse, error) {
-	tile := g.world.GetTile(int(req.GetXPos()), int(req.GetYPos()))
-
-	sensorType, err := sensors.ToDomainSensorType(req.GetSensorType())
-	if err != nil {
-		return nil, fmt.Errorf("unknown sensor type: %w", err)
-	}
-
-	tileReading, ok := tile.Read(sensorType)
-	if !ok {
-		return nil, fmt.Errorf("tile does not have this sensor")
-	}
-
-	return &pb.TileReadingResponse{
-		SensorType:    req.GetSensorType(),
-		SensorReading: tileReading,
-	}, nil
+	return g.world.TileReading(req)
 }
 
 func (g *grpcServer) TileUpdate(ctx context.Context, req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
-	tile := g.world.GetTile(int(req.GetXPos()), int(req.GetYPos()))
-
-	sensorType, err := sensors.ToDomainSensorType(req.GetSensorType())
-	if err != nil {
-		return nil, fmt.Errorf("unknown sensor type %w", err)
-	}
-
-	ok := tile.Set(sensorType, req.Value)
-	if !ok {
-		return nil, fmt.Errorf("cannot set value of tile")
-	}
-
-	return &pb.TileUpdateResponse{
-		Success: true,
-	}, nil
+	return g.world.TileUpdate(req)
 }
