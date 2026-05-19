@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	WorldService_TileReading_FullMethodName = "/WorldService/TileReading"
 	WorldService_TileUpdate_FullMethodName  = "/WorldService/TileUpdate"
+	WorldService_WorldData_FullMethodName   = "/WorldService/WorldData"
 )
 
 // WorldServiceClient is the client API for WorldService service.
@@ -29,6 +30,7 @@ const (
 type WorldServiceClient interface {
 	TileReading(ctx context.Context, in *TileReadingRequest, opts ...grpc.CallOption) (*TileReadingResponse, error)
 	TileUpdate(ctx context.Context, in *TileUpdateRequest, opts ...grpc.CallOption) (*TileUpdateResponse, error)
+	WorldData(ctx context.Context, in *WorldDataRequest, opts ...grpc.CallOption) (*WorldDataResponse, error)
 }
 
 type worldServiceClient struct {
@@ -59,12 +61,23 @@ func (c *worldServiceClient) TileUpdate(ctx context.Context, in *TileUpdateReque
 	return out, nil
 }
 
+func (c *worldServiceClient) WorldData(ctx context.Context, in *WorldDataRequest, opts ...grpc.CallOption) (*WorldDataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WorldDataResponse)
+	err := c.cc.Invoke(ctx, WorldService_WorldData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorldServiceServer is the server API for WorldService service.
 // All implementations must embed UnimplementedWorldServiceServer
 // for forward compatibility.
 type WorldServiceServer interface {
 	TileReading(context.Context, *TileReadingRequest) (*TileReadingResponse, error)
 	TileUpdate(context.Context, *TileUpdateRequest) (*TileUpdateResponse, error)
+	WorldData(context.Context, *WorldDataRequest) (*WorldDataResponse, error)
 	mustEmbedUnimplementedWorldServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedWorldServiceServer) TileReading(context.Context, *TileReading
 }
 func (UnimplementedWorldServiceServer) TileUpdate(context.Context, *TileUpdateRequest) (*TileUpdateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TileUpdate not implemented")
+}
+func (UnimplementedWorldServiceServer) WorldData(context.Context, *WorldDataRequest) (*WorldDataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method WorldData not implemented")
 }
 func (UnimplementedWorldServiceServer) mustEmbedUnimplementedWorldServiceServer() {}
 func (UnimplementedWorldServiceServer) testEmbeddedByValue()                      {}
@@ -138,6 +154,24 @@ func _WorldService_TileUpdate_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorldService_WorldData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WorldDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorldServiceServer).WorldData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorldService_WorldData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorldServiceServer).WorldData(ctx, req.(*WorldDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorldService_ServiceDesc is the grpc.ServiceDesc for WorldService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var WorldService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TileUpdate",
 			Handler:    _WorldService_TileUpdate_Handler,
+		},
+		{
+			MethodName: "WorldData",
+			Handler:    _WorldService_WorldData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
