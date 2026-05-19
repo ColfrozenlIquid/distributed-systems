@@ -1,6 +1,7 @@
-package main
+package html
 
 import (
+	"control-center/internal/model"
 	"fmt"
 	"math"
 	"sort"
@@ -12,17 +13,6 @@ import (
 
 	"github.com/a-h/templ"
 )
-
-type World struct {
-	Width  int
-	Height int
-	Tiles  [][]Tile
-}
-
-type Tile struct {
-	Terrain        pb.TerrainType
-	Infrastructure pb.InfrastructureType
-}
 
 type DashboardPageData struct {
 	Title       string
@@ -99,7 +89,7 @@ type DashboardMapData struct {
 	UpdatedAt string          `json:"updated_at"`
 }
 
-func NewDashboardPageData(status SystemStatusSnapshot, island *World) DashboardPageData {
+func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World) DashboardPageData {
 	latestReadings := latestReadingsByPosition(status.Readings)
 	incidents := incidentsByPosition(status.Incidents)
 	sensorsByTile := sensorsByPosition(status.Sensors)
@@ -169,7 +159,7 @@ func NewDashboardPageData(status SystemStatusSnapshot, island *World) DashboardP
 	}
 }
 
-func NewDashboardTile(x int, y int, tile Tile, sensor shared.SensorInfo, hasSensor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
+func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
 	terrain := terrainLabel(tile.Terrain)
 	infra := infrastructureLabel(tile.Infrastructure)
 	short := infrastructureShortLabel(tile.Infrastructure)
