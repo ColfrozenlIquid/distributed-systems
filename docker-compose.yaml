@@ -24,7 +24,9 @@ services:
     environment:
       CONTROL_CENTER_WORLD_SIMULATION_HOST: "world-simulation:50051"
     depends_on:
-      - world-simulation
+      world-simulation:
+        condition: service_healthy
+        restart: true
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 5s
@@ -46,8 +48,12 @@ services:
       SENSOR_BASE_STATION_HOST: "http://control-center:8080"
       SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
     depends_on:
-      - world-simulation
-      - control-center
+      world-simulation:
+        condition: service_healthy
+        restart: true
+      control-center:
+        condition: service_healthy
+        restart: true
 
   actor-1:
     build:
@@ -62,5 +68,9 @@ services:
       ACTOR_BASE_STATION_HOST: "http://control-center:8080"
       ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
     depends_on:
-      - world-simulation
-      - control-center
+      world-simulation:
+        condition: service_healthy
+        restart: true
+      control-center:
+        condition: service_healthy
+        restart: true
