@@ -97,6 +97,7 @@ templ SidePanel(props DashboardPageData) {
 		@ReadingsFeed(props.Readings)
 		@IncidentsFeed(props.Incidents)
 		@SensorsFeed(props.Sensors)
+		@ActorsFeed(props.Actors)
 	</aside>
 }
 
@@ -105,6 +106,7 @@ templ SummaryCards(summary DashboardSummary) {
 		@MetricCard("Land tiles", fmt.Sprintf("%d", summary.LandTiles))
 		@MetricCard("Water tiles", fmt.Sprintf("%d", summary.WaterTiles))
 		@MetricCard("Sensors", fmt.Sprintf("%d", summary.SensorCount))
+		@MetricCard("Actors", fmt.Sprintf("%d", summary.ActorCount))
 		@MetricCard("Incidents", fmt.Sprintf("%d", summary.IncidentCount))
 	</section>
 }
@@ -132,6 +134,26 @@ templ ReadingsFeed(readings []ReadingListItem) {
 							<div class="feed-secondary">{ reading.SensorID } at { reading.Position }</div>
 						</div>
 						<time class="feed-time">{ reading.Timestamp }</time>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}
+
+templ ActorsFeed(actors []ActorListItem) {
+	<section class="feed-card" data-testid="actors-feed">
+		<h2 class="feed-title">Registered actors</h2>
+		if len(actors) == 0 {
+			<p class="feed-empty">No actors registered</p>
+		} else {
+			<ul class="feed-list">
+				for _, actor := range actors {
+					<li class="feed-item">
+						<div>
+							<div class="feed-primary">{ actor.ID }</div>
+							<div class="feed-secondary">{ actor.Type } at { actor.Position }</div>
+						</div>
 					</li>
 				}
 			</ul>

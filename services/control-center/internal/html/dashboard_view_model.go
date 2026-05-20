@@ -22,6 +22,7 @@ type DashboardPageData struct {
 	Tiles       [][]DashboardTile
 	Summary     DashboardSummary
 	Sensors     []SensorListItem
+	Actors      []ActorListItem
 	Readings    []ReadingListItem
 	Incidents   []IncidentListItem
 	Legend      []LegendItem
@@ -33,6 +34,7 @@ type DashboardSummary struct {
 	LandTiles        int
 	WaterTiles       int
 	SensorCount      int
+	ActorCount       int
 	IncidentCount    int
 	CriticalTiles    int
 	HasLiveData      bool
@@ -56,6 +58,12 @@ type DashboardTile struct {
 }
 
 type SensorListItem struct {
+	ID       string
+	Type     string
+	Position string
+}
+
+type ActorListItem struct {
 	ID       string
 	Type     string
 	Position string
@@ -99,6 +107,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	summary := DashboardSummary{
 		TotalTiles:    island.Width * island.Height,
 		SensorCount:   len(status.Sensors),
+		ActorCount:    len(status.Actors),
 		IncidentCount: len(status.Incidents),
 		HasLiveData:   len(status.Readings) > 0,
 	}
@@ -141,6 +150,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 		Tiles:       rows,
 		Summary:     summary,
 		Sensors:     sensorListItems(status.Sensors),
+		Actors:      actorListItems(status.Actors),
 		Readings:    readingListItems(status.Readings),
 		Incidents:   incidentListItems(status.Incidents),
 		Legend: []LegendItem{
@@ -305,6 +315,15 @@ func sensorTypeLabel(sensorType shared.SensorType) string {
 	}
 }
 
+func actorTypeLabel(actorType shared.ActorType) string {
+	switch actorType {
+	case shared.RescueVehicleActor:
+		return "rescue vehicle"
+	default:
+		return "unknown"
+	}
+}
+
 func incidentLabel(incident shared.Incident) string {
 	switch incident {
 	case shared.VibrationTooHigh:
@@ -348,6 +367,21 @@ func sensorListItems(sensors []shared.SensorInfo) []SensorListItem {
 			ID:       fallbackID(sensor.Id),
 			Type:     sensorTypeLabel(sensor.SensorType),
 			Position: formatPosition(sensor.Position),
+		})
+	}
+	sort.Slice(items, func(i int, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items
+}
+
+func actorListItems(actors []shared.ActorInfo) []ActorListItem {
+	items := make([]ActorListItem, 0, len(actors))
+	for _, actor := range actors {
+		items = append(items, ActorListItem{
+			ID:       fallbackID(actor.Id),
+			Type:     actorTypeLabel(actor.ActorType),
+			Position: formatPosition(actor.Position),
 		})
 	}
 	sort.Slice(items, func(i int, j int) bool {
