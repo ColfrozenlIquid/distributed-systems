@@ -70,7 +70,7 @@ func (s *App) Register() error {
 				X: s.actor.Position().X,
 				Y: s.actor.Position().Y,
 			},
-			SensorType: shared.SensorType(s.actor.Type()),
+			ActorType: shared.ActorType(s.actor.Type()),
 		},
 	}
 
