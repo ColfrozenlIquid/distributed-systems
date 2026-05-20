@@ -14,11 +14,12 @@ type VibrationSim struct {
 	MinVibrationIndex float32
 	target            float32
 	smoothing         float32
+	newTargetChance   float32
 }
 
 func (s *VibrationSim) Set(value float32) {
 	s.target = s.randomTarget()
-	s.VibrationIndex = config.STARTING_VIBRATION_INDEX
+	s.VibrationIndex = value
 }
 
 func NewVibrationSim(cfg config.Config) *VibrationSim {
@@ -27,6 +28,7 @@ func NewVibrationSim(cfg config.Config) *VibrationSim {
 		MaxVibrationIndex: cfg.Vibration.MaxVibrationIndex,
 		MinVibrationIndex: cfg.Vibration.MinVibrationIndex,
 		smoothing:         cfg.Vibration.VibrationIndexSmoothing,
+		newTargetChance:   cfg.Water.WaterLevelNewTargetChance,
 	}
 	s.Init()
 	return s
@@ -56,7 +58,7 @@ func (s *VibrationSim) randomTarget() float32 {
 }
 
 func (s *VibrationSim) Update() {
-	if rand.Float32() < 0.02 {
+	if rand.Float32() < s.newTargetChance {
 		s.target = s.randomTarget()
 	}
 

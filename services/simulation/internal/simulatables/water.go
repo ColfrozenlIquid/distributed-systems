@@ -9,24 +9,26 @@ import (
 var _ Simulatable = (*WaterSim)(nil)
 
 type WaterSim struct {
-	WaterLevelCm  float32
-	MaxWaterLevel float32
-	MinWaterLevel float32
-	target        float32
-	smoothing     float32
+	WaterLevelCm    float32
+	MaxWaterLevel   float32
+	MinWaterLevel   float32
+	target          float32
+	smoothing       float32
+	newTargetChance float32
 }
 
 func (s *WaterSim) Set(value float32) {
 	s.target = s.randomTarget()
-	s.WaterLevelCm = config.STARTING_WATER_LEVEL_CM
+	s.WaterLevelCm = value
 }
 
 func NewWaterLevelSim(cfg config.Config) *WaterSim {
 	s := &WaterSim{
-		WaterLevelCm:  cfg.Water.StartingWaterLevelCM,
-		MaxWaterLevel: cfg.Water.MaxWaterLevelCM,
-		MinWaterLevel: cfg.Water.MinWaterLevelCM,
-		smoothing:     cfg.Water.WaterLevelSmoothing,
+		WaterLevelCm:    cfg.Water.StartingWaterLevelCM,
+		MaxWaterLevel:   cfg.Water.MaxWaterLevelCM,
+		MinWaterLevel:   cfg.Water.MinWaterLevelCM,
+		smoothing:       cfg.Water.WaterLevelSmoothing,
+		newTargetChance: cfg.Water.WaterLevelNewTargetChance,
 	}
 	s.Init()
 	return s
@@ -48,7 +50,7 @@ func (s *WaterSim) Color() uint8 {
 func (s *WaterSim) Read() float32 { return s.WaterLevelCm }
 
 func (s *WaterSim) Update() {
-	if rand.Float32() < 0.02 {
+	if rand.Float32() < s.newTargetChance {
 		s.target = s.randomTarget()
 	}
 
