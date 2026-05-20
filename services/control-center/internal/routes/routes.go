@@ -27,6 +27,15 @@ func Routes(router *vshttp.Router, state *model.State) {
 		return c.NoContent()
 	})
 
+	router.Post("/register/actor", func(c *vshttp.Context) error {
+		var request shared.ActorRegistration
+		if err := c.JSONBody(&request); err != nil {
+			return err
+		}
+		state.System().AddActor(request.Actor)
+		return c.NoContent()
+	})
+
 	router.Get("/map", func(c *vshttp.Context) error {
 		c.Writer.Header().Replace("Content-Type", "text/html; charset=utf-8")
 		c.Writer.WriteHeader(vshttp.OK)

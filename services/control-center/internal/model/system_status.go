@@ -8,12 +8,14 @@ import (
 type SystemStatus struct {
 	mu        sync.RWMutex
 	Sensors   []shared.SensorInfo     `json:"sensors"`
+	Actors    []shared.ActorInfo      `json:"actors"`
 	Readings  []shared.SensorReading  `json:"readings"`
 	Incidents []shared.SensorIncident `json:"incidents"`
 }
 
 type SystemStatusSnapshot struct {
 	Sensors   []shared.SensorInfo     `json:"sensors"`
+	Actors    []shared.ActorInfo      `json:"actors"`
 	Readings  []shared.SensorReading  `json:"readings"`
 	Incidents []shared.SensorIncident `json:"incidents"`
 }
@@ -22,6 +24,12 @@ func (s *SystemStatus) AddSensor(sensor shared.SensorInfo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.Sensors = append(s.Sensors, sensor)
+}
+
+func (s *SystemStatus) AddActor(actor shared.ActorInfo) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Actors = append(s.Actors, actor)
 }
 
 func (s *SystemStatus) AddReading(reading shared.SensorReading) {
@@ -44,6 +52,7 @@ func (s *SystemStatus) Snapshot() SystemStatusSnapshot {
 	defer s.mu.RUnlock()
 	return SystemStatusSnapshot{
 		Sensors:   append([]shared.SensorInfo(nil), s.Sensors...),
+		Actors:    append([]shared.ActorInfo(nil), s.Actors...),
 		Readings:  append([]shared.SensorReading(nil), s.Readings...),
 		Incidents: append([]shared.SensorIncident(nil), s.Incidents...),
 	}
