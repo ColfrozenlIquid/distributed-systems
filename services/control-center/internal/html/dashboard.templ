@@ -65,6 +65,7 @@ templ MapTile(tile DashboardTile) {
 			templ.KV("is-water", tile.Terrain == "water"),
 			templ.KV("has-infrastructure", tile.HasInfrastructure),
 			templ.KV("has-sensor", tile.HasSensor),
+			templ.KV("has-actor", tile.HasActor),
 			templ.KV("has-incident", tile.HasIncident),
 			templ.KV("reading-warning", tile.ReadingTone == "warning"),
 			templ.KV("reading-critical", tile.ReadingTone == "critical"),

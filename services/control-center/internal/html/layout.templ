@@ -33,6 +33,7 @@ templ DashboardAssets() {
 				--water-edge: #367d9e;
 				--infra: #273238;
 				--sensor: #f4c542;
+				--actor: #7c3aed;
 				--warning: #d67b1f;
 				--critical: #b91c1c;
 				--normal: #1c7c54;
@@ -159,6 +160,7 @@ templ DashboardAssets() {
 			.legend-water { background: var(--water); }
 			.legend-infrastructure { background: var(--infra); }
 			.legend-sensor { background: var(--sensor); }
+			.legend-actor { background: var(--actor); }
 			.legend-incident { background: var(--critical); }
 
 			.world-map {
@@ -214,6 +216,18 @@ templ DashboardAssets() {
 				height: 7px;
 				border-radius: 999px;
 				background: var(--sensor);
+				box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
+			}
+
+			.map-tile.has-actor::before {
+				content: "";
+				position: absolute;
+				left: 3px;
+				top: 3px;
+				width: 7px;
+				height: 7px;
+				border-radius: 2px;
+				background: var(--actor);
 				box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
 			}
 

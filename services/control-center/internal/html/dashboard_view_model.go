@@ -51,6 +51,8 @@ type DashboardTile struct {
 	HasInfrastructure   bool   `json:"has_infrastructure"`
 	HasSensor           bool   `json:"has_sensor"`
 	SensorLabel         string `json:"sensor_label"`
+	HasActor            bool   `json:"has_actor"`
+	ActorLabel          string `json:"actor_label"`
 	ReadingLabel        string `json:"reading_label"`
 	ReadingTone         string `json:"reading_tone"`
 	HasIncident         bool   `json:"has_incident"`
@@ -101,6 +103,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	latestReadings := latestReadingsByPosition(status.Readings)
 	incidents := incidentsByPosition(status.Incidents)
 	sensorsByTile := sensorsByPosition(status.Sensors)
+	actorsByTile := actorsByPosition(status.Actors)
 
 	rows := make([][]DashboardTile, 0, len(island.Tiles))
 	flatTiles := make([]DashboardTile, 0, island.Width*island.Height)
@@ -119,8 +122,9 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 			reading, hasReading := latestReadings[key]
 			incident, hasIncident := incidents[key]
 			sensor, hasSensor := sensorsByTile[key]
+			actor, hasActor := actorsByTile[key]
 
-			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, reading, hasReading, incident, hasIncident)
+			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, actor, hasActor, reading, hasReading, incident, hasIncident)
 			if tileView.Terrain == "land" {
 				summary.LandTiles++
 			} else {
@@ -158,6 +162,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 			{Label: "Water", Class: "legend-water"},
 			{Label: "Infrastructure", Class: "legend-infrastructure"},
 			{Label: "Sensor", Class: "legend-sensor"},
+			{Label: "Actor", Class: "legend-actor"},
 			{Label: "Critical incident", Class: "legend-incident"},
 		},
 		MapData: DashboardMapData{
@@ -169,7 +174,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	}
 }
 
-func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
+func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, actor shared.ActorInfo, hasActor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
 	terrain := terrainLabel(tile.Terrain)
 	infra := infrastructureLabel(tile.Infrastructure)
 	short := infrastructureShortLabel(tile.Infrastructure)
@@ -187,10 +192,15 @@ func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, h
 		InfrastructureShort: short,
 		HasInfrastructure:   infra != "none",
 		HasSensor:           hasSensor,
+		HasActor:            hasActor,
 	}
 
 	if hasSensor {
 		view.SensorLabel = sensorTypeLabel(sensor.SensorType)
+	}
+	if hasActor {
+		view.ActorLabel = actorTypeLabel(actor.ActorType)
+		view.Label += ", " + view.ActorLabel
 	}
 	if hasReading {
 		view.ReadingLabel = formatReadingValue(reading)
@@ -217,6 +227,7 @@ func tileAttributes(tile DashboardTile) templ.Attributes {
 		"data-incident":       tile.IncidentLabel,
 		"data-reading":        tile.ReadingLabel,
 		"data-sensor":         tile.SensorLabel,
+		"data-actor":          tile.ActorLabel,
 		"title":               tile.Label,
 	}
 }
@@ -251,6 +262,14 @@ func sensorsByPosition(sensors []shared.SensorInfo) map[string]shared.SensorInfo
 	byPosition := make(map[string]shared.SensorInfo, len(sensors))
 	for _, sensor := range sensors {
 		byPosition[positionKey(sensor.Position.X, sensor.Position.Y)] = sensor
+	}
+	return byPosition
+}
+
+func actorsByPosition(actors []shared.ActorInfo) map[string]shared.ActorInfo {
+	byPosition := make(map[string]shared.ActorInfo, len(actors))
+	for _, actor := range actors {
+		byPosition[positionKey(actor.Position.X, actor.Position.Y)] = actor
 	}
 	return byPosition
 }
