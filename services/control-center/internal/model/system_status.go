@@ -2,6 +2,7 @@ package model
 
 import (
 	"shared"
+	"slices"
 	"sync"
 )
 
@@ -59,5 +60,10 @@ func (s *SystemStatus) Snapshot() SystemStatusSnapshot {
 }
 
 func (s *SystemStatus) addIncidentLocked(incident shared.SensorIncident) {
+	if slices.ContainsFunc(s.Incidents, func(i shared.SensorIncident) bool {
+		return i.Sensor == incident.Sensor
+	}) {
+		return
+	}
 	s.Incidents = append(s.Incidents, incident)
 }
