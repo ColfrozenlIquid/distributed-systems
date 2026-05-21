@@ -1,0 +1,26 @@
+type: http_request
+model: http_request
+id: rq_WXWdMGWeHX
+createdAt: 2026-05-21T16:18:55.343
+updatedAt: 2026-05-21T16:19:32.181918
+workspaceId: wk_XFprmkwA7A
+folderId: fl_5D9MP2NwY4
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers:
+- enabled: true
+  name: Accept
+  value: application/json
+  id: qn5B6eCfBy
+- enabled: true
+  name: ''
+  value: ''
+  id: pFhY4bNKix
+method: GET
+name: Get Status
+sortPriority: 0.0
+url: ${[ baseUrl ]}/status
+urlParameters: []
