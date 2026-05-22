@@ -5,17 +5,9 @@ import (
 	"fmt"
 	pb "simulation/gen"
 	"simulation/internal/config"
-	"simulation/internal/simulatables"
 	"sync"
 	"time"
 )
-
-type World interface {
-	RunWorldLoop(ctx context.Context)
-	TileReading(req *pb.TileReadingRequest) (*pb.TileReadingResponse, error)
-	TileUpdate(req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error)
-	WorldData() (*pb.WorldDataResponse, error)
-}
 
 type world struct {
 	Width            int
@@ -31,7 +23,7 @@ const (
 	Land MovableType = iota
 	Water
 	Air
-	Amphibous
+	Amphibious
 )
 
 func mapToMovableType(movableType pb.MovableType) (MovableType, error) {
@@ -41,85 +33,12 @@ func mapToMovableType(movableType pb.MovableType) (MovableType, error) {
 	case pb.MovableType_MOVABLE_TYPE_LAND:
 		return Land, nil
 	case pb.MovableType_MOVABLE_TYPE_AMPHIBIOUS:
-		return Amphibous, nil
+		return Amphibious, nil
 	case pb.MovableType_MOVABLE_TYPE_WATER:
 		return Water, nil
 	default:
 		return 0, fmt.Errorf("unspecified movable type: %d", movableType)
 	}
-}
-
-func (w *world) MoveTo(req *pb.MoveToRequest) (*pb.MoveToResponse, error) {
-	tile := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
-
-	movableType, err := mapToMovableType(req.GetMovableType())
-	if err != nil {
-		return nil, fmt.Errorf("map movableType: %w", err)
-	}
-
-	ok := tile.IsMovable(movableType)
-	if !ok {
-
-	}
-}
-
-func (w *world) TileReading(req *pb.TileReadingRequest) (*pb.TileReadingResponse, error) {
-	tile := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
-
-	sensorType, err := simulatables.ToDomainSensorType(req.GetSensorType())
-	if err != nil {
-		return nil, fmt.Errorf("unknown sensor type: %w", err)
-	}
-
-	tileReading, ok := tile.Read(sensorType)
-	if !ok {
-		return nil, fmt.Errorf("tile does not have this sensor")
-	}
-
-	return &pb.TileReadingResponse{
-		SensorType:    req.GetSensorType(),
-		SensorReading: tileReading,
-	}, nil
-}
-
-func (w *world) TileUpdate(req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
-	tile := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
-
-	sensorType, err := simulatables.ToDomainSensorType(req.GetSensorType())
-	if err != nil {
-		return nil, fmt.Errorf("unknown sensor type %w", err)
-	}
-
-	ok := tile.Set(sensorType, req.Value)
-	if !ok {
-		return nil, fmt.Errorf("cannot set value of tile")
-	}
-
-	return &pb.TileUpdateResponse{
-		Success: true,
-	}, nil
-}
-
-func (w *world) WorldData() (*pb.WorldDataResponse, error) {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-
-	tiles := make([]*pb.TileState, 0, w.Width*w.Height)
-	for _, row := range w.Tiles {
-		for _, tile := range row {
-			pbTile := &pb.TileState{
-				Terrain:        simulatables.ToProtoTerrainType(tile.Terrain),
-				Infrastructure: simulatables.ToProtoInfrastructureType(tile.Infrastructure),
-			}
-			tiles = append(tiles, pbTile)
-		}
-	}
-
-	return &pb.WorldDataResponse{
-		Width:  int32(w.Width),
-		Height: int32(w.Height),
-		Tiles:  tiles,
-	}, nil
 }
 
 func NewWorld(width int, height int, cfg config.Config) World {
@@ -149,10 +68,13 @@ func (w *world) RunWorldLoop(ctx context.Context) {
 	}
 }
 
-func (w *world) getTile(xpos int, ypos int) Tile {
+func (w *world) getTile(xpos int, ypos int) (Tile, error) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
-	return w.Tiles[ypos][xpos]
+	if xpos < 0 || xpos > w.Width-1 || ypos < 0 || ypos > w.Height-1 {
+		return Tile{}, fmt.Errorf("requested tile (%d, %d) out of bounds", xpos, ypos)
+	}
+	return w.Tiles[ypos][xpos], nil
 }
 
 func (w *world) update() {

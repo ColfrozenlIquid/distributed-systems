@@ -17,6 +17,10 @@ type VibrationSensor struct {
 	sensor     vibrationSensor
 }
 
+func (v *VibrationSensor) Update() error {
+	return nil
+}
+
 func (v *VibrationSensor) Position() Position {
 	return v.sensor.position
 }

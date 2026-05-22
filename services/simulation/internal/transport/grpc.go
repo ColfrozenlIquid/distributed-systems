@@ -1,4 +1,4 @@
-package client
+package transport
 
 import (
 	"context"
@@ -61,17 +61,17 @@ func (g *GRPCServer) Serve() error {
 }
 
 func (g *grpcServer) TileReading(ctx context.Context, req *pb.TileReadingRequest) (*pb.TileReadingResponse, error) {
-	return g.world.TileReading(req)
+	return g.world.TileReading(ctx, req)
 }
 
 func (g *grpcServer) TileUpdate(ctx context.Context, req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
-	return g.world.TileUpdate(req)
+	return g.world.TileUpdate(ctx, req)
 }
 
 func (g *grpcServer) WorldData(ctx context.Context, req *pb.WorldDataRequest) (*pb.WorldDataResponse, error) {
-	return g.world.WorldData()
+	return g.world.WorldData(ctx, req)
 }
 
-func (g *grpcServer) MoveTo(context.Context, *pb.MoveToRequest) (*pb.MoveToResponse, error) {
-	return g.world.MoveTo(req)
+func (g *grpcServer) MoveTo(ctx context.Context, req *pb.MoveToRequest) (*pb.MoveToResponse, error) {
+	return g.world.MoveTo(ctx, req)
 }

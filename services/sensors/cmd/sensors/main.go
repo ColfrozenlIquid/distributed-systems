@@ -121,6 +121,10 @@ func (s *App) Run(ctx context.Context, sensor sensor.Sensor, endpoint string) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			err := sensor.Update()
+			if err != nil {
+				log.Printf("update failed")
+			}
 			reading, err := sensor.Read()
 			if err != nil {
 				log.Printf("[%s] read error: %v", sensor.ID(), err)

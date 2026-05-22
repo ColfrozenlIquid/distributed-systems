@@ -25,7 +25,18 @@ type TileVisual struct {
 }
 
 func (t *Tile) IsMovable(movableType MovableType) bool {
-
+	switch movableType {
+	case Land:
+		return t.Terrain == sim.Land && t.Infrastructure == sim.NoInfrastructure
+	case Air:
+		return true
+	case Amphibious:
+		return t.Infrastructure == sim.NoInfrastructure
+	case Water:
+		return t.Terrain == sim.Water && t.Infrastructure == sim.NoInfrastructure
+	default:
+		return false
+	}
 }
 
 func (t *Tile) Read(sensor sim.SimulatableType) (float32, bool) {

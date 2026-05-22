@@ -18,6 +18,10 @@ type WaterLevelSensor struct {
 	sensor     waterLevelSensor
 }
 
+func (w *WaterLevelSensor) Update() error {
+	return nil
+}
+
 func (w *WaterLevelSensor) Position() Position {
 	return w.sensor.position
 }

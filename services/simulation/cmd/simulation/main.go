@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"log"
-	"simulation/internal/client"
 	"simulation/internal/config"
+	"simulation/internal/transport"
 	"simulation/internal/world"
 
 	"go.uber.org/zap"
@@ -23,7 +23,7 @@ func main() {
 		logger.Fatal("failed to initialize zap logger")
 	}
 
-	grpcSrv, err := client.NewGRPCServer(world, logger)
+	grpcSrv, err := transport.NewGRPCServer(world, logger)
 
 	if err != nil {
 		logger.Fatal("initialize grpc server", zap.Error(err))
