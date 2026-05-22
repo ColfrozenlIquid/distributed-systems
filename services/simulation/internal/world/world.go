@@ -25,6 +25,44 @@ type world struct {
 	mu               sync.RWMutex
 }
 
+type MovableType int
+
+const (
+	Land MovableType = iota
+	Water
+	Air
+	Amphibous
+)
+
+func mapToMovableType(movableType pb.MovableType) (MovableType, error) {
+	switch movableType {
+	case pb.MovableType_MOVABLE_TYPE_AIR:
+		return Air, nil
+	case pb.MovableType_MOVABLE_TYPE_LAND:
+		return Land, nil
+	case pb.MovableType_MOVABLE_TYPE_AMPHIBIOUS:
+		return Amphibous, nil
+	case pb.MovableType_MOVABLE_TYPE_WATER:
+		return Water, nil
+	default:
+		return 0, fmt.Errorf("unspecified movable type: %d", movableType)
+	}
+}
+
+func (w *world) MoveTo(req *pb.MoveToRequest) (*pb.MoveToResponse, error) {
+	tile := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
+
+	movableType, err := mapToMovableType(req.GetMovableType())
+	if err != nil {
+		return nil, fmt.Errorf("map movableType: %w", err)
+	}
+
+	ok := tile.IsMovable(movableType)
+	if !ok {
+
+	}
+}
+
 func (w *world) TileReading(req *pb.TileReadingRequest) (*pb.TileReadingResponse, error) {
 	tile := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
 

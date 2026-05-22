@@ -15,6 +15,8 @@ import (
 	"simulation/internal/world"
 )
 
+var _ pb.WorldServiceServer = (*grpcServer)(nil)
+
 type GRPCServer struct {
 	server   *grpc.Server
 	listener net.Listener
@@ -68,4 +70,8 @@ func (g *grpcServer) TileUpdate(ctx context.Context, req *pb.TileUpdateRequest) 
 
 func (g *grpcServer) WorldData(ctx context.Context, req *pb.WorldDataRequest) (*pb.WorldDataResponse, error) {
 	return g.world.WorldData()
+}
+
+func (g *grpcServer) MoveTo(context.Context, *pb.MoveToRequest) (*pb.MoveToResponse, error) {
+	return g.world.MoveTo(req)
 }

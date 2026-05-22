@@ -24,6 +24,10 @@ type TileVisual struct {
 	BG   string
 }
 
+func (t *Tile) IsMovable(movableType MovableType) bool {
+
+}
+
 func (t *Tile) Read(sensor sim.SimulatableType) (float32, bool) {
 	sim, ok := t.Sensors[sensor]
 	if !ok {
