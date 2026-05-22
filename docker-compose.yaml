@@ -42,7 +42,7 @@ services:
     environment:
       SENSOR_ID: "sensor-1"
       SENSOR_TYPE: "water_level"
-      SENSOR_INTERVAL_MS: "1000"
+      SENSOR_INTERVAL_MS: "100"
       SENSOR_POSITION_X: "3"
       SENSOR_POSITION_Y: "3"
       SENSOR_BASE_STATION_HOST: "http://control-center:8080"

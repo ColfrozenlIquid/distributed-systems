@@ -8,7 +8,6 @@ package proto
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,6 +22,7 @@ const (
 	WorldService_TileReading_FullMethodName = "/WorldService/TileReading"
 	WorldService_TileUpdate_FullMethodName  = "/WorldService/TileUpdate"
 	WorldService_WorldData_FullMethodName   = "/WorldService/WorldData"
+	WorldService_MoveTo_FullMethodName      = "/WorldService/MoveTo"
 )
 
 // WorldServiceClient is the client API for WorldService service.
@@ -32,6 +32,7 @@ type WorldServiceClient interface {
 	TileReading(ctx context.Context, in *TileReadingRequest, opts ...grpc.CallOption) (*TileReadingResponse, error)
 	TileUpdate(ctx context.Context, in *TileUpdateRequest, opts ...grpc.CallOption) (*TileUpdateResponse, error)
 	WorldData(ctx context.Context, in *WorldDataRequest, opts ...grpc.CallOption) (*WorldDataResponse, error)
+	MoveTo(ctx context.Context, in *MoveToRequest, opts ...grpc.CallOption) (*MoveToResponse, error)
 }
 
 type worldServiceClient struct {
@@ -72,6 +73,16 @@ func (c *worldServiceClient) WorldData(ctx context.Context, in *WorldDataRequest
 	return out, nil
 }
 
+func (c *worldServiceClient) MoveTo(ctx context.Context, in *MoveToRequest, opts ...grpc.CallOption) (*MoveToResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MoveToResponse)
+	err := c.cc.Invoke(ctx, WorldService_MoveTo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorldServiceServer is the server API for WorldService service.
 // All implementations must embed UnimplementedWorldServiceServer
 // for forward compatibility.
@@ -79,6 +90,7 @@ type WorldServiceServer interface {
 	TileReading(context.Context, *TileReadingRequest) (*TileReadingResponse, error)
 	TileUpdate(context.Context, *TileUpdateRequest) (*TileUpdateResponse, error)
 	WorldData(context.Context, *WorldDataRequest) (*WorldDataResponse, error)
+	MoveTo(context.Context, *MoveToRequest) (*MoveToResponse, error)
 	mustEmbedUnimplementedWorldServiceServer()
 }
 
@@ -97,6 +109,9 @@ func (UnimplementedWorldServiceServer) TileUpdate(context.Context, *TileUpdateRe
 }
 func (UnimplementedWorldServiceServer) WorldData(context.Context, *WorldDataRequest) (*WorldDataResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method WorldData not implemented")
+}
+func (UnimplementedWorldServiceServer) MoveTo(context.Context, *MoveToRequest) (*MoveToResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MoveTo not implemented")
 }
 func (UnimplementedWorldServiceServer) mustEmbedUnimplementedWorldServiceServer() {}
 func (UnimplementedWorldServiceServer) testEmbeddedByValue()                      {}
@@ -173,6 +188,24 @@ func _WorldService_WorldData_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorldService_MoveTo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MoveToRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorldServiceServer).MoveTo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorldService_MoveTo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorldServiceServer).MoveTo(ctx, req.(*MoveToRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorldService_ServiceDesc is the grpc.ServiceDesc for WorldService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -191,6 +224,10 @@ var WorldService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "WorldData",
 			Handler:    _WorldService_WorldData_Handler,
+		},
+		{
+			MethodName: "MoveTo",
+			Handler:    _WorldService_MoveTo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

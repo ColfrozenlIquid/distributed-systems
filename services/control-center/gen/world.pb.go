@@ -189,6 +189,165 @@ func (InfrastructureType) EnumDescriptor() ([]byte, []int) {
 	return file_world_proto_rawDescGZIP(), []int{2}
 }
 
+type MovableType int32
+
+const (
+	MovableType_MOVABLE_TYPE_UNSPECIFIED MovableType = 0
+	MovableType_MOVABLE_TYPE_LAND        MovableType = 1
+	MovableType_MOVABLE_TYPE_WATER       MovableType = 2
+	MovableType_MOVABLE_TYPE_AIR         MovableType = 3
+	MovableType_MOVABLE_TYPE_AMPHIBIOUS  MovableType = 4
+)
+
+// Enum value maps for MovableType.
+var (
+	MovableType_name = map[int32]string{
+		0: "MOVABLE_TYPE_UNSPECIFIED",
+		1: "MOVABLE_TYPE_LAND",
+		2: "MOVABLE_TYPE_WATER",
+		3: "MOVABLE_TYPE_AIR",
+		4: "MOVABLE_TYPE_AMPHIBIOUS",
+	}
+	MovableType_value = map[string]int32{
+		"MOVABLE_TYPE_UNSPECIFIED": 0,
+		"MOVABLE_TYPE_LAND":        1,
+		"MOVABLE_TYPE_WATER":       2,
+		"MOVABLE_TYPE_AIR":         3,
+		"MOVABLE_TYPE_AMPHIBIOUS":  4,
+	}
+)
+
+func (x MovableType) Enum() *MovableType {
+	p := new(MovableType)
+	*p = x
+	return p
+}
+
+func (x MovableType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MovableType) Descriptor() protoreflect.EnumDescriptor {
+	return file_world_proto_enumTypes[3].Descriptor()
+}
+
+func (MovableType) Type() protoreflect.EnumType {
+	return &file_world_proto_enumTypes[3]
+}
+
+func (x MovableType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MovableType.Descriptor instead.
+func (MovableType) EnumDescriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{3}
+}
+
+type MoveToRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	XPos          int32                  `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          int32                  `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
+	MovableType   MovableType            `protobuf:"varint,3,opt,name=movable_type,json=movableType,proto3,enum=MovableType" json:"movable_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveToRequest) Reset() {
+	*x = MoveToRequest{}
+	mi := &file_world_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveToRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveToRequest) ProtoMessage() {}
+
+func (x *MoveToRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_world_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveToRequest.ProtoReflect.Descriptor instead.
+func (*MoveToRequest) Descriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *MoveToRequest) GetXPos() int32 {
+	if x != nil {
+		return x.XPos
+	}
+	return 0
+}
+
+func (x *MoveToRequest) GetYPos() int32 {
+	if x != nil {
+		return x.YPos
+	}
+	return 0
+}
+
+func (x *MoveToRequest) GetMovableType() MovableType {
+	if x != nil {
+		return x.MovableType
+	}
+	return MovableType_MOVABLE_TYPE_UNSPECIFIED
+}
+
+type MoveToResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Allowed       bool                   `protobuf:"varint,1,opt,name=allowed,proto3" json:"allowed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveToResponse) Reset() {
+	*x = MoveToResponse{}
+	mi := &file_world_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveToResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveToResponse) ProtoMessage() {}
+
+func (x *MoveToResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_world_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveToResponse.ProtoReflect.Descriptor instead.
+func (*MoveToResponse) Descriptor() ([]byte, []int) {
+	return file_world_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *MoveToResponse) GetAllowed() bool {
+	if x != nil {
+		return x.Allowed
+	}
+	return false
+}
+
 type TileReadingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	XPos          int32                  `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
@@ -200,7 +359,7 @@ type TileReadingRequest struct {
 
 func (x *TileReadingRequest) Reset() {
 	*x = TileReadingRequest{}
-	mi := &file_world_proto_msgTypes[0]
+	mi := &file_world_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +371,7 @@ func (x *TileReadingRequest) String() string {
 func (*TileReadingRequest) ProtoMessage() {}
 
 func (x *TileReadingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_proto_msgTypes[0]
+	mi := &file_world_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +384,7 @@ func (x *TileReadingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TileReadingRequest.ProtoReflect.Descriptor instead.
 func (*TileReadingRequest) Descriptor() ([]byte, []int) {
-	return file_world_proto_rawDescGZIP(), []int{0}
+	return file_world_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TileReadingRequest) GetXPos() int32 {
@@ -259,7 +418,7 @@ type TileReadingResponse struct {
 
 func (x *TileReadingResponse) Reset() {
 	*x = TileReadingResponse{}
-	mi := &file_world_proto_msgTypes[1]
+	mi := &file_world_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -271,7 +430,7 @@ func (x *TileReadingResponse) String() string {
 func (*TileReadingResponse) ProtoMessage() {}
 
 func (x *TileReadingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_proto_msgTypes[1]
+	mi := &file_world_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -284,7 +443,7 @@ func (x *TileReadingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TileReadingResponse.ProtoReflect.Descriptor instead.
 func (*TileReadingResponse) Descriptor() ([]byte, []int) {
-	return file_world_proto_rawDescGZIP(), []int{1}
+	return file_world_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *TileReadingResponse) GetSensorType() SensorType {
@@ -313,7 +472,7 @@ type TileUpdateRequest struct {
 
 func (x *TileUpdateRequest) Reset() {
 	*x = TileUpdateRequest{}
-	mi := &file_world_proto_msgTypes[2]
+	mi := &file_world_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -325,7 +484,7 @@ func (x *TileUpdateRequest) String() string {
 func (*TileUpdateRequest) ProtoMessage() {}
 
 func (x *TileUpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_proto_msgTypes[2]
+	mi := &file_world_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -338,7 +497,7 @@ func (x *TileUpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TileUpdateRequest.ProtoReflect.Descriptor instead.
 func (*TileUpdateRequest) Descriptor() ([]byte, []int) {
-	return file_world_proto_rawDescGZIP(), []int{2}
+	return file_world_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TileUpdateRequest) GetXPos() int32 {
@@ -378,7 +537,7 @@ type TileUpdateResponse struct {
 
 func (x *TileUpdateResponse) Reset() {
 	*x = TileUpdateResponse{}
-	mi := &file_world_proto_msgTypes[3]
+	mi := &file_world_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -390,7 +549,7 @@ func (x *TileUpdateResponse) String() string {
 func (*TileUpdateResponse) ProtoMessage() {}
 
 func (x *TileUpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_proto_msgTypes[3]
+	mi := &file_world_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -403,7 +562,7 @@ func (x *TileUpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TileUpdateResponse.ProtoReflect.Descriptor instead.
 func (*TileUpdateResponse) Descriptor() ([]byte, []int) {
-	return file_world_proto_rawDescGZIP(), []int{3}
+	return file_world_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TileUpdateResponse) GetSuccess() bool {
@@ -421,7 +580,7 @@ type WorldDataRequest struct {
 
 func (x *WorldDataRequest) Reset() {
 	*x = WorldDataRequest{}
-	mi := &file_world_proto_msgTypes[4]
+	mi := &file_world_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -433,7 +592,7 @@ func (x *WorldDataRequest) String() string {
 func (*WorldDataRequest) ProtoMessage() {}
 
 func (x *WorldDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_proto_msgTypes[4]
+	mi := &file_world_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -446,7 +605,7 @@ func (x *WorldDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorldDataRequest.ProtoReflect.Descriptor instead.
 func (*WorldDataRequest) Descriptor() ([]byte, []int) {
-	return file_world_proto_rawDescGZIP(), []int{4}
+	return file_world_proto_rawDescGZIP(), []int{6}
 }
 
 type TileState struct {
@@ -459,7 +618,7 @@ type TileState struct {
 
 func (x *TileState) Reset() {
 	*x = TileState{}
-	mi := &file_world_proto_msgTypes[5]
+	mi := &file_world_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -471,7 +630,7 @@ func (x *TileState) String() string {
 func (*TileState) ProtoMessage() {}
 
 func (x *TileState) ProtoReflect() protoreflect.Message {
-	mi := &file_world_proto_msgTypes[5]
+	mi := &file_world_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -484,7 +643,7 @@ func (x *TileState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TileState.ProtoReflect.Descriptor instead.
 func (*TileState) Descriptor() ([]byte, []int) {
-	return file_world_proto_rawDescGZIP(), []int{5}
+	return file_world_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TileState) GetTerrain() TerrainType {
@@ -512,7 +671,7 @@ type WorldDataResponse struct {
 
 func (x *WorldDataResponse) Reset() {
 	*x = WorldDataResponse{}
-	mi := &file_world_proto_msgTypes[6]
+	mi := &file_world_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -524,7 +683,7 @@ func (x *WorldDataResponse) String() string {
 func (*WorldDataResponse) ProtoMessage() {}
 
 func (x *WorldDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_proto_msgTypes[6]
+	mi := &file_world_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -537,7 +696,7 @@ func (x *WorldDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorldDataResponse.ProtoReflect.Descriptor instead.
 func (*WorldDataResponse) Descriptor() ([]byte, []int) {
-	return file_world_proto_rawDescGZIP(), []int{6}
+	return file_world_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *WorldDataResponse) GetWidth() int32 {
@@ -565,7 +724,13 @@ var File_world_proto protoreflect.FileDescriptor
 
 const file_world_proto_rawDesc = "" +
 	"\n" +
-	"\vworld.proto\"l\n" +
+	"\vworld.proto\"j\n" +
+	"\rMoveToRequest\x12\x13\n" +
+	"\x05x_pos\x18\x01 \x01(\x05R\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\x02 \x01(\x05R\x04yPos\x12/\n" +
+	"\fmovable_type\x18\x03 \x01(\x0e2\f.MovableTypeR\vmovableType\"*\n" +
+	"\x0eMoveToResponse\x12\x18\n" +
+	"\aallowed\x18\x01 \x01(\bR\aallowed\"l\n" +
 	"\x12TileReadingRequest\x12\x13\n" +
 	"\x05x_pos\x18\x01 \x01(\x05R\x04xPos\x12\x13\n" +
 	"\x05y_pos\x18\x02 \x01(\x05R\x04yPos\x12,\n" +
@@ -611,12 +776,19 @@ const file_world_proto_rawDesc = "" +
 	"$INFRASTRUCTURE_TYPE_CHARGING_STATION\x10\x04\x12\x1c\n" +
 	"\x18INFRASTRUCTURE_TYPE_PORT\x10\x05\x12\x1d\n" +
 	"\x19INFRASTRUCTURE_TYPE_DEPOT\x10\x06\x12%\n" +
-	"!INFRASTRUCTURE_TYPE_LANDING_STRIP\x10\a2\xb3\x01\n" +
+	"!INFRASTRUCTURE_TYPE_LANDING_STRIP\x10\a*\x8d\x01\n" +
+	"\vMovableType\x12\x1c\n" +
+	"\x18MOVABLE_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11MOVABLE_TYPE_LAND\x10\x01\x12\x16\n" +
+	"\x12MOVABLE_TYPE_WATER\x10\x02\x12\x14\n" +
+	"\x10MOVABLE_TYPE_AIR\x10\x03\x12\x1b\n" +
+	"\x17MOVABLE_TYPE_AMPHIBIOUS\x10\x042\xde\x01\n" +
 	"\fWorldService\x128\n" +
 	"\vTileReading\x12\x13.TileReadingRequest\x1a\x14.TileReadingResponse\x125\n" +
 	"\n" +
 	"TileUpdate\x12\x12.TileUpdateRequest\x1a\x13.TileUpdateResponse\x122\n" +
-	"\tWorldData\x12\x11.WorldDataRequest\x1a\x12.WorldDataResponseB\tZ\a./protob\x06proto3"
+	"\tWorldData\x12\x11.WorldDataRequest\x1a\x12.WorldDataResponse\x12)\n" +
+	"\x06MoveTo\x12\x0e.MoveToRequest\x1a\x0f.MoveToResponseB\tZ\a./protob\x06proto3"
 
 var (
 	file_world_proto_rawDescOnce sync.Once
@@ -630,38 +802,44 @@ func file_world_proto_rawDescGZIP() []byte {
 	return file_world_proto_rawDescData
 }
 
-var file_world_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_world_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_world_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_world_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_world_proto_goTypes = []any{
 	(SensorType)(0),             // 0: SensorType
 	(TerrainType)(0),            // 1: TerrainType
 	(InfrastructureType)(0),     // 2: InfrastructureType
-	(*TileReadingRequest)(nil),  // 3: TileReadingRequest
-	(*TileReadingResponse)(nil), // 4: TileReadingResponse
-	(*TileUpdateRequest)(nil),   // 5: TileUpdateRequest
-	(*TileUpdateResponse)(nil),  // 6: TileUpdateResponse
-	(*WorldDataRequest)(nil),    // 7: WorldDataRequest
-	(*TileState)(nil),           // 8: TileState
-	(*WorldDataResponse)(nil),   // 9: WorldDataResponse
+	(MovableType)(0),            // 3: MovableType
+	(*MoveToRequest)(nil),       // 4: MoveToRequest
+	(*MoveToResponse)(nil),      // 5: MoveToResponse
+	(*TileReadingRequest)(nil),  // 6: TileReadingRequest
+	(*TileReadingResponse)(nil), // 7: TileReadingResponse
+	(*TileUpdateRequest)(nil),   // 8: TileUpdateRequest
+	(*TileUpdateResponse)(nil),  // 9: TileUpdateResponse
+	(*WorldDataRequest)(nil),    // 10: WorldDataRequest
+	(*TileState)(nil),           // 11: TileState
+	(*WorldDataResponse)(nil),   // 12: WorldDataResponse
 }
 var file_world_proto_depIdxs = []int32{
-	0, // 0: TileReadingRequest.sensor_type:type_name -> SensorType
-	0, // 1: TileReadingResponse.sensor_type:type_name -> SensorType
-	0, // 2: TileUpdateRequest.sensor_type:type_name -> SensorType
-	1, // 3: TileState.terrain:type_name -> TerrainType
-	2, // 4: TileState.infrastructure:type_name -> InfrastructureType
-	8, // 5: WorldDataResponse.tiles:type_name -> TileState
-	3, // 6: WorldService.TileReading:input_type -> TileReadingRequest
-	5, // 7: WorldService.TileUpdate:input_type -> TileUpdateRequest
-	7, // 8: WorldService.WorldData:input_type -> WorldDataRequest
-	4, // 9: WorldService.TileReading:output_type -> TileReadingResponse
-	6, // 10: WorldService.TileUpdate:output_type -> TileUpdateResponse
-	9, // 11: WorldService.WorldData:output_type -> WorldDataResponse
-	9, // [9:12] is the sub-list for method output_type
-	6, // [6:9] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	3,  // 0: MoveToRequest.movable_type:type_name -> MovableType
+	0,  // 1: TileReadingRequest.sensor_type:type_name -> SensorType
+	0,  // 2: TileReadingResponse.sensor_type:type_name -> SensorType
+	0,  // 3: TileUpdateRequest.sensor_type:type_name -> SensorType
+	1,  // 4: TileState.terrain:type_name -> TerrainType
+	2,  // 5: TileState.infrastructure:type_name -> InfrastructureType
+	11, // 6: WorldDataResponse.tiles:type_name -> TileState
+	6,  // 7: WorldService.TileReading:input_type -> TileReadingRequest
+	8,  // 8: WorldService.TileUpdate:input_type -> TileUpdateRequest
+	10, // 9: WorldService.WorldData:input_type -> WorldDataRequest
+	4,  // 10: WorldService.MoveTo:input_type -> MoveToRequest
+	7,  // 11: WorldService.TileReading:output_type -> TileReadingResponse
+	9,  // 12: WorldService.TileUpdate:output_type -> TileUpdateResponse
+	12, // 13: WorldService.WorldData:output_type -> WorldDataResponse
+	5,  // 14: WorldService.MoveTo:output_type -> MoveToResponse
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_world_proto_init() }
@@ -674,8 +852,8 @@ func file_world_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_world_proto_rawDesc), len(file_world_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   7,
+			NumEnums:      4,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

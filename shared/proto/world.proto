@@ -8,6 +8,18 @@ service WorldService {
   rpc TileUpdate(TileUpdateRequest) returns (TileUpdateResponse);
 
   rpc WorldData(WorldDataRequest) returns (WorldDataResponse);
+
+  rpc MoveTo(MoveToRequest) returns (MoveToResponse);
+}
+
+message MoveToRequest {
+  int32 x_pos = 1;
+  int32 y_pos = 2;
+  MovableType movable_type = 3;
+}
+
+message MoveToResponse {
+  bool allowed = 1;
 }
 
 message TileReadingRequest {
@@ -68,4 +80,12 @@ enum InfrastructureType {
   INFRASTRUCTURE_TYPE_PORT = 5;
   INFRASTRUCTURE_TYPE_DEPOT = 6;
   INFRASTRUCTURE_TYPE_LANDING_STRIP = 7;
+}
+
+enum MovableType {
+  MOVABLE_TYPE_UNSPECIFIED = 0;
+  MOVABLE_TYPE_LAND = 1;
+  MOVABLE_TYPE_WATER = 2;
+  MOVABLE_TYPE_AIR = 3;
+  MOVABLE_TYPE_AMPHIBIOUS = 4;
 }
