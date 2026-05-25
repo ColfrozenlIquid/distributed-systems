@@ -1,4 +1,17 @@
 name: vs-praktikum
+
+x-sensor-base: &sensor-base
+  build:
+    context: .
+    dockerfile: ./services/sensors/Dockerfile
+  depends_on:
+    world-simulation:
+      condition: service_healthy
+      restart: true
+    control-center:
+      condition: service_healthy
+      restart: true
+
 services:
   world-simulation:
     build:
@@ -35,9 +48,7 @@ services:
       start_period: 2s
 
   sensor-1:
-    build:
-      context: .
-      dockerfile: ./services/sensors/Dockerfile
+    <<: *sensor-base
     container_name: sensor-1
     environment:
       SENSOR_ID: "sensor-1"
@@ -47,34 +58,87 @@ services:
       SENSOR_POSITION_Y: "3"
       SENSOR_BASE_STATION_HOST: "http://control-center:8080"
       SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
-    depends_on:
-      world-simulation:
-        condition: service_healthy
-        restart: true
-      control-center:
-        condition: service_healthy
-        restart: true
 
   sensor-2:
-    build:
-      context: .
-      dockerfile: ./services/sensors/Dockerfile
+    <<: *sensor-base
     container_name: sensor-2
     environment:
       SENSOR_ID: "sensor-2"
-      SENSOR_TYPE: "swimmer_beacon"
-      SENSOR_INTERVAL_MS: "2000"
-      SENSOR_POSITION_X: "0"
-      SENSOR_POSITION_Y: "0"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "18"
+      SENSOR_POSITION_Y: "3"
       SENSOR_BASE_STATION_HOST: "http://control-center:8080"
       SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
-    depends_on:
-      world-simulation:
-        condition: service_healthy
-        restart: true
-      control-center:
-        condition: service_healthy
-        restart: true
+
+  sensor-3:
+    <<: *sensor-base
+    container_name: sensor-3
+    environment:
+      SENSOR_ID: "sensor-3"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "18"
+      SENSOR_POSITION_Y: "18"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-4:
+    <<: *sensor-base
+    container_name: sensor-4
+    environment:
+      SENSOR_ID: "sensor-4"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "3"
+      SENSOR_POSITION_Y: "18"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-5:
+    <<: *sensor-base
+    container_name: sensor-5
+    environment:
+      SENSOR_ID: "sensor-5"
+      SENSOR_TYPE: "vibration"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "9"
+      SENSOR_POSITION_Y: "7"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-6:
+    <<: *sensor-base
+    container_name: sensor-6
+    environment:
+      SENSOR_ID: "sensor-6"
+      SENSOR_TYPE: "vibration"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "9"
+      SENSOR_POSITION_Y: "16"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  # sensor-2:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/sensors/Dockerfile
+  #   container_name: sensor-2
+  #   environment:
+  #     SENSOR_ID: "sensor-2"
+  #     SENSOR_TYPE: "swimmer_beacon"
+  #     SENSOR_INTERVAL_MS: "2000"
+  #     SENSOR_POSITION_X: "0"
+  #     SENSOR_POSITION_Y: "0"
+  #     SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+  #     SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+  #   depends_on:
+  #     world-simulation:
+  #       condition: service_healthy
+  #       restart: true
+  #     control-center:
+  #       condition: service_healthy
+  #       restart: true
 
   actor-1:
     build:

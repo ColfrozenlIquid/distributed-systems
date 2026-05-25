@@ -5,7 +5,7 @@ import "github.com/spf13/viper"
 const MAX_VIBRATION_INDEX float32 = 10.0
 const MIN_VIBRATION_INDEX float32 = 0.0
 const STARTING_VIBRATION_INDEX float32 = 0.0
-const VIBRATION_INDEX_SMOOTHING float32 = 0.001
+const VIBRATION_INDEX_SMOOTHING float32 = 0.2
 const VIBRATION_INDEX_NEW_TARGET_CHANCE float32 = 0.2
 
 type VibrationSimulatableConfig struct {
