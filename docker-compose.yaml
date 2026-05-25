@@ -1,0 +1,162 @@
+name: vs-praktikum
+
+x-sensor-base: &sensor-base
+  build:
+    context: .
+    dockerfile: ./services/sensors/Dockerfile
+  depends_on:
+    world-simulation:
+      condition: service_healthy
+      restart: true
+    control-center:
+      condition: service_healthy
+      restart: true
+
+services:
+  world-simulation:
+    build:
+      context: .
+      dockerfile: ./services/simulation/Dockerfile
+    container_name: world-simulation
+    ports:
+      - "50051:50051"
+    healthcheck:
+      test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+      start_period: 2s
+
+  control-center:
+    build:
+      context: .
+      dockerfile: ./services/control-center/Dockerfile
+    container_name: control-center
+    ports:
+      - "8080:8080"
+    environment:
+      CONTROL_CENTER_WORLD_SIMULATION_HOST: "world-simulation:50051"
+    depends_on:
+      world-simulation:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+      start_period: 2s
+
+  sensor-1:
+    <<: *sensor-base
+    container_name: sensor-1
+    environment:
+      SENSOR_ID: "sensor-1"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "3"
+      SENSOR_POSITION_Y: "3"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-2:
+    <<: *sensor-base
+    container_name: sensor-2
+    environment:
+      SENSOR_ID: "sensor-2"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "18"
+      SENSOR_POSITION_Y: "3"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-3:
+    <<: *sensor-base
+    container_name: sensor-3
+    environment:
+      SENSOR_ID: "sensor-3"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "18"
+      SENSOR_POSITION_Y: "18"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-4:
+    <<: *sensor-base
+    container_name: sensor-4
+    environment:
+      SENSOR_ID: "sensor-4"
+      SENSOR_TYPE: "water_level"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "3"
+      SENSOR_POSITION_Y: "18"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-5:
+    <<: *sensor-base
+    container_name: sensor-5
+    environment:
+      SENSOR_ID: "sensor-5"
+      SENSOR_TYPE: "vibration"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "9"
+      SENSOR_POSITION_Y: "7"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  sensor-6:
+    <<: *sensor-base
+    container_name: sensor-6
+    environment:
+      SENSOR_ID: "sensor-6"
+      SENSOR_TYPE: "vibration"
+      SENSOR_INTERVAL_MS: "100"
+      SENSOR_POSITION_X: "9"
+      SENSOR_POSITION_Y: "16"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
+  # sensor-2:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/sensors/Dockerfile
+  #   container_name: sensor-2
+  #   environment:
+  #     SENSOR_ID: "sensor-2"
+  #     SENSOR_TYPE: "swimmer_beacon"
+  #     SENSOR_INTERVAL_MS: "2000"
+  #     SENSOR_POSITION_X: "0"
+  #     SENSOR_POSITION_Y: "0"
+  #     SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+  #     SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+  #   depends_on:
+  #     world-simulation:
+  #       condition: service_healthy
+  #       restart: true
+  #     control-center:
+  #       condition: service_healthy
+  #       restart: true
+
+  actor-1:
+    build:
+      context: .
+      dockerfile: ./services/actors/Dockerfile
+    container_name: actor-1
+    environment:
+      ACTOR_ID: "actor-1"
+      ACTOR_TYPE: "rescue_vehicle"
+      ACTOR_INTERVAL_MS: "1000"
+      ACTOR_POSITION_X: "10"
+      ACTOR_POSITION_Y: "10"
+      ACTOR_BASE_STATION_HOST: "http://control-center:8080"
+      ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+    depends_on:
+      world-simulation:
+        condition: service_healthy
+        restart: true
+      control-center:
+        condition: service_healthy
+        restart: true

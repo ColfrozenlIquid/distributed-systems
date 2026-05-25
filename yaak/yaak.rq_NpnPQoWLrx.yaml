@@ -1,0 +1,33 @@
+type: http_request
+model: http_request
+id: rq_NpnPQoWLrx
+createdAt: 2026-05-20T11:08:32.474627
+updatedAt: 2026-05-20T11:09:06.236162
+workspaceId: wk_XFprmkwA7A
+folderId: fl_5D9MP2NwY4
+authentication: {}
+authenticationType: null
+body:
+  text: |-
+    {
+      "actor": {
+        "id": "actor-1",
+        "position": {
+          "x": 6,
+          "y": 5
+        },
+        "actor_type": "rescue_vehicle"
+      }
+    }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: ibHwz7hdNv
+method: POST
+name: Register actor
+sortPriority: 1000.001
+url: ${[ baseUrl ]}/register/actor
+urlParameters: []
