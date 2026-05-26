@@ -37,8 +37,17 @@ func (s *SystemStatus) AddReading(reading shared.SensorReading) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.Readings = append(s.Readings, reading)
+	s.updateSensorInfo(reading)
 	if reading.IsCritical() {
 		s.addIncidentLocked(reading.ToIncident())
+	}
+}
+
+func (s *SystemStatus) updateSensorInfo(reading shared.SensorReading) {
+	if index := slices.IndexFunc(s.Sensors, func(sensor shared.SensorInfo) bool {
+		return sensor.Id == reading.Sensor.Id
+	}); index >= 0 {
+		slices.Replace(s.Sensors, index, index+1, reading.Sensor)
 	}
 }
 
