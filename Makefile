@@ -7,7 +7,7 @@ docker-compose-up-build:
 docker-compose-down:
 	@docker compose down --remove-orphans
 
-.PHONY: generate-proto
+.PHONY: generate-proto docker-compose-up-build
 
 generate-proto:
 	@for d in services/*; do \
@@ -17,22 +17,20 @@ generate-proto:
 		fi \
 	done
 
-aufgabe1-functional:
-	docker compose up -d --build
+aufgabe1-functional: docker-compose-up-build
 	docker run --rm \
 	  --network vs-praktikum_default \
-	  -v "$PWD/tests/aufgabe1:/tests" \
+	  -v "$$PWD/tests/aufgabe1:/tests" \
 	  -w /tests \
 	  -e CONTROL_CENTER_URL=http://control-center:8080 \
 	  golang:1.26.2-alpine \
 	  go test -v -run TestRegistrationCriticalReadingAndDashboard .
 
 
-aufgabe1-nonfunctional:
-	docker compose up -d --build
+aufgabe1-nonfunctional: docker-compose-up-build
 	docker run --rm \
 	  --network vs-praktikum_default \
-	  -v "$PWD/tests/aufgabe1:/tests" \
+	  -v "$$PWD/tests/aufgabe1:/tests" \
 	  -w /tests \
 	  -e CONTROL_CENTER_URL=http://control-center:8080 \
 	  golang:1.26.2-alpine \
