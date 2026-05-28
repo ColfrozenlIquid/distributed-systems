@@ -23,7 +23,7 @@ message Mission {
 }
 
 message MissionId {
-  bytes uuid = 1;
+  string uuid = 1;
 }
 
 message Position {

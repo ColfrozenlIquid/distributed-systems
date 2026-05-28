@@ -348,7 +348,7 @@ func (x *Mission) GetPriority() MissionPriority {
 
 type MissionId struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Uuid          []byte                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	Uuid          string                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -383,11 +383,11 @@ func (*MissionId) Descriptor() ([]byte, []int) {
 	return file_actor_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MissionId) GetUuid() []byte {
+func (x *MissionId) GetUuid() string {
 	if x != nil {
 		return x.Uuid
 	}
-	return nil
+	return ""
 }
 
 type Position struct {
@@ -461,7 +461,7 @@ const file_actor_proto_rawDesc = "" +
 	"\bposition\x18\x03 \x01(\v2\t.PositionR\bposition\x12,\n" +
 	"\bpriority\x18\x04 \x01(\x0e2\x10.MissionPriorityR\bpriority\"\x1f\n" +
 	"\tMissionId\x12\x12\n" +
-	"\x04uuid\x18\x01 \x01(\fR\x04uuid\"&\n" +
+	"\x04uuid\x18\x01 \x01(\tR\x04uuid\"&\n" +
 	"\bPosition\x12\f\n" +
 	"\x01X\x18\x01 \x01(\rR\x01X\x12\f\n" +
 	"\x01Y\x18\x02 \x01(\rR\x01Y*P\n" +
