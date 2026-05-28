@@ -1,0 +1,52 @@
+syntax = "proto3";
+option go_package = "./proto";
+
+service ActorService {
+  rpc AssignMission(AssignMissionRequest) returns (stream AssignMissionResponse);
+}
+
+message AssignMissionRequest {
+  Mission mission = 1;
+}
+
+message AssignMissionResponse {
+  MissionId missionId = 1;
+  Position currentPosition = 2;
+  ActorState state = 3;
+}
+
+message Mission {
+  MissionId id = 1;
+  MissionType type = 2;
+  Position position = 3;
+  MissionPriority priority = 4;
+}
+
+message MissionId {
+  bytes uuid = 1;
+}
+
+message Position {
+  uint32 X = 1;
+  uint32 Y = 2;
+}
+
+enum MissionType {
+  MISSION_TYPE_PUMP_WATER = 0;
+  MISSION_TYPE_STABILIZE_VIBRATION = 1;
+}
+
+enum MissionPriority {
+  MISSION_PRIORITY_LOW = 0;
+  MISSION_PRIORITY_MEDIUM = 1;
+  MISSION_PRIORITY_HIGH = 2;
+}
+
+enum ActorState {
+  ACTOR_STATE_IDLE = 0;
+  ACTOR_STATE_ASSIGNED = 1;
+  ACTOR_STATE_ON_THE_WAY = 2;
+  ACTOR_STATE_BUSY = 3;
+  ACTOR_STATE_DONE = 4;
+  ACTOR_STATE_ERROR = 5;
+}
