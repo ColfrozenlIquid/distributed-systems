@@ -1,5 +1,5 @@
 build:
-	go build -o sensor ./cmd/sensors/
+	go build -o actor ./cmd/actors/
 
 generate-proto:
 	mkdir -p gen

@@ -3,6 +3,8 @@ package actor
 import (
 	pb "actors/gen"
 	"actors/internal/config"
+	"actors/internal/types"
+	"context"
 	"fmt"
 	"time"
 )
@@ -10,13 +12,10 @@ import (
 type Actor interface {
 	Interval() time.Duration
 	Id() string
-	Position() Position
+	Position() types.Position
 	Type() string
-}
-
-type Position struct {
-	X int
-	Y int
+	RegisterMission(mission *pb.Mission) error
+	RunMission(ctx context.Context, req *pb.AssignMissionRequest, ch chan<- *pb.AssignMissionResponse)
 }
 
 type ActorStatus int
@@ -24,7 +23,9 @@ type ActorStatus int
 const (
 	ActorStatusIdle ActorStatus = iota
 	ActorStatusAssigned
+	ActorStatsusOnTheWay
 	ActorStatusBusy
+	ActorStatusDone
 	ActorStatusError
 )
 
