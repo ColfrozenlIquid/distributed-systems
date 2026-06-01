@@ -4,15 +4,19 @@ import (
 	pb "actors/gen"
 	proto "actors/gen"
 	"actors/internal/types"
+	"time"
 
 	"fmt"
 )
 
 type Mission struct {
-	Id       string
-	Type     MissionType
-	Position types.Position
-	Priority MissionPriority
+	Id           string
+	Type         MissionType
+	Position     types.Position
+	Priority     MissionPriority
+	State        ActorState
+	Duration     time.Duration
+	MissionTimer *time.Timer
 }
 
 type MissionType int
@@ -29,6 +33,36 @@ const (
 	MissionPriorityMedium
 	MissionPriorityHigh
 )
+
+type ActorState int
+
+const (
+	ActorStateIdle ActorState = iota
+	ActorStateAssigned
+	ActorStateOnTheWay
+	ActorStateBusy
+	ActorStateDone
+	ActorStateError
+)
+
+func ActorStateToProto(actorState ActorState) (pb.ActorState, error) {
+	switch actorState {
+	case ActorStateAssigned:
+		return pb.ActorState_ACTOR_STATE_ASSIGNED, nil
+	case ActorStateBusy:
+		return pb.ActorState_ACTOR_STATE_BUSY, nil
+	case ActorStateDone:
+		return pb.ActorState_ACTOR_STATE_DONE, nil
+	case ActorStateError:
+		return pb.ActorState_ACTOR_STATE_ERROR, nil
+	case ActorStateIdle:
+		return pb.ActorState_ACTOR_STATE_IDLE, nil
+	case ActorStateOnTheWay:
+		return pb.ActorState_ACTOR_STATE_ON_THE_WAY, nil
+	default:
+		return pb.ActorState_ACTOR_STATE_ASSIGNED, fmt.Errorf("unknown actor state")
+	}
+}
 
 func MissionTypeToDomain(missionType pb.MissionType) (MissionType, error) {
 	switch missionType {

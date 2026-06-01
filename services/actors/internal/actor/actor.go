@@ -14,20 +14,9 @@ type Actor interface {
 	Id() string
 	Position() types.Position
 	Type() string
-	RegisterMission(mission *pb.Mission) error
-	RunMission(ctx context.Context, req *pb.AssignMissionRequest, ch chan<- *pb.AssignMissionResponse)
+	RegisterMission(ctx context.Context, req *pb.AssignMissionRequest, ch chan<- *pb.AssignMissionResponse) error
+	RunMission(ctx context.Context, out chan<- *pb.AssignMissionResponse)
 }
-
-type ActorStatus int
-
-const (
-	ActorStatusIdle ActorStatus = iota
-	ActorStatusAssigned
-	ActorStatsusOnTheWay
-	ActorStatusBusy
-	ActorStatusDone
-	ActorStatusError
-)
 
 func NewActor(cfg config.ActorConfig, simulation pb.WorldServiceClient) (Actor, error) {
 	switch cfg.ActorType {

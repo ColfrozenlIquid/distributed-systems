@@ -20,7 +20,7 @@ type ActorHandler struct {
 func (a *ActorHandler) AssignMission(req *pb.AssignMissionRequest, stream grpc.ServerStreamingServer[pb.AssignMissionResponse]) error {
 	resultsCh := make(chan *pb.AssignMissionResponse)
 
-	go a.actor.RunMission(stream.Context(), req, resultsCh)
+	go a.actor.RegisterMission(stream.Context(), req, resultsCh)
 
 	for res := range resultsCh {
 		if err := stream.Send(res); err != nil {
