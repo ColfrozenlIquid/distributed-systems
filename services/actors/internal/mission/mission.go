@@ -4,19 +4,52 @@ import (
 	pb "actors/gen"
 	proto "actors/gen"
 	"actors/internal/types"
+	"context"
 	"time"
 
 	"fmt"
 )
 
-type Mission struct {
-	Id           string
-	Type         MissionType
-	Position     types.Position
-	Priority     MissionPriority
-	State        ActorState
-	Duration     time.Duration
-	MissionTimer *time.Timer
+type Mission interface {
+	RunMission(ctx context.Context) error
+}
+
+type MissionConfig struct {
+	Id       string
+	Type     MissionType
+	Position types.Position
+	Priority MissionPriority
+}
+
+type ActorContext struct {
+	Position    *types.Position
+	Destination *types.Position
+	Path        *[]types.Position
+	Interval    time.Duration
+	ID          string
+}
+
+func NewMission(
+	req *pb.AssignMissionRequest,
+	ch chan<- *pb.AssignMissionResponse,
+	simulation pb.WorldServiceClient,
+	actorCtx *ActorContext,
+) (Mission, error) {
+	missionType, err := MissionTypeToDomain(req.GetMission().GetType())
+	if err != nil {
+		return nil, fmt.Errorf("unknown mission type: %w")
+	}
+
+	switch missionType {
+	case MissionTypePumpWater:
+		return NewPumpWaterMission(req, ch, simulation, actorCtx), nil
+
+	case MissionTypeStabilizeVibration:
+		return NewStabilizeVibrationMission(req, ch, simulation), nil
+
+	default:
+		return nil, fmt.Errorf("unknown mission type: %s", missionType)
+	}
 }
 
 type MissionType int

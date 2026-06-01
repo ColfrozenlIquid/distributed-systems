@@ -24,7 +24,7 @@ type GRPCServer struct {
 }
 
 type grpcServer struct {
-	pb.UnimplementedWorldServiceServer
+	pb.WorldServiceServer
 	world  world.World
 	logger *zap.Logger
 }
@@ -74,4 +74,8 @@ func (g *grpcServer) WorldData(ctx context.Context, req *pb.WorldDataRequest) (*
 
 func (g *grpcServer) MoveTo(ctx context.Context, req *pb.MoveToRequest) (*pb.MoveToResponse, error) {
 	return g.world.MoveTo(ctx, req)
+}
+
+func (g *grpcServer) PathTo(ctx context.Context, req *pb.PathToRequest) (*pb.PathToResponse, error) {
+	return g.world.PathTo(ctx, req)
 }

@@ -15,7 +15,6 @@ type Actor interface {
 	Position() types.Position
 	Type() string
 	RegisterMission(ctx context.Context, req *pb.AssignMissionRequest, ch chan<- *pb.AssignMissionResponse) error
-	RunMission(ctx context.Context, out chan<- *pb.AssignMissionResponse)
 }
 
 func NewActor(cfg config.ActorConfig, simulation pb.WorldServiceClient) (Actor, error) {
