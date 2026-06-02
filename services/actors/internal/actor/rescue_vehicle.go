@@ -135,7 +135,7 @@ func (v *RescueVehicle) Update(ctx context.Context) {
 	case ActorStateMoving:
 		v.move()
 	default:
-		panic(fmt.Sprintf("unexpected actor.ActorState: %#v", v.Actor.state))
+		v.logger.Debug("unknown actor state ")
 	}
 }
 

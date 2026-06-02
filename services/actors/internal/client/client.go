@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 
 	pb "actors/gen"
 )
@@ -29,8 +31,10 @@ type Client struct {
 }
 
 type GRPCClient struct {
-	grpcConn *grpc.ClientConn
-	Grpc     pb.WorldServiceClient
+	grpcConn           *grpc.ClientConn
+	WorldServiceClient pb.WorldServiceClient
+	Server             *grpc.Server
+	Listener           net.Listener
 }
 
 type HTTPClient struct {
@@ -55,9 +59,21 @@ func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
 		return nil, fmt.Errorf("failed to connect to gRPC: %w", err)
 	}
 
+	srv := grpc.NewServer()
+
+	lis, err := net.Listen("tcp", "0.0.0.0:50051")
+	if err != nil {
+		logger.Fatal("failed to listen for gRPC", zap.Error(err))
+		return nil, err
+	}
+
+	reflection.Register(srv)
+
 	grpc := &GRPCClient{
-		grpcConn: conn,
-		Grpc:     pb.NewWorldServiceClient(conn),
+		grpcConn:           conn,
+		WorldServiceClient: pb.NewWorldServiceClient(conn),
+		Server:             srv,
+		Listener:           lis,
 	}
 
 	http := &HTTPClient{
@@ -71,6 +87,14 @@ func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
 		Http:   *http,
 		Grpc:   *grpc,
 	}, nil
+}
+
+func (g *GRPCClient) RegisterActorHandler(handler pb.ActorServiceServer) {
+	pb.RegisterActorServiceServer(g.Server, handler)
+}
+
+func (g *GRPCClient) Serve() error {
+	return g.Server.Serve(g.Listener)
 }
 
 func (c *HTTPClient) send(method string, path string, body any) (*Response, error) {

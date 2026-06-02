@@ -42,9 +42,11 @@ func (a *ActorHandler) AssignMission(req *pb.AssignMissionRequest, stream grpc.S
 	return nil
 }
 
-func NewActorHandler(logger *zap.Logger) *ActorHandler {
+func NewActorHandler(logger *zap.Logger, actor actor.Actor, simulation pb.WorldServiceClient) *ActorHandler {
 	return &ActorHandler{
-		logger: logger,
+		logger:     logger,
+		actor:      actor,
+		simulation: simulation,
 	}
 }
 

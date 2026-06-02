@@ -3,6 +3,7 @@ package main
 import (
 	"actors/internal/actor"
 	"actors/internal/client"
+	cl "actors/internal/client"
 	"actors/internal/config"
 	"context"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 
 type App struct {
 	logger *zap.Logger
-	client client.Client
+	client cl.Client
 	actor  actor.Actor
 }
 
@@ -27,9 +28,11 @@ func main() {
 	}
 	defer logger.Sync()
 
+	logger.Info("Initializationn started")
+
 	actorCfg, err := config.LoadConfig()
 	if err != nil {
-		logger.Fatal("failed to read sensor config", zap.Error(err))
+		logger.Fatal("failed to read actor config", zap.Error(err))
 	}
 
 	clientCfg := client.ClientConfig{
@@ -38,12 +41,25 @@ func main() {
 	}
 
 	client, err := client.NewClient(clientCfg, logger)
+	if err != nil {
+		logger.Fatal("creating client failed", zap.Error(err))
+	}
 	defer client.Grpc.Close()
 
-	actor, err := actor.NewActor(*actorCfg, client.Grpc.Grpc, logger)
+	actor, err := actor.NewActor(*actorCfg, client.Grpc.WorldServiceClient, logger)
 	if err != nil {
 		logger.Fatal("failed to create new actor", zap.Error(err))
 	}
+
+	handler := cl.NewActorHandler(logger, actor, client.Grpc.WorldServiceClient)
+
+	client.Grpc.RegisterActorHandler(handler)
+
+	go func() {
+		if err := client.Grpc.Serve(); err != nil {
+			logger.Error("gRPC server error", zap.Error(err))
+		}
+	}()
 
 	app := App{
 		logger: logger,
@@ -58,6 +74,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	logger.Info("Initializationn successful")
 
 	app.Run(ctx, actor, clientCfg.HttpAddress)
 }

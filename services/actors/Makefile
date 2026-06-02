@@ -1,6 +1,9 @@
 build:
 	go build -o actor ./cmd/actors/
 
+run:
+	go run ./cmd/actors
+
 generate-proto:
 	mkdir -p gen
 	protoc --proto_path=../../shared/proto \
@@ -13,6 +16,6 @@ generate-proto:
 
 assign-mission:
 	grpcurl -plaintext \
-		-d '{"mission":{"id":{"uuid":"mission-123"},"type":"MISSION_TYPE_PUMP_WATER","position":{"x":14,"y":12},"priority":"MISSION_PRIORITY_HIGH"}}' \
-		localhost:50051 \
+		-d '{"mission":{"id":{"uuid":"mission-123"},"type":"MISSION_TYPE_PUMP_WATER","position":{"X":14,"Y":12},"priority":"MISSION_PRIORITY_HIGH"}}' \
+		localhost:50052 \
 		ActorService/AssignMission

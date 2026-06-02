@@ -145,6 +145,8 @@ services:
       context: .
       dockerfile: ./services/actors/Dockerfile
     container_name: actor-1
+    ports:
+      - "50052:50051"
     environment:
       ACTOR_ID: "actor-1"
       ACTOR_TYPE: "rescue_vehicle"
