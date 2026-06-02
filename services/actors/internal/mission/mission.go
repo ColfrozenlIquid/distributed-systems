@@ -3,9 +3,9 @@ package mission
 import (
 	pb "actors/gen"
 	proto "actors/gen"
+	"actors/internal/actor"
 	"actors/internal/types"
 	"context"
-	"time"
 
 	"fmt"
 )
@@ -21,19 +21,11 @@ type MissionConfig struct {
 	Priority MissionPriority
 }
 
-type ActorContext struct {
-	Position    *types.Position
-	Destination *types.Position
-	Path        *[]types.Position
-	Interval    time.Duration
-	ID          string
-}
-
 func NewMission(
 	req *pb.AssignMissionRequest,
 	ch chan<- *pb.AssignMissionResponse,
 	simulation pb.WorldServiceClient,
-	actorCtx *ActorContext,
+	actor actor.Actor,
 ) (Mission, error) {
 	missionType, err := MissionTypeToDomain(req.GetMission().GetType())
 	if err != nil {
@@ -42,10 +34,10 @@ func NewMission(
 
 	switch missionType {
 	case MissionTypePumpWater:
-		return NewPumpWaterMission(req, ch, simulation, actorCtx), nil
+		return NewPumpWaterMission(req, ch, simulation, actor), nil
 
-	case MissionTypeStabilizeVibration:
-		return NewStabilizeVibrationMission(req, ch, simulation), nil
+	// case MissionTypeStabilizeVibration:
+	// 	return NewStabilizeVibrationMission(req, ch, simulation), nil
 
 	default:
 		return nil, fmt.Errorf("unknown mission type: %s", missionType)
@@ -66,36 +58,6 @@ const (
 	MissionPriorityMedium
 	MissionPriorityHigh
 )
-
-type ActorState int
-
-const (
-	ActorStateIdle ActorState = iota
-	ActorStateAssigned
-	ActorStateOnTheWay
-	ActorStateBusy
-	ActorStateDone
-	ActorStateError
-)
-
-func ActorStateToProto(actorState ActorState) (pb.ActorState, error) {
-	switch actorState {
-	case ActorStateAssigned:
-		return pb.ActorState_ACTOR_STATE_ASSIGNED, nil
-	case ActorStateBusy:
-		return pb.ActorState_ACTOR_STATE_BUSY, nil
-	case ActorStateDone:
-		return pb.ActorState_ACTOR_STATE_DONE, nil
-	case ActorStateError:
-		return pb.ActorState_ACTOR_STATE_ERROR, nil
-	case ActorStateIdle:
-		return pb.ActorState_ACTOR_STATE_IDLE, nil
-	case ActorStateOnTheWay:
-		return pb.ActorState_ACTOR_STATE_ON_THE_WAY, nil
-	default:
-		return pb.ActorState_ACTOR_STATE_ASSIGNED, fmt.Errorf("unknown actor state")
-	}
-}
 
 func MissionTypeToDomain(missionType pb.MissionType) (MissionType, error) {
 	switch missionType {
@@ -155,4 +117,34 @@ func MissionWithinBounds(position *pb.Position) error {
 		return fmt.Errorf("mission position outside of world bounds")
 	}
 	return nil
+}
+
+type MissionState int
+
+const (
+	MissionStateIdle MissionState = iota
+	MissionStateAssigned
+	MissionStateOnTheWay
+	MissionStateBusy
+	MissionStateDone
+	MissionStateError
+)
+
+func MissionStateToProto(actorState MissionState) (pb.ActorState, error) {
+	switch actorState {
+	case MissionStateAssigned:
+		return pb.ActorState_ACTOR_STATE_ASSIGNED, nil
+	case MissionStateBusy:
+		return pb.ActorState_ACTOR_STATE_BUSY, nil
+	case MissionStateDone:
+		return pb.ActorState_ACTOR_STATE_DONE, nil
+	case MissionStateError:
+		return pb.ActorState_ACTOR_STATE_ERROR, nil
+	case MissionStateIdle:
+		return pb.ActorState_ACTOR_STATE_IDLE, nil
+	case MissionStateOnTheWay:
+		return pb.ActorState_ACTOR_STATE_ON_THE_WAY, nil
+	default:
+		return pb.ActorState_ACTOR_STATE_ASSIGNED, fmt.Errorf("unknown actor state")
+	}
 }

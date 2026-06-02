@@ -1,7 +1,7 @@
 package mission
 
 import (
-	"actors/internal/actorstate"
+	"actors/internal/actor"
 	"actors/internal/types"
 	"context"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 
 type PumpWaterMission struct {
 	simulation pb.WorldServiceClient
-	actor      *actorstate.State
+	actor      actor.Actor
 	mission    pumpWaterMission
 	channel    chan<- *pb.AssignMissionResponse
 }
@@ -21,18 +21,18 @@ type PumpWaterMission struct {
 type pumpWaterMission struct {
 	Id           string
 	Type         MissionType
-	Position     types.Position
+	Destination  types.Position
 	Priority     MissionPriority
-	State        ActorState
 	Duration     time.Duration
 	MissionTimer *time.Timer
+	State        MissionState
 }
 
 func NewPumpWaterMission(
 	req *pb.AssignMissionRequest,
 	ch chan<- *pb.AssignMissionResponse,
 	simulation pb.WorldServiceClient,
-	actor *actorstate.State,
+	actor actor.Actor,
 ) *PumpWaterMission {
 	missionType, err := MissionTypeToDomain(req.GetMission().GetType())
 	if err != nil {
@@ -50,12 +50,11 @@ func NewPumpWaterMission(
 		mission: pumpWaterMission{
 			Id:   req.GetMission().Id.GetUuid(),
 			Type: missionType,
-			Position: types.Position{
+			Destination: types.Position{
 				X: int(req.GetMission().GetPosition().GetX()),
 				Y: int(req.GetMission().GetPosition().GetY()),
 			},
 			Priority: missionPriority,
-			State:    ActorStateAssigned,
 			Duration: time.Duration(rand.Intn(10)+1) * time.Second,
 		},
 		channel: ch,
@@ -64,7 +63,7 @@ func NewPumpWaterMission(
 
 func (p *PumpWaterMission) RunMission(ctx context.Context) error {
 	defer close(p.channel)
-	ticker := time.NewTicker(p.actorCtx.Interval)
+	ticker := time.NewTicker(p.actor.Interval())
 	defer ticker.Stop()
 
 	for {
@@ -80,89 +79,65 @@ func (p *PumpWaterMission) RunMission(ctx context.Context) error {
 	}
 }
 
-func (p *PumpWaterMission) calculatePathToDestination(ctx context.Context) error {
-	resp, err := p.simulation.PathTo(ctx, &pb.PathToRequest{
-		Source: &pb.WorldPosition{
-			X: int32(p.actorCtx.Position.X),
-			Y: int32(p.actorCtx.Position.Y),
-		},
-		Destination: &pb.WorldPosition{
-			X: int32(p.actorCtx.Destination.X),
-			Y: int32(p.actorCtx.Destination.Y),
-		},
-		MovableType: pb.MovableType_MOVABLE_TYPE_LAND,
-	})
-	if err != nil {
-		return err
-	}
-
-	path := make([]types.Position, 0, len(resp.GetPath()))
-	for _, p := range resp.GetPath() {
-		path = append(path, types.Position{
-			X: int(p.GetX()),
-			Y: int(p.GetY()),
-		})
-	}
-
-	p.actorCtx.Path = &path
-
-	return nil
-}
-
 func (p *PumpWaterMission) StreamMission(ctx context.Context) <-chan *pb.AssignMissionResponse {
 	ch := make(chan *pb.AssignMissionResponse, 8)
 	p.channel = ch
-	go p.RunMission(ctx, ch)
+	go p.RunMission(ctx)
 	return ch
 }
 
 func (p *PumpWaterMission) missionUpdate(out chan<- *pb.AssignMissionResponse) error {
-	switch p.State {
-	case ActorStateAssigned:
-		resp, err := p.buildResponse(p.State)
+	switch p.mission.State {
+	case MissionStateAssigned:
+		resp, err := p.buildResponse(p.mission.State)
 		if err != nil {
 			return err
 		}
 		out <- resp
-		p.State = ActorStateOnTheWay
 
-	case ActorStateBusy:
+		if !p.actor.AtPosition(p.mission.Destination) {
+			p.mission.State = MissionStateOnTheWay
+			p.actor.MoveToLocation(p.mission.Destination)
+		} else {
+			p.mission.State = MissionStateBusy
+		}
+
+	case MissionStateBusy:
 		p.runMissionActivity()
 		select {
-		case <-p.MissionTimer.C:
-			p.MissionTimer = nil
-			p.State = ActorStateDone
+		case <-p.mission.MissionTimer.C:
+			p.mission.MissionTimer = nil
+			p.mission.State = MissionStateDone
 		default:
 			// Do nothing
 		}
 
-	case ActorStateDone:
-		resp, err := p.buildResponse(p.State)
+	case MissionStateDone:
+		resp, err := p.buildResponse(p.mission.State)
 		if err != nil {
 			return err
 		}
 		out <- resp
 		return fmt.Errorf("mission done")
 
-	case ActorStateError:
-		resp, err := p.buildResponse(p.State)
+	case MissionStateError:
+		resp, err := p.buildResponse(p.mission.State)
 		if err != nil {
 			return err
 		}
 		out <- resp
 		return fmt.Errorf("mission error")
 
-	case ActorStateIdle:
-		resp, err := p.buildResponse(p.State)
+	case MissionStateIdle:
+		resp, err := p.buildResponse(p.mission.State)
 		if err != nil {
 			return err
 		}
 		out <- resp
 
-	case ActorStateOnTheWay:
-		p.moveToLocation()
+	case MissionStateOnTheWay:
 
-		resp, err := p.buildResponse(p.State)
+		resp, err := p.buildResponse(p.mission.State)
 		if err != nil {
 			return err
 		}
@@ -174,40 +149,25 @@ func (p *PumpWaterMission) missionUpdate(out chan<- *pb.AssignMissionResponse) e
 	return nil
 }
 
-func (p *PumpWaterMission) moveToLocation() {
-	if len(p.actorCtx.Path) == 0 {
-		return
-	}
-
-	if p.actor.position == p.actor.destination {
-		p.State = ActorStateBusy
-		return
-	}
-
-	p.actor.position = p.actor.Path[0]
-
-	p.actor.Path = p.actor.Path[1:]
-}
-
 func (p *PumpWaterMission) runMissionActivity() {
-	if p.MissionTimer == nil {
-		p.MissionTimer = time.NewTimer(p.Duration)
+	if p.mission.MissionTimer == nil {
+		p.mission.MissionTimer = time.NewTimer(p.mission.Duration)
 	}
 }
 
-func (p *PumpWaterMission) buildResponse(state ActorState) (*pb.AssignMissionResponse, error) {
-	actorState, err := ActorStateToProto(state)
+func (p *PumpWaterMission) buildResponse(state MissionState) (*pb.AssignMissionResponse, error) {
+	actorState, err := MissionStateToProto(state)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.AssignMissionResponse{
 		MissionId: &pb.MissionId{
-			Uuid: p.Id,
+			Uuid: p.mission.Id,
 		},
 		CurrentPosition: &pb.Position{
-			X: uint32(p.actor.position.X),
-			Y: uint32(p.actor.position.Y),
+			X: uint32(p.actor.Position().X),
+			Y: uint32(p.actor.Position().Y),
 		},
 		State: actorState,
 	}, nil

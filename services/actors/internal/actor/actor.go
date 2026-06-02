@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type Actor interface {
@@ -14,14 +16,28 @@ type Actor interface {
 	Id() string
 	Position() types.Position
 	Type() string
-	RegisterMission(ctx context.Context, req *pb.AssignMissionRequest, ch chan<- *pb.AssignMissionResponse) error
+	MovableType() pb.MovableType
+
+	MoveToLocation(destination types.Position)
+	AtPosition(pos types.Position) bool
+
+	Update(ctx context.Context)
 }
 
-func NewActor(cfg config.ActorConfig, simulation pb.WorldServiceClient) (Actor, error) {
+func NewActor(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) (Actor, error) {
 	switch cfg.ActorType {
 	case "rescue_vehicle":
-		return NewRescueVehicle(cfg, simulation), nil
+		return NewRescueVehicle(cfg, simulation, logger), nil
 	default:
 		return nil, fmt.Errorf("unknown sensor type: %s", cfg.ActorType)
 	}
 }
+
+type ActorState int
+
+const (
+	ActorStateIdle ActorState = iota
+	ActorStateMoving
+	ActorStateBlocked
+	ActorStateDone
+)

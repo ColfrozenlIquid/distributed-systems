@@ -40,7 +40,7 @@ func main() {
 	client, err := client.NewClient(clientCfg, logger)
 	defer client.Grpc.Close()
 
-	actor, err := actor.NewActor(*actorCfg, client.Grpc.Grpc)
+	actor, err := actor.NewActor(*actorCfg, client.Grpc.Grpc, logger)
 	if err != nil {
 		logger.Fatal("failed to create new actor", zap.Error(err))
 	}
@@ -95,7 +95,7 @@ func (s *App) Run(ctx context.Context, actor actor.Actor, endpoint string) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			s.logger.Info("actor should do something here")
+			s.actor.Update(ctx)
 		}
 	}
 }
