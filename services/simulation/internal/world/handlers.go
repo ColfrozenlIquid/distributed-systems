@@ -13,6 +13,84 @@ type World interface {
 	TileUpdate(ctx context.Context, req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error)
 	WorldData(ctx context.Context, req *pb.WorldDataRequest) (*pb.WorldDataResponse, error)
 	MoveTo(ctx context.Context, req *pb.MoveToRequest) (*pb.MoveToResponse, error)
+	PathTo(ctx context.Context, req *pb.PathToRequest) (*pb.PathToResponse, error)
+}
+
+func (w *world) PathTo(_ context.Context, req *pb.PathToRequest) (*pb.PathToResponse, error) {
+	var source Point = Point{
+		X: int(req.GetSource().GetX()),
+		Y: int(req.GetSource().GetY()),
+	}
+	var destination = Point{
+		X: int(req.GetDestination().GetX()),
+		Y: int(req.GetDestination().GetY()),
+	}
+
+	path, err := w.findPath(source, destination, req.GetMovableType())
+	if err != nil {
+		return nil, err
+	}
+
+	positions := make([]*pb.WorldPosition, len(path))
+	for i, p := range path {
+		positions[i] = &pb.WorldPosition{
+			X: int32(p.X),
+			Y: int32(p.Y),
+		}
+	}
+
+	return &pb.PathToResponse{
+		Path: positions,
+	}, nil
+}
+
+type Point struct {
+	X int
+	Y int
+}
+
+func (w *world) findPath(source Point, destination Point, movableType pb.MovableType) ([]Point, error) {
+	mtype, err := mapToMovableType(movableType)
+	if err != nil {
+		return nil, err
+	}
+
+	canWalk := func(p Point) bool {
+		tile, err := w.getTile(p.X, p.Y)
+		if err != nil {
+			return false
+		}
+		return tile.IsMovable(mtype)
+	}
+
+	queue := [][]Point{{source}}
+	visited := map[Point]bool{source: true}
+
+	for len(queue) > 0 {
+		path := queue[0]
+		queue = queue[1:]
+
+		current := path[len(path)-1]
+		if current == destination {
+			return path, nil
+		}
+
+		for _, n := range []Point{
+			{current.X, current.Y - 1},
+			{current.X, current.Y + 1},
+			{current.X - 1, current.Y},
+			{current.X + 1, current.Y},
+		} {
+			if !visited[n] && canWalk(n) {
+				visited[n] = true
+				newPath := append([]Point{}, path...)
+				newPath = append(newPath, n)
+				queue = append(queue, newPath)
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no path from (%d,%d) to (%d,%d)", source.X, source.Y, destination.X, destination.Y)
 }
 
 func (w *world) MoveTo(_ context.Context, req *pb.MoveToRequest) (*pb.MoveToResponse, error) {

@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "actor.proto";
+
 option go_package = "./proto";
 
 service WorldService {
@@ -10,6 +12,23 @@ service WorldService {
   rpc WorldData(WorldDataRequest) returns (WorldDataResponse);
 
   rpc MoveTo(MoveToRequest) returns (MoveToResponse);
+
+  rpc PathTo(PathToRequest) returns (PathToResponse);
+}
+
+message WorldPosition {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message PathToRequest {
+  WorldPosition source = 1;
+  WorldPosition destination = 2;
+  MovableType movable_type = 3;
+}
+
+message PathToResponse {
+  repeated WorldPosition path = 1; // returns the next tile steps to reach destination including destination
 }
 
 message MoveToRequest {
