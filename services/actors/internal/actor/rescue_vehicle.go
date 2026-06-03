@@ -70,11 +70,20 @@ func (v *RescueVehicle) MovableType() pb.MovableType {
 }
 
 func (v *RescueVehicle) MoveToLocation(destination types.Position) {
+	v.calculatePathToDestination(destination)
 	v.Actor.state = ActorStateMoving
 }
 
-func (v *RescueVehicle) calculatePathToDestination(ctx context.Context, destination types.Position) error {
-	resp, err := v.simulation.PathTo(ctx, &pb.PathToRequest{
+func (v *RescueVehicle) ExecuteMission() {
+	v.Actor.state = ActorStateWorking
+}
+
+func (v *RescueVehicle) CompleteTask() {
+	v.Actor.state = ActorStateDone
+}
+
+func (v *RescueVehicle) calculatePathToDestination(destination types.Position) error {
+	resp, err := v.simulation.PathTo(context.Background(), &pb.PathToRequest{
 		Source: &pb.WorldPosition{
 			X: int32(v.Actor.position.X),
 			Y: int32(v.Actor.position.Y),
@@ -104,14 +113,8 @@ func (v *RescueVehicle) calculatePathToDestination(ctx context.Context, destinat
 }
 
 func (v *RescueVehicle) move() {
-	if len(v.Actor.path) == 0 {
-		v.logger.Info("Path length is zero")
-		return
-	}
-
 	if v.Actor.position == v.Actor.destination {
 		v.logger.Info("Actor arrived at destination")
-		v.Actor.state = ActorStateIdle
 		return
 	}
 
@@ -130,9 +133,13 @@ func (v *RescueVehicle) Update(ctx context.Context) {
 		v.logger.Info("actor is blocked")
 	case ActorStateDone:
 		v.logger.Info("actor is done")
+		v.Actor.state = ActorStateIdle
 	case ActorStateIdle:
 		v.logger.Info("actor is idle")
+	case ActorStateWorking:
+		v.logger.Info("actor is executing the mission")
 	case ActorStateMoving:
+		v.logger.Info("actor is moving")
 		v.move()
 	default:
 		v.logger.Debug("unknown actor state ")

@@ -4,7 +4,6 @@ import (
 	pb "actors/gen"
 	"actors/internal/actor"
 	"actors/internal/mission"
-	"context"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -48,9 +47,4 @@ func NewActorHandler(logger *zap.Logger, actor actor.Actor, simulation pb.WorldS
 		actor:      actor,
 		simulation: simulation,
 	}
-}
-
-func (a *ActorHandler) runMission(ctx context.Context, req *pb.AssignMissionRequest, out chan<- *pb.AssignMissionResponse) {
-	defer close(out)
-
 }
