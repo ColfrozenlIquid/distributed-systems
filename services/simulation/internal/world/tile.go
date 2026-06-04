@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"simulation/internal/config"
+	"simulation/internal/simulatables"
 	sim "simulation/internal/simulatables"
 )
 
@@ -58,7 +59,11 @@ func (t *Tile) Set(sensor sim.SimulatableType, value float32) bool {
 	if !ok {
 		return false
 	}
-	sim.Set(value)
+	res := sim.Set(value)
+
+	if sensor == simulatables.PersonConfidence && res == 0 {
+		delete(t.Sensors, simulatables.PersonConfidence)
+	}
 
 	return true
 }

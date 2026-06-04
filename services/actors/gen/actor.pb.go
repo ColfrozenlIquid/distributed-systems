@@ -27,6 +27,7 @@ const (
 	MissionType_MISSION_TYPE_UNSPECIFIED         MissionType = 0
 	MissionType_MISSION_TYPE_PUMP_WATER          MissionType = 1
 	MissionType_MISSION_TYPE_STABILIZE_VIBRATION MissionType = 2
+	MissionType_MISSION_TYPE_RESCUE_PERSONS      MissionType = 3
 )
 
 // Enum value maps for MissionType.
@@ -35,11 +36,13 @@ var (
 		0: "MISSION_TYPE_UNSPECIFIED",
 		1: "MISSION_TYPE_PUMP_WATER",
 		2: "MISSION_TYPE_STABILIZE_VIBRATION",
+		3: "MISSION_TYPE_RESCUE_PERSONS",
 	}
 	MissionType_value = map[string]int32{
 		"MISSION_TYPE_UNSPECIFIED":         0,
 		"MISSION_TYPE_PUMP_WATER":          1,
 		"MISSION_TYPE_STABILIZE_VIBRATION": 2,
+		"MISSION_TYPE_RESCUE_PERSONS":      3,
 	}
 )
 
@@ -473,11 +476,12 @@ const file_actor_proto_rawDesc = "" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\"&\n" +
 	"\bPosition\x12\f\n" +
 	"\x01X\x18\x01 \x01(\rR\x01X\x12\f\n" +
-	"\x01Y\x18\x02 \x01(\rR\x01Y*n\n" +
+	"\x01Y\x18\x02 \x01(\rR\x01Y*\x8f\x01\n" +
 	"\vMissionType\x12\x1c\n" +
 	"\x18MISSION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17MISSION_TYPE_PUMP_WATER\x10\x01\x12$\n" +
-	" MISSION_TYPE_STABILIZE_VIBRATION\x10\x02*\x85\x01\n" +
+	" MISSION_TYPE_STABILIZE_VIBRATION\x10\x02\x12\x1f\n" +
+	"\x1bMISSION_TYPE_RESCUE_PERSONS\x10\x03*\x85\x01\n" +
 	"\x0fMissionPriority\x12 \n" +
 	"\x1cMISSION_PRIORITY_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14MISSION_PRIORITY_LOW\x10\x01\x12\x1b\n" +

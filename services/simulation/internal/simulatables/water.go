@@ -17,9 +17,10 @@ type WaterSim struct {
 	newTargetChance float32
 }
 
-func (s *WaterSim) Set(value float32) {
+func (s *WaterSim) Set(value float32) float32 {
 	s.target = s.randomTarget()
 	s.WaterLevelCm = value
+	return s.WaterLevelCm
 }
 
 func NewWaterLevelSim(cfg config.Config) *WaterSim {

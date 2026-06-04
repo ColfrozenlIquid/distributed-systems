@@ -36,6 +36,9 @@ func NewMission(
 	case MissionTypePumpWater:
 		return NewPumpWaterMission(req, ch, simulation, actor), nil
 
+	case MissionTypeRescuePersons:
+		return NewRescuePersonsMission(req, ch, simulation, actor), nil
+
 	// case MissionTypeStabilizeVibration:
 	// 	return NewStabilizeVibrationMission(req, ch, simulation), nil
 
@@ -49,6 +52,7 @@ type MissionType int
 const (
 	MissionTypePumpWater MissionType = iota
 	MissionTypeStabilizeVibration
+	MissionTypeRescuePersons
 )
 
 type MissionPriority int
@@ -65,6 +69,8 @@ func MissionTypeToDomain(missionType pb.MissionType) (MissionType, error) {
 		return MissionTypePumpWater, nil
 	case pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION:
 		return MissionTypeStabilizeVibration, nil
+	case pb.MissionType_MISSION_TYPE_RESCUE_PERSONS:
+		return MissionTypeRescuePersons, nil
 	default:
 		return MissionTypePumpWater, fmt.Errorf("unknown mission type")
 	}
@@ -76,6 +82,8 @@ func MissionTypeToProto(missionType MissionType) (pb.MissionType, error) {
 		return pb.MissionType_MISSION_TYPE_PUMP_WATER, nil
 	case MissionTypeStabilizeVibration:
 		return pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION, nil
+	case MissionTypeRescuePersons:
+		return pb.MissionType_MISSION_TYPE_RESCUE_PERSONS, nil
 	default:
 		return pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION, fmt.Errorf("unknown mission type")
 	}

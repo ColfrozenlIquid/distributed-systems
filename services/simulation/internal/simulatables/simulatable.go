@@ -39,7 +39,7 @@ type Simulatable interface {
 	Read() float32
 	Update()
 	Init()
-	Set(value float32)
+	Set(value float32) float32
 }
 
 func ToDomainSensorType(s pb.SensorType) (SimulatableType, error) {

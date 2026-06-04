@@ -25,8 +25,9 @@ func (p *PersonsSim) Read() float32 {
 	return float32(p.Count)
 }
 
-func (p *PersonsSim) Set(value float32) {
+func (p *PersonsSim) Set(value float32) float32 {
 	p.Count = int(value)
+	return float32(p.Count)
 }
 
 func (p *PersonsSim) Type() proto.SensorType {
