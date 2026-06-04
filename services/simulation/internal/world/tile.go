@@ -16,6 +16,12 @@ type Tile struct {
 	Terrain        sim.TerrainType
 	Infrastructure sim.InfrastructureType
 	Sensors        map[sim.SimulatableType]sim.Simulatable
+	InfrasState    *InfrastructureState
+}
+
+type InfrastructureState struct {
+	Capacity  int
+	Occupancy int
 }
 
 type TileVisual struct {
@@ -118,6 +124,7 @@ func GenerateTiles(cfg config.Config) ([][]Tile, error) {
 					Sensors: map[sim.SimulatableType]sim.Simulatable{
 						sim.WaterLevel: sim.NewWaterLevelSim(cfg),
 					},
+					InfrasState: nil,
 				})
 			case '#': //Land
 				row = append(row, Tile{
@@ -126,6 +133,7 @@ func GenerateTiles(cfg config.Config) ([][]Tile, error) {
 					Sensors: map[sim.SimulatableType]sim.Simulatable{
 						sim.Vibration: sim.NewVibrationSim(cfg),
 					},
+					InfrasState: nil,
 				})
 			case 'C': //Control Station
 				row = append(row, Tile{
@@ -134,40 +142,53 @@ func GenerateTiles(cfg config.Config) ([][]Tile, error) {
 					Sensors: map[sim.SimulatableType]sim.Simulatable{
 						sim.WaterLevel: sim.NewWaterLevelSim(cfg),
 					},
+					InfrasState: nil,
 				})
 			case 'B': //Bridge
 				row = append(row, Tile{
 					Terrain:        sim.Land,
 					Infrastructure: sim.Bridge,
 					Sensors:        nil,
+					InfrasState:    nil,
 				})
 			case 'P': //Port
 				row = append(row, Tile{
 					Terrain:        sim.Land,
 					Infrastructure: sim.Port,
 					Sensors:        nil,
+					InfrasState: &InfrastructureState{
+						Capacity:  20,
+						Occupancy: 0,
+					},
 				})
 			case 'S': //ChargingStation
 				row = append(row, Tile{
 					Terrain:        sim.Land,
 					Infrastructure: sim.ChargingStation,
 					Sensors:        nil,
+					InfrasState:    nil,
 				})
 			case 'L': //LandingStrip
 				row = append(row, Tile{
 					Terrain:        sim.Land,
 					Infrastructure: sim.LandingStrip,
 					Sensors:        nil,
+					InfrasState: &InfrastructureState{
+						Capacity:  20,
+						Occupancy: 0,
+					},
 				})
 			case 'D': //Depot
 				row = append(row, Tile{
 					Terrain:        sim.Land,
 					Infrastructure: sim.Depot,
 					Sensors:        nil,
+					InfrasState:    nil,
 				})
 			}
 		}
 		tiles = append(tiles, row)
 	}
+
 	return tiles, nil
 }

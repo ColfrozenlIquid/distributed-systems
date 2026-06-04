@@ -39,7 +39,6 @@ type Simulatable interface {
 	Read() float32
 	Update()
 	Init()
-	Color() uint8
 	Set(value float32)
 }
 
