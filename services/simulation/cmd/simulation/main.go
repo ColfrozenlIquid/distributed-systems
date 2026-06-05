@@ -16,12 +16,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	world := world.NewWorld(20, 20, *cfg)
-
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		logger.Fatal("failed to initialize zap logger")
 	}
+
+	world := world.NewWorld(20, 20, *cfg, logger)
 
 	grpcSrv, err := transport.NewGRPCServer(world, logger)
 

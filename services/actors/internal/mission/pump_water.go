@@ -56,6 +56,7 @@ func NewPumpWaterMission(
 			},
 			Priority: missionPriority,
 			Duration: time.Duration(rand.Intn(10)+1) * time.Second,
+			State:    MissionStateAssigned,
 		},
 		channel: ch,
 	}
@@ -103,13 +104,20 @@ func (p *PumpWaterMission) missionUpdate(out chan<- *pb.AssignMissionResponse) e
 		}
 
 	case MissionStateBusy:
+		p.actor.ExecuteMission()
 		p.runMissionActivity()
 		select {
 		case <-p.mission.MissionTimer.C:
+			p.actor.CompleteTask()
 			p.mission.MissionTimer = nil
 			p.mission.State = MissionStateDone
+
 		default:
-			// Do nothing
+			resp, err := p.buildResponse(p.mission.State)
+			if err != nil {
+				return err
+			}
+			out <- resp
 		}
 
 	case MissionStateDone:
@@ -142,6 +150,10 @@ func (p *PumpWaterMission) missionUpdate(out chan<- *pb.AssignMissionResponse) e
 			return err
 		}
 		out <- resp
+
+		if p.actor.AtPosition(p.mission.Destination) {
+			p.mission.State = MissionStateBusy
+		}
 
 	default:
 		return nil

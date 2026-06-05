@@ -14,8 +14,14 @@ generate-proto:
 		../../shared/proto/world.proto \
 		../../shared/proto/actor.proto
 
-assign-mission:
+assign-mission1:
 	grpcurl -plaintext \
 		-d '{"mission":{"id":{"uuid":"mission-123"},"type":"MISSION_TYPE_PUMP_WATER","position":{"X":14,"Y":12},"priority":"MISSION_PRIORITY_HIGH"}}' \
+		localhost:50052 \
+		ActorService/AssignMission
+
+assign-mission2:
+	grpcurl -plaintext \
+		-d '{"mission":{"id":{"uuid":"mission-123"},"type":"MISSION_TYPE_PUMP_WATER","position":{"X":10,"Y":2},"priority":"MISSION_PRIORITY_HIGH"}}' \
 		localhost:50052 \
 		ActorService/AssignMission

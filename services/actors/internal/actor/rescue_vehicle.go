@@ -14,6 +14,8 @@ import (
 
 var _ Actor = (*RescueVehicle)(nil)
 
+const MAX_VEHICLE_CAPACITY = 20
+
 type RescueVehicle struct {
 	cfg        config.ActorConfig
 	simulation pb.WorldServiceClient
@@ -25,10 +27,11 @@ type rescueVehicle struct {
 	id          string
 	position    types.Position
 	interval    time.Duration
-	reading     float32
 	destination types.Position
 	path        []types.Position
 	state       ActorState
+	capacity    int // How many persons this vehicle can transport
+	count       int // How many persons are currently in the vehicle
 }
 
 func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) *RescueVehicle {
@@ -42,7 +45,8 @@ func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, 
 				Y: int(cfg.YPosition),
 			},
 			interval: cfg.IntervalMs,
-			reading:  0,
+			capacity: MAX_VEHICLE_CAPACITY,
+			count:    0,
 			state:    ActorStateIdle,
 		},
 		logger: logger,
@@ -70,11 +74,64 @@ func (v *RescueVehicle) MovableType() pb.MovableType {
 }
 
 func (v *RescueVehicle) MoveToLocation(destination types.Position) {
+	v.calculatePathToDestination(destination)
 	v.Actor.state = ActorStateMoving
 }
 
-func (v *RescueVehicle) calculatePathToDestination(ctx context.Context, destination types.Position) error {
-	resp, err := v.simulation.PathTo(ctx, &pb.PathToRequest{
+func (v *RescueVehicle) ExecuteMission() {
+	v.Actor.state = ActorStateWorking
+}
+
+func (v *RescueVehicle) CompleteTask() {
+	v.performTask()
+	v.Actor.state = ActorStateDone
+}
+
+func (v *RescueVehicle) performTask() error {
+	ctx := context.Background()
+
+	reading, err := v.simulation.TileReading(ctx, &pb.TileReadingRequest{
+		XPos:       int32(v.Actor.position.X),
+		YPos:       int32(v.Actor.position.Y),
+		SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
+	})
+	if err != nil {
+		return fmt.Errorf("tile reading: %w", err)
+	}
+
+	persons := int(reading.GetSensorReading())
+	if v.Actor.count+persons <= v.Actor.capacity {
+		v.Actor.count += persons
+
+		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
+			XPos:       int32(v.Actor.position.X),
+			YPos:       int32(v.Actor.position.Y),
+			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
+			Value:      0,
+		})
+		if err != nil {
+			return fmt.Errorf("tile update: %w", err)
+		}
+	} else {
+		remaining := persons - (MAX_VEHICLE_CAPACITY - v.Actor.count)
+		v.Actor.count = MAX_VEHICLE_CAPACITY
+
+		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
+			XPos:       int32(v.Actor.position.X),
+			YPos:       int32(v.Actor.position.Y),
+			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
+			Value:      float32(remaining),
+		})
+		if err != nil {
+			return fmt.Errorf("tile update: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (v *RescueVehicle) calculatePathToDestination(destination types.Position) error {
+	resp, err := v.simulation.PathTo(context.Background(), &pb.PathToRequest{
 		Source: &pb.WorldPosition{
 			X: int32(v.Actor.position.X),
 			Y: int32(v.Actor.position.Y),
@@ -104,14 +161,8 @@ func (v *RescueVehicle) calculatePathToDestination(ctx context.Context, destinat
 }
 
 func (v *RescueVehicle) move() {
-	if len(v.Actor.path) == 0 {
-		v.logger.Info("Path length is zero")
-		return
-	}
-
 	if v.Actor.position == v.Actor.destination {
 		v.logger.Info("Actor arrived at destination")
-		v.Actor.state = ActorStateIdle
 		return
 	}
 
@@ -130,9 +181,13 @@ func (v *RescueVehicle) Update(ctx context.Context) {
 		v.logger.Info("actor is blocked")
 	case ActorStateDone:
 		v.logger.Info("actor is done")
+		v.Actor.state = ActorStateIdle
 	case ActorStateIdle:
 		v.logger.Info("actor is idle")
+	case ActorStateWorking:
+		v.logger.Info("actor is executing the mission")
 	case ActorStateMoving:
+		v.logger.Info("actor is moving")
 		v.move()
 	default:
 		v.logger.Debug("unknown actor state ")

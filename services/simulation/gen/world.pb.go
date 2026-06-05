@@ -1022,6 +1022,7 @@ func file_world_proto_init() {
 	if File_world_proto != nil {
 		return
 	}
+	file_actor_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -20,6 +20,8 @@ type Actor interface {
 
 	MoveToLocation(destination types.Position)
 	AtPosition(pos types.Position) bool
+	ExecuteMission()
+	CompleteTask()
 
 	Update(ctx context.Context)
 }
@@ -40,4 +42,5 @@ const (
 	ActorStateMoving
 	ActorStateBlocked
 	ActorStateDone
+	ActorStateWorking
 )

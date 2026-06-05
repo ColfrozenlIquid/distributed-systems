@@ -31,6 +31,8 @@ func NewSensor(cfg config.SensorConfig, simulation pb.WorldServiceClient) (Senso
 		return NewWaterLevelSensor(cfg, simulation), nil
 	case "swimmer_beacon":
 		return NewSwimmerBeaconSensor(cfg, simulation), nil
+	case "drone":
+		return NewDroneSensor(cfg, simulation), nil
 	default:
 		return nil, fmt.Errorf("unknown sensor type: %s", cfg.SensorType)
 	}
