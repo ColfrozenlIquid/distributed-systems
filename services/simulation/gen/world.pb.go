@@ -246,8 +246,8 @@ func (MovableType) EnumDescriptor() ([]byte, []int) {
 
 type WorldPosition struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	X             int32                  `protobuf:"varint,1,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32                  `protobuf:"varint,2,opt,name=y,proto3" json:"y,omitempty"`
+	X             uint32                 `protobuf:"varint,1,opt,name=x,proto3" json:"x,omitempty"`
+	Y             uint32                 `protobuf:"varint,2,opt,name=y,proto3" json:"y,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -282,14 +282,14 @@ func (*WorldPosition) Descriptor() ([]byte, []int) {
 	return file_world_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *WorldPosition) GetX() int32 {
+func (x *WorldPosition) GetX() uint32 {
 	if x != nil {
 		return x.X
 	}
 	return 0
 }
 
-func (x *WorldPosition) GetY() int32 {
+func (x *WorldPosition) GetY() uint32 {
 	if x != nil {
 		return x.Y
 	}
@@ -402,8 +402,8 @@ func (x *PathToResponse) GetPath() []*WorldPosition {
 
 type MoveToRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	XPos          int32                  `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
-	YPos          int32                  `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
+	XPos          uint32                 `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          uint32                 `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
 	MovableType   MovableType            `protobuf:"varint,3,opt,name=movable_type,json=movableType,proto3,enum=MovableType" json:"movable_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -439,14 +439,14 @@ func (*MoveToRequest) Descriptor() ([]byte, []int) {
 	return file_world_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MoveToRequest) GetXPos() int32 {
+func (x *MoveToRequest) GetXPos() uint32 {
 	if x != nil {
 		return x.XPos
 	}
 	return 0
 }
 
-func (x *MoveToRequest) GetYPos() int32 {
+func (x *MoveToRequest) GetYPos() uint32 {
 	if x != nil {
 		return x.YPos
 	}
@@ -506,8 +506,8 @@ func (x *MoveToResponse) GetAllowed() bool {
 
 type TileReadingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	XPos          int32                  `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
-	YPos          int32                  `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
+	XPos          uint32                 `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          uint32                 `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
 	SensorType    SensorType             `protobuf:"varint,3,opt,name=sensor_type,json=sensorType,proto3,enum=SensorType" json:"sensor_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -543,14 +543,14 @@ func (*TileReadingRequest) Descriptor() ([]byte, []int) {
 	return file_world_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *TileReadingRequest) GetXPos() int32 {
+func (x *TileReadingRequest) GetXPos() uint32 {
 	if x != nil {
 		return x.XPos
 	}
 	return 0
 }
 
-func (x *TileReadingRequest) GetYPos() int32 {
+func (x *TileReadingRequest) GetYPos() uint32 {
 	if x != nil {
 		return x.YPos
 	}
@@ -618,8 +618,8 @@ func (x *TileReadingResponse) GetSensorReading() float32 {
 
 type TileUpdateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	XPos          int32                  `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
-	YPos          int32                  `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
+	XPos          uint32                 `protobuf:"varint,1,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          uint32                 `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
 	SensorType    SensorType             `protobuf:"varint,3,opt,name=sensor_type,json=sensorType,proto3,enum=SensorType" json:"sensor_type,omitempty"`
 	Value         float32                `protobuf:"fixed32,4,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -656,14 +656,14 @@ func (*TileUpdateRequest) Descriptor() ([]byte, []int) {
 	return file_world_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *TileUpdateRequest) GetXPos() int32 {
+func (x *TileUpdateRequest) GetXPos() uint32 {
 	if x != nil {
 		return x.XPos
 	}
 	return 0
 }
 
-func (x *TileUpdateRequest) GetYPos() int32 {
+func (x *TileUpdateRequest) GetYPos() uint32 {
 	if x != nil {
 		return x.YPos
 	}
@@ -880,10 +880,10 @@ var File_world_proto protoreflect.FileDescriptor
 
 const file_world_proto_rawDesc = "" +
 	"\n" +
-	"\vworld.proto\x1a\vactor.proto\"+\n" +
+	"\vworld.proto\"+\n" +
 	"\rWorldPosition\x12\f\n" +
-	"\x01x\x18\x01 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x05R\x01y\"\x9a\x01\n" +
+	"\x01x\x18\x01 \x01(\rR\x01x\x12\f\n" +
+	"\x01y\x18\x02 \x01(\rR\x01y\"\x9a\x01\n" +
 	"\rPathToRequest\x12&\n" +
 	"\x06source\x18\x01 \x01(\v2\x0e.WorldPositionR\x06source\x120\n" +
 	"\vdestination\x18\x02 \x01(\v2\x0e.WorldPositionR\vdestination\x12/\n" +
@@ -891,14 +891,14 @@ const file_world_proto_rawDesc = "" +
 	"\x0ePathToResponse\x12\"\n" +
 	"\x04path\x18\x01 \x03(\v2\x0e.WorldPositionR\x04path\"j\n" +
 	"\rMoveToRequest\x12\x13\n" +
-	"\x05x_pos\x18\x01 \x01(\x05R\x04xPos\x12\x13\n" +
-	"\x05y_pos\x18\x02 \x01(\x05R\x04yPos\x12/\n" +
+	"\x05x_pos\x18\x01 \x01(\rR\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\x02 \x01(\rR\x04yPos\x12/\n" +
 	"\fmovable_type\x18\x03 \x01(\x0e2\f.MovableTypeR\vmovableType\"*\n" +
 	"\x0eMoveToResponse\x12\x18\n" +
 	"\aallowed\x18\x01 \x01(\bR\aallowed\"l\n" +
 	"\x12TileReadingRequest\x12\x13\n" +
-	"\x05x_pos\x18\x01 \x01(\x05R\x04xPos\x12\x13\n" +
-	"\x05y_pos\x18\x02 \x01(\x05R\x04yPos\x12,\n" +
+	"\x05x_pos\x18\x01 \x01(\rR\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\x02 \x01(\rR\x04yPos\x12,\n" +
 	"\vsensor_type\x18\x03 \x01(\x0e2\v.SensorTypeR\n" +
 	"sensorType\"j\n" +
 	"\x13TileReadingResponse\x12,\n" +
@@ -906,8 +906,8 @@ const file_world_proto_rawDesc = "" +
 	"sensorType\x12%\n" +
 	"\x0esensor_reading\x18\x02 \x01(\x02R\rsensorReading\"\x81\x01\n" +
 	"\x11TileUpdateRequest\x12\x13\n" +
-	"\x05x_pos\x18\x01 \x01(\x05R\x04xPos\x12\x13\n" +
-	"\x05y_pos\x18\x02 \x01(\x05R\x04yPos\x12,\n" +
+	"\x05x_pos\x18\x01 \x01(\rR\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\x02 \x01(\rR\x04yPos\x12,\n" +
 	"\vsensor_type\x18\x03 \x01(\x0e2\v.SensorTypeR\n" +
 	"sensorType\x12\x14\n" +
 	"\x05value\x18\x04 \x01(\x02R\x05value\".\n" +
@@ -1022,7 +1022,6 @@ func file_world_proto_init() {
 	if File_world_proto != nil {
 		return
 	}
-	file_actor_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

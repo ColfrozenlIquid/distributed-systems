@@ -23,12 +23,12 @@ func (v *SwimmerBeaconSensor) Update() error {
 		return nil
 	}
 
-	newX := v.sensor.position.X + (rand.IntN(3) - 1)
-	newY := v.sensor.position.Y + (rand.IntN(3) - 1)
+	newX := v.sensor.position.X + (rand.Uint32N(3) - 1)
+	newY := v.sensor.position.Y + (rand.Uint32N(3) - 1)
 
 	req := &pb.MoveToRequest{
-		XPos:        int32(newX),
-		YPos:        int32(newY),
+		XPos:        newX,
+		YPos:        newY,
 		MovableType: pb.MovableType_MOVABLE_TYPE_WATER,
 	}
 
@@ -48,13 +48,13 @@ func (v *SwimmerBeaconSensor) Update() error {
 	return nil
 }
 
-func (v *SwimmerBeaconSensor) Position() Position {
+func (v *SwimmerBeaconSensor) Position() shared.Position {
 	return v.sensor.position
 }
 
 type swimmerBeaconSensor struct {
 	id       string
-	position Position
+	position shared.Position
 	interval time.Duration
 	reading  float32
 }
@@ -65,9 +65,9 @@ func NewSwimmerBeaconSensor(cfg config.SensorConfig, simulation pb.WorldServiceC
 		simulation: simulation,
 		sensor: swimmerBeaconSensor{
 			id: cfg.Id,
-			position: Position{
-				X: int(cfg.XPosition),
-				Y: int(cfg.YPosition),
+			position: shared.Position{
+				X: cfg.XPosition,
+				Y: cfg.YPosition,
 			},
 			interval: cfg.IntervalMs,
 			reading:  0,
@@ -85,8 +85,8 @@ func (v *SwimmerBeaconSensor) Interval() time.Duration {
 
 func (v *SwimmerBeaconSensor) Read() (*shared.SensorReading, error) {
 	req := &pb.TileReadingRequest{
-		XPos:       int32(v.sensor.position.X),
-		YPos:       int32(v.sensor.position.Y),
+		XPos:       v.sensor.position.X,
+		YPos:       v.sensor.position.Y,
 		SensorType: pb.SensorType_SENSOR_TYPE_WATER_LEVEL,
 	}
 

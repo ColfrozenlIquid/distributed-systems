@@ -9,17 +9,12 @@ import (
 	"sensors/internal/config"
 )
 
-type Position struct {
-	X int
-	Y int
-}
-
 type Sensor interface {
 	ID() string
 	Type() string
 	Read() (*shared.SensorReading, error)
 	Interval() time.Duration
-	Position() Position
+	Position() shared.Position
 	Update() error
 }
 

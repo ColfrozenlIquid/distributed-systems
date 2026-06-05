@@ -6,6 +6,7 @@ import (
 	"actors/internal/actor"
 	"actors/internal/types"
 	"context"
+	"shared"
 
 	"fmt"
 )
@@ -17,7 +18,7 @@ type Mission interface {
 type MissionConfig struct {
 	Id       string
 	Type     MissionType
-	Position types.Position
+	Position shared.Position
 	Priority MissionPriority
 }
 

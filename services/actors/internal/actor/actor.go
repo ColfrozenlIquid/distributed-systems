@@ -3,9 +3,9 @@ package actor
 import (
 	pb "actors/gen"
 	"actors/internal/config"
-	"actors/internal/types"
 	"context"
 	"fmt"
+	"shared"
 	"time"
 
 	"go.uber.org/zap"
@@ -14,12 +14,12 @@ import (
 type Actor interface {
 	Interval() time.Duration
 	Id() string
-	Position() types.Position
+	Position() shared.Position
 	Type() string
 	MovableType() pb.MovableType
 
-	MoveToLocation(destination types.Position)
-	AtPosition(pos types.Position) bool
+	MoveToLocation(destination shared.Position)
+	AtPosition(pos shared.Position) bool
 	ExecuteMission()
 	CompleteTask()
 

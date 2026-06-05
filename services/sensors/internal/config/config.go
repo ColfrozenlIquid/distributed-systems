@@ -11,8 +11,8 @@ type SensorConfig struct {
 	Id                      string
 	SensorType              string
 	IntervalMs              time.Duration
-	XPosition               int32
-	YPosition               int32
+	XPosition               uint32
+	YPosition               uint32
 	BaseStationEndpoint     string
 	WorldSimulationEndpoint string
 }
@@ -35,8 +35,8 @@ func LoadConfig() (*SensorConfig, error) {
 		Id:                      v.GetString("SENSOR_ID"),
 		SensorType:              v.GetString("SENSOR_TYPE"),
 		IntervalMs:              time.Duration(v.GetInt("SENSOR_INTERVAL_MS")) * time.Millisecond,
-		XPosition:               int32(v.GetInt("SENSOR_POSITION_X")),
-		YPosition:               int32(v.GetInt("SENSOR_POSITION_Y")),
+		XPosition:               uint32(v.GetInt("SENSOR_POSITION_X")),
+		YPosition:               uint32(v.GetInt("SENSOR_POSITION_Y")),
 		BaseStationEndpoint:     v.GetString("SENSOR_BASE_STATION_HOST"),
 		WorldSimulationEndpoint: v.GetString("SENSOR_WORLD_SIMULATION_HOST"),
 	}, nil

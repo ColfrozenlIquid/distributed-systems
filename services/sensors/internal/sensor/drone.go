@@ -23,12 +23,12 @@ func (v *DroneSensor) Update() error {
 		return nil
 	}
 
-	newX := v.sensor.position.X + (rand.IntN(3) - 1)
-	newY := v.sensor.position.Y + (rand.IntN(3) - 1)
+	newX := v.sensor.position.X + (rand.Uint32N(3) - 1)
+	newY := v.sensor.position.Y + (rand.Uint32N(3) - 1)
 
 	req := &pb.MoveToRequest{
-		XPos:        int32(newX),
-		YPos:        int32(newY),
+		XPos:        newX,
+		YPos:        newY,
 		MovableType: pb.MovableType_MOVABLE_TYPE_AIR,
 	}
 
@@ -49,13 +49,13 @@ func (v *DroneSensor) Update() error {
 	return nil
 }
 
-func (v *DroneSensor) Position() Position {
+func (v *DroneSensor) Position() shared.Position {
 	return v.sensor.position
 }
 
 type droneSensor struct {
 	id       string
-	position Position
+	position shared.Position
 	interval time.Duration
 	reading  float32
 }
@@ -66,9 +66,9 @@ func NewDroneSensor(cfg config.SensorConfig, simulation pb.WorldServiceClient) *
 		simulation: simulation,
 		sensor: droneSensor{
 			id: cfg.Id,
-			position: Position{
-				X: int(cfg.XPosition),
-				Y: int(cfg.YPosition),
+			position: shared.Position{
+				X: cfg.XPosition,
+				Y: cfg.YPosition,
 			},
 			interval: cfg.IntervalMs,
 			reading:  0,
@@ -86,8 +86,8 @@ func (v *DroneSensor) Interval() time.Duration {
 
 func (v *DroneSensor) Read() (*shared.SensorReading, error) {
 	req := &pb.TileReadingRequest{
-		XPos:       int32(v.sensor.position.X),
-		YPos:       int32(v.sensor.position.Y),
+		XPos:       v.sensor.position.X,
+		YPos:       v.sensor.position.Y,
 		SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 	}
 

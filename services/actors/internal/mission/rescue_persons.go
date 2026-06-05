@@ -2,10 +2,10 @@ package mission
 
 import (
 	"actors/internal/actor"
-	"actors/internal/types"
 	"context"
 	"fmt"
 	"math/rand"
+	"shared"
 	"time"
 
 	pb "actors/gen"
@@ -21,7 +21,7 @@ type RescuePersonsMission struct {
 type rescuePersonsMission struct {
 	Id           string
 	Type         MissionType
-	Destination  types.Position
+	Destination  shared.Position
 	Priority     MissionPriority
 	Duration     time.Duration
 	MissionTimer *time.Timer
@@ -50,9 +50,9 @@ func NewRescuePersonsMission(
 		mission: rescuePersonsMission{
 			Id:   req.GetMission().Id.GetUuid(),
 			Type: missionType,
-			Destination: types.Position{
-				X: int(req.GetMission().GetPosition().GetX()),
-				Y: int(req.GetMission().GetPosition().GetY()),
+			Destination: shared.Position{
+				X: req.GetMission().GetPosition().GetX(),
+				Y: req.GetMission().GetPosition().GetY(),
 			},
 			Priority: missionPriority,
 			Duration: time.Duration(rand.Intn(10)+1) * time.Second,

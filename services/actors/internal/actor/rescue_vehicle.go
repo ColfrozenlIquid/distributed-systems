@@ -2,9 +2,9 @@ package actor
 
 import (
 	"actors/internal/config"
-	"actors/internal/types"
 	"context"
 	"fmt"
+	"shared"
 	"time"
 
 	pb "actors/gen"
@@ -25,10 +25,10 @@ type RescueVehicle struct {
 
 type rescueVehicle struct {
 	id          string
-	position    types.Position
+	position    shared.Position
 	interval    time.Duration
-	destination types.Position
-	path        []types.Position
+	destination shared.Position
+	path        []shared.Position
 	state       ActorState
 	capacity    int // How many persons this vehicle can transport
 	count       int // How many persons are currently in the vehicle
@@ -40,9 +40,9 @@ func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, 
 		simulation: simulation,
 		Actor: rescueVehicle{
 			id: cfg.Id,
-			position: types.Position{
-				X: int(cfg.XPosition),
-				Y: int(cfg.YPosition),
+			position: shared.Position{
+				X: uint32(cfg.XPosition),
+				Y: uint32(cfg.YPosition),
 			},
 			interval: cfg.IntervalMs,
 			capacity: MAX_VEHICLE_CAPACITY,
@@ -65,7 +65,7 @@ func (v *RescueVehicle) Interval() time.Duration {
 	return v.Actor.interval
 }
 
-func (v *RescueVehicle) Position() types.Position {
+func (v *RescueVehicle) Position() shared.Position {
 	return v.Actor.position
 }
 
@@ -73,7 +73,7 @@ func (v *RescueVehicle) MovableType() pb.MovableType {
 	return pb.MovableType_MOVABLE_TYPE_LAND
 }
 
-func (v *RescueVehicle) MoveToLocation(destination types.Position) {
+func (v *RescueVehicle) MoveToLocation(destination shared.Position) {
 	v.calculatePathToDestination(destination)
 	v.Actor.state = ActorStateMoving
 }
@@ -91,8 +91,8 @@ func (v *RescueVehicle) performTask() error {
 	ctx := context.Background()
 
 	reading, err := v.simulation.TileReading(ctx, &pb.TileReadingRequest{
-		XPos:       int32(v.Actor.position.X),
-		YPos:       int32(v.Actor.position.Y),
+		XPos:       v.Actor.position.X,
+		YPos:       v.Actor.position.Y,
 		SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 	})
 	if err != nil {
@@ -104,8 +104,8 @@ func (v *RescueVehicle) performTask() error {
 		v.Actor.count += persons
 
 		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
-			XPos:       int32(v.Actor.position.X),
-			YPos:       int32(v.Actor.position.Y),
+			XPos:       v.Actor.position.X,
+			YPos:       v.Actor.position.Y,
 			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 			Value:      0,
 		})
@@ -117,8 +117,8 @@ func (v *RescueVehicle) performTask() error {
 		v.Actor.count = MAX_VEHICLE_CAPACITY
 
 		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
-			XPos:       int32(v.Actor.position.X),
-			YPos:       int32(v.Actor.position.Y),
+			XPos:       v.Actor.position.X,
+			YPos:       v.Actor.position.Y,
 			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 			Value:      float32(remaining),
 		})
@@ -130,15 +130,15 @@ func (v *RescueVehicle) performTask() error {
 	return nil
 }
 
-func (v *RescueVehicle) calculatePathToDestination(destination types.Position) error {
+func (v *RescueVehicle) calculatePathToDestination(destination shared.Position) error {
 	resp, err := v.simulation.PathTo(context.Background(), &pb.PathToRequest{
 		Source: &pb.WorldPosition{
-			X: int32(v.Actor.position.X),
-			Y: int32(v.Actor.position.Y),
+			X: v.Actor.position.X,
+			Y: v.Actor.position.Y,
 		},
 		Destination: &pb.WorldPosition{
-			X: int32(destination.X),
-			Y: int32(destination.Y),
+			X: destination.X,
+			Y: destination.Y,
 		},
 		MovableType: v.MovableType(),
 	})
@@ -146,11 +146,11 @@ func (v *RescueVehicle) calculatePathToDestination(destination types.Position) e
 		return fmt.Errorf("calculate path to destination: %w", err)
 	}
 
-	path := make([]types.Position, 0, len(resp.GetPath()))
+	path := make([]shared.Position, 0, len(resp.GetPath()))
 	for _, p := range resp.GetPath() {
-		path = append(path, types.Position{
-			X: int(p.GetX()),
-			Y: int(p.GetY()),
+		path = append(path, shared.Position{
+			X: p.GetX(),
+			Y: p.GetY(),
 		})
 	}
 
@@ -171,7 +171,7 @@ func (v *RescueVehicle) move() {
 	v.Actor.path = v.Actor.path[1:]
 }
 
-func (v *RescueVehicle) AtPosition(pos types.Position) bool {
+func (v *RescueVehicle) AtPosition(pos shared.Position) bool {
 	return v.Position() == pos
 }
 

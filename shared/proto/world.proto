@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-import "actor.proto";
-
 option go_package = "./proto";
 
 service WorldService {
@@ -17,8 +15,8 @@ service WorldService {
 }
 
 message WorldPosition {
-  int32 x = 1;
-  int32 y = 2;
+  uint32 x = 1;
+  uint32 y = 2;
 }
 
 message PathToRequest {
@@ -32,8 +30,8 @@ message PathToResponse {
 }
 
 message MoveToRequest {
-  int32 x_pos = 1;
-  int32 y_pos = 2;
+  uint32 x_pos = 1;
+  uint32 y_pos = 2;
   MovableType movable_type = 3;
 }
 
@@ -42,8 +40,8 @@ message MoveToResponse {
 }
 
 message TileReadingRequest {
-  int32 x_pos = 1;
-  int32 y_pos = 2;
+  uint32 x_pos = 1;
+  uint32 y_pos = 2;
   SensorType sensor_type = 3;
 }
 
@@ -61,8 +59,8 @@ enum SensorType {
 }
 
 message TileUpdateRequest {
-  int32 x_pos = 1;
-  int32 y_pos = 2;
+  uint32 x_pos = 1;
+  uint32 y_pos = 2;
   SensorType sensor_type = 3;
   float value = 4;
 }
