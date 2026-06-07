@@ -153,7 +153,10 @@ templ ActorsFeed(actors []ActorListItem) {
 					<li class="feed-item">
 						<div>
 							<div class="feed-primary">{ actor.ID }</div>
-							<div class="feed-secondary">{ actor.Type } at { actor.Position }</div>
+							<div class="feed-secondary" data-actor-row={ actor.ID }>
+								{ actor.Type } at <span data-actor-position={ actor.ID }>{ actor.Position }</span>
+								<span class="actor-state" data-actor-state={ actor.ID }>{ actor.State }</span>
+							</div>
 						</div>
 					</li>
 				}
@@ -175,7 +178,18 @@ templ IncidentsFeed(incidents []IncidentListItem) {
 							<div class="feed-primary critical-text">{ incident.Type }</div>
 							<div class="feed-secondary">{ incident.SensorID } at { incident.Position }</div>
 						</div>
-						<time class="feed-time">{ incident.Timestamp }</time>
+						<div class="feed-actions">
+							<time class="feed-time">{ incident.Timestamp }</time>
+							<button
+								type="button"
+								class="mission-button"
+								data-mission-trigger
+								data-incident-id={ incident.ID }
+								data-mission-url={ "/incidents/" + incident.ID + "/mission" }
+							>
+								Assign mission
+							</button>
+						</div>
 					</li>
 				}
 			</ul>
