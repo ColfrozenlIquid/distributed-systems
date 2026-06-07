@@ -99,6 +99,8 @@ func mapIncidentToMission(incident shared.Incident) (pb.MissionType, shared.Acto
 		return pb.MissionType_MISSION_TYPE_PUMP_WATER, shared.RescueVehicleActor, true
 	case shared.VibrationTooHigh:
 		return pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION, shared.RescueVehicleActor, true
+	case shared.PersonDetected:
+		return pb.MissionType_MISSION_TYPE_RESCUE_PERSONS, shared.RescueVehicleActor, true
 	default:
 		return pb.MissionType_MISSION_TYPE_UNSPECIFIED, "", false
 	}
