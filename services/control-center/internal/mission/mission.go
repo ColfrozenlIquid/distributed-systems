@@ -96,9 +96,9 @@ func IncidentID(incident shared.SensorIncident) string {
 func mapIncidentToMission(incident shared.Incident) (pb.MissionType, shared.ActorType, bool) {
 	switch incident {
 	case shared.WaterLevelAlert:
-		return pb.MissionType_MISSION_TYPE_PUMP_WATER, shared.RescueVehicleActor, true
+		return pb.MissionType_MISSION_TYPE_PUMP_WATER, "", false
 	case shared.VibrationTooHigh:
-		return pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION, shared.RescueVehicleActor, true
+		return pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION, shared.VibrationVehicleActor, true
 	case shared.PersonDetected:
 		return pb.MissionType_MISSION_TYPE_RESCUE_PERSONS, shared.RescueVehicleActor, true
 	default:
