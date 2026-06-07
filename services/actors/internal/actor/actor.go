@@ -32,6 +32,8 @@ func NewActor(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *
 		return NewRescueVehicle(cfg, simulation, logger), nil
 	case "vibration_vehicle":
 		return NewVibrationVehicle(cfg, simulation, logger), nil
+	case "water_vehicle":
+		return NewWaterVehicle(cfg, simulation, logger), nil
 	default:
 		return nil, fmt.Errorf("unknown sensor type: %s", cfg.ActorType)
 	}
