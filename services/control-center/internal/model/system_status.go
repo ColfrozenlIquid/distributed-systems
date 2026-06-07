@@ -83,6 +83,10 @@ func (s *SystemStatus) Snapshot() SystemStatusSnapshot {
 func (s *SystemStatus) IncidentByID(id string) (shared.SensorIncident, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	return s.incidentByIdLocked(id)
+}
+
+func (s *SystemStatus) incidentByIdLocked(id string) (shared.SensorIncident, bool) {
 	for _, incident := range s.Incidents {
 		if mission.IncidentID(incident) == id {
 			return incident, true
@@ -127,8 +131,9 @@ func (s *SystemStatus) UpdateMission(update mission.Update) {
 		index := strings.LastIndexAny(update.MissionID, "-")
 		if index < 0 {
 			fmt.Printf("invalid mission ID %s (no '-' found at index %d )", update.MissionID, index)
+			return
 		}
-		incident, _ := s.IncidentByID(update.MissionID[:index])
+		incident, _ := s.incidentByIdLocked(update.MissionID[:index])
 		s.Incidents = slices.DeleteFunc(s.Incidents, func(i shared.SensorIncident) bool {
 			return i.Sensor == incident.Sensor
 		})
