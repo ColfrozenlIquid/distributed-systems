@@ -364,6 +364,8 @@ func actorTypeLabel(actorType shared.ActorType) string {
 	switch actorType {
 	case shared.RescueVehicleActor:
 		return "rescue vehicle"
+	case shared.VibrationVehicleActor:
+		return "vibration vehicle"
 	default:
 		return "unknown"
 	}

@@ -88,7 +88,8 @@ func (r SensorType) IncidentForSensorType() Incident {
 type ActorType string
 
 const (
-	RescueVehicleActor ActorType = "rescue_vehicle"
+	RescueVehicleActor    ActorType = "rescue_vehicle"
+	VibrationVehicleActor ActorType = "vibration_vehicle"
 )
 
 type ActorInfo struct {
