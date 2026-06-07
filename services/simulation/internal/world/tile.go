@@ -54,12 +54,12 @@ func (t *Tile) Read(sensor sim.SimulatableType) (float32, bool) {
 	return sim.Read(), true
 }
 
-func (t *Tile) Set(sensor sim.SimulatableType, value float32) bool {
+func (t *Tile) Set(sensor sim.SimulatableType, value float32, setDefault bool) bool {
 	sim, ok := t.Sensors[sensor]
 	if !ok {
 		return false
 	}
-	res := sim.Set(value)
+	res := sim.Set(value, setDefault)
 
 	if sensor == simulatables.PersonConfidence && res == 0 {
 		delete(t.Sensors, simulatables.PersonConfidence)

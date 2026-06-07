@@ -144,7 +144,6 @@ func (r *RescuePersonsMission) missionUpdate(out chan<- *pb.AssignMissionRespons
 		out <- resp
 
 	case MissionStateOnTheWay:
-
 		resp, err := r.buildResponse(r.mission.State)
 		if err != nil {
 			return err

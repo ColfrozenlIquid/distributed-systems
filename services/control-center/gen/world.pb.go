@@ -622,6 +622,7 @@ type TileUpdateRequest struct {
 	YPos          uint32                 `protobuf:"varint,2,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
 	SensorType    SensorType             `protobuf:"varint,3,opt,name=sensor_type,json=sensorType,proto3,enum=SensorType" json:"sensor_type,omitempty"`
 	Value         float32                `protobuf:"fixed32,4,opt,name=value,proto3" json:"value,omitempty"`
+	Default       bool                   `protobuf:"varint,5,opt,name=default,proto3" json:"default,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -682,6 +683,13 @@ func (x *TileUpdateRequest) GetValue() float32 {
 		return x.Value
 	}
 	return 0
+}
+
+func (x *TileUpdateRequest) GetDefault() bool {
+	if x != nil {
+		return x.Default
+	}
+	return false
 }
 
 type TileUpdateResponse struct {
@@ -904,13 +912,14 @@ const file_world_proto_rawDesc = "" +
 	"\x13TileReadingResponse\x12,\n" +
 	"\vsensor_type\x18\x01 \x01(\x0e2\v.SensorTypeR\n" +
 	"sensorType\x12%\n" +
-	"\x0esensor_reading\x18\x02 \x01(\x02R\rsensorReading\"\x81\x01\n" +
+	"\x0esensor_reading\x18\x02 \x01(\x02R\rsensorReading\"\x9b\x01\n" +
 	"\x11TileUpdateRequest\x12\x13\n" +
 	"\x05x_pos\x18\x01 \x01(\rR\x04xPos\x12\x13\n" +
 	"\x05y_pos\x18\x02 \x01(\rR\x04yPos\x12,\n" +
 	"\vsensor_type\x18\x03 \x01(\x0e2\v.SensorTypeR\n" +
 	"sensorType\x12\x14\n" +
-	"\x05value\x18\x04 \x01(\x02R\x05value\".\n" +
+	"\x05value\x18\x04 \x01(\x02R\x05value\x12\x18\n" +
+	"\adefault\x18\x05 \x01(\bR\adefault\".\n" +
 	"\x12TileUpdateResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x12\n" +
 	"\x10WorldDataRequest\"p\n" +

@@ -17,8 +17,12 @@ type VibrationSim struct {
 	newTargetChance   float32
 }
 
-func (s *VibrationSim) Set(value float32) float32 {
+func (s *VibrationSim) Set(value float32, setDefault bool) float32 {
 	s.target = s.randomTarget()
+	if setDefault {
+		s.VibrationIndex = s.MinVibrationIndex
+		return s.VibrationIndex
+	}
 	s.VibrationIndex = value
 	return s.VibrationIndex
 }

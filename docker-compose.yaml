@@ -119,17 +119,17 @@ services:
       SENSOR_BASE_STATION_HOST: "http://control-center:8080"
       SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
 
-  sensor-7:
-    <<: *sensor-base
-    container_name: sensor-7
-    environment:
-      SENSOR_ID: "sensor-7"
-      SENSOR_TYPE: "drone"
-      SENSOR_INTERVAL_MS: "1000"
-      SENSOR_POSITION_X: "10"
-      SENSOR_POSITION_Y: "10"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+  # sensor-7:
+  #   <<: *sensor-base
+  #   container_name: sensor-7
+  #   environment:
+  #     SENSOR_ID: "sensor-7"
+  #     SENSOR_TYPE: "drone"
+  #     SENSOR_INTERVAL_MS: "1000"
+  #     SENSOR_POSITION_X: "10"
+  #     SENSOR_POSITION_Y: "10"
+  #     SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+  #     SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
 
   # sensor-2:
   #   build:

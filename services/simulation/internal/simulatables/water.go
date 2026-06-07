@@ -17,8 +17,12 @@ type WaterSim struct {
 	newTargetChance float32
 }
 
-func (s *WaterSim) Set(value float32) float32 {
+func (s *WaterSim) Set(value float32, setDefault bool) float32 {
 	s.target = s.randomTarget()
+	if setDefault {
+		s.WaterLevelCm = s.MinWaterLevel
+		return s.WaterLevelCm
+	}
 	s.WaterLevelCm = value
 	return s.WaterLevelCm
 }
