@@ -2,9 +2,9 @@ package actor
 
 import (
 	"actors/internal/config"
-	"actors/internal/types"
 	"context"
 	"fmt"
+	"shared"
 	"time"
 
 	pb "actors/gen"
@@ -23,10 +23,10 @@ type VibrationVehicle struct {
 
 type vibrationVehicle struct {
 	id          string
-	position    types.Position
+	position    shared.Position
 	interval    time.Duration
-	destination types.Position
-	path        []types.Position
+	destination shared.Position
+	path        []shared.Position
 	state       ActorState
 }
 
@@ -36,9 +36,9 @@ func NewVibrationVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClien
 		simulation: simulation,
 		Actor: vibrationVehicle{
 			id: cfg.Id,
-			position: types.Position{
-				X: int(cfg.XPosition),
-				Y: int(cfg.YPosition),
+			position: shared.Position{
+				X: cfg.XPosition,
+				Y: cfg.YPosition,
 			},
 			interval: cfg.IntervalMs,
 			state:    ActorStateIdle,
@@ -59,7 +59,7 @@ func (v *VibrationVehicle) Interval() time.Duration {
 	return v.Actor.interval
 }
 
-func (v *VibrationVehicle) Position() types.Position {
+func (v *VibrationVehicle) Position() shared.Position {
 	return v.Actor.position
 }
 
@@ -67,7 +67,7 @@ func (v *VibrationVehicle) MovableType() pb.MovableType {
 	return pb.MovableType_MOVABLE_TYPE_LAND
 }
 
-func (v *VibrationVehicle) MoveToLocation(destination types.Position) {
+func (v *VibrationVehicle) MoveToLocation(destination shared.Position) {
 	v.calculatePathToDestination(destination)
 	v.Actor.state = ActorStateMoving
 }
@@ -85,8 +85,8 @@ func (v *VibrationVehicle) performTask() error {
 	ctx := context.Background()
 
 	_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
-		XPos:       int32(v.Actor.position.X),
-		YPos:       int32(v.Actor.position.Y),
+		XPos:       v.Actor.position.X,
+		YPos:       v.Actor.position.Y,
 		SensorType: pb.SensorType_SENSOR_TYPE_VIBRATION,
 		Value:      0,
 		Default:    true,
@@ -98,15 +98,15 @@ func (v *VibrationVehicle) performTask() error {
 	return nil
 }
 
-func (v *VibrationVehicle) calculatePathToDestination(destination types.Position) error {
+func (v *VibrationVehicle) calculatePathToDestination(destination shared.Position) error {
 	resp, err := v.simulation.PathTo(context.Background(), &pb.PathToRequest{
 		Source: &pb.WorldPosition{
-			X: int32(v.Actor.position.X),
-			Y: int32(v.Actor.position.Y),
+			X: v.Actor.position.X,
+			Y: v.Actor.position.Y,
 		},
 		Destination: &pb.WorldPosition{
-			X: int32(destination.X),
-			Y: int32(destination.Y),
+			X: destination.X,
+			Y: destination.Y,
 		},
 		MovableType: v.MovableType(),
 	})
@@ -114,11 +114,11 @@ func (v *VibrationVehicle) calculatePathToDestination(destination types.Position
 		return fmt.Errorf("calculate path to destination: %w", err)
 	}
 
-	path := make([]types.Position, 0, len(resp.GetPath()))
+	path := make([]shared.Position, 0, len(resp.GetPath()))
 	for _, p := range resp.GetPath() {
-		path = append(path, types.Position{
-			X: int(p.GetX()),
-			Y: int(p.GetY()),
+		path = append(path, shared.Position{
+			X: p.GetX(),
+			Y: p.GetY(),
 		})
 	}
 
@@ -139,7 +139,7 @@ func (v *VibrationVehicle) move() {
 	v.Actor.path = v.Actor.path[1:]
 }
 
-func (v *VibrationVehicle) AtPosition(pos types.Position) bool {
+func (v *VibrationVehicle) AtPosition(pos shared.Position) bool {
 	return v.Position() == pos
 }
 

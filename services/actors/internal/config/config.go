@@ -11,8 +11,8 @@ type ActorConfig struct {
 	Id                      string
 	ActorType               string
 	IntervalMs              time.Duration
-	XPosition               int32
-	YPosition               int32
+	XPosition               uint32
+	YPosition               uint32
 	BaseStationEndpoint     string
 	WorldSimulationEndpoint string
 }
@@ -35,8 +35,8 @@ func LoadConfig() (*ActorConfig, error) {
 		Id:                      v.GetString("ACTOR_ID"),
 		ActorType:               v.GetString("ACTOR_TYPE"),
 		IntervalMs:              time.Duration(v.GetInt("ACTOR_INTERVAL_MS")) * time.Millisecond,
-		XPosition:               int32(v.GetInt("ACTOR_POSITION_X")),
-		YPosition:               int32(v.GetInt("ACTOR_POSITION_Y")),
+		XPosition:               v.GetUint32("ACTOR_POSITION_X"),
+		YPosition:               v.GetUint32("ACTOR_POSITION_Y"),
 		BaseStationEndpoint:     v.GetString("ACTOR_BASE_STATION_HOST"),
 		WorldSimulationEndpoint: v.GetString("ACTOR_WORLD_SIMULATION_HOST"),
 	}, nil
