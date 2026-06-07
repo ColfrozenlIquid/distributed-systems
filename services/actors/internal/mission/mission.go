@@ -30,19 +30,31 @@ func NewMission(
 ) (Mission, error) {
 	missionType, err := MissionTypeToDomain(req.GetMission().GetType())
 	if err != nil {
-		return nil, fmt.Errorf("unknown mission type: %w")
+		return nil, fmt.Errorf("unknown mission type: %w", err)
 	}
+	missionPriority, err := MissionPriorityToDomain(req.GetMission().GetPriority())
+	if err != nil {
+		return nil, fmt.Errorf("unknown mission priority: %w", err)
+	}
+
+	cfg := MissionConfig{
+		Id:   req.Mission.GetId().GetUuid(),
+		Type: missionType,
+		Position: shared.Position{
+			X: req.GetMission().GetPosition().GetX(),
+			Y: req.GetMission().GetPosition().GetY(),
+		},
+		Priority: missionPriority,
+	}
+	base := NewBaseMission(cfg, ch, simulation, actor)
 
 	switch missionType {
 	case MissionTypePumpWater:
-		return NewPumpWaterMission(req, ch, simulation, actor), nil
-
+		return &PumpWaterMission{base}, nil
 	case MissionTypeRescuePersons:
-		return NewRescuePersonsMission(req, ch, simulation, actor), nil
-
-	// case MissionTypeStabilizeVibration:
-	// 	return NewStabilizeVibrationMission(req, ch, simulation), nil
-
+		return &RescuePersonsMission{base}, nil
+	case MissionTypeStabilizeVibration:
+		return &StabilizeVibrationMission{base}, nil
 	default:
 		return nil, fmt.Errorf("unknown mission type: %s", missionType)
 	}

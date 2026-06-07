@@ -13,9 +13,15 @@ import (
 var _ Sensor = (*DroneSensor)(nil)
 
 type DroneSensor struct {
-	cfg        config.SensorConfig
+	BaseSensor
 	simulation pb.WorldServiceClient
-	sensor     droneSensor
+}
+
+func NewDroneSensor(cfg config.SensorConfig, simulation pb.WorldServiceClient) *DroneSensor {
+	return &DroneSensor{
+		BaseSensor: NewBaseSensor(cfg),
+		simulation: simulation,
+	}
 }
 
 func (v *DroneSensor) Update() error {
@@ -23,8 +29,8 @@ func (v *DroneSensor) Update() error {
 		return nil
 	}
 
-	newX := v.sensor.position.X + (rand.Uint32N(3) - 1)
-	newY := v.sensor.position.Y + (rand.Uint32N(3) - 1)
+	newX := v.BaseSensor.position.X + (rand.Uint32N(3) - 1)
+	newY := v.BaseSensor.position.Y + (rand.Uint32N(3) - 1)
 
 	req := &pb.MoveToRequest{
 		XPos:        newX,
@@ -41,53 +47,18 @@ func (v *DroneSensor) Update() error {
 	}
 
 	if resp.Allowed {
-		v.sensor.position.X = newX
-		v.sensor.position.Y = newY
+		v.BaseSensor.position.X = newX
+		v.BaseSensor.position.Y = newY
 
 	}
 
 	return nil
 }
 
-func (v *DroneSensor) Position() shared.Position {
-	return v.sensor.position
-}
-
-type droneSensor struct {
-	id       string
-	position shared.Position
-	interval time.Duration
-	reading  float32
-}
-
-func NewDroneSensor(cfg config.SensorConfig, simulation pb.WorldServiceClient) *DroneSensor {
-	return &DroneSensor{
-		cfg:        cfg,
-		simulation: simulation,
-		sensor: droneSensor{
-			id: cfg.Id,
-			position: shared.Position{
-				X: cfg.XPosition,
-				Y: cfg.YPosition,
-			},
-			interval: cfg.IntervalMs,
-			reading:  0,
-		},
-	}
-}
-
-func (v *DroneSensor) ID() string {
-	return v.sensor.id
-}
-
-func (v *DroneSensor) Interval() time.Duration {
-	return v.sensor.interval
-}
-
 func (v *DroneSensor) Read() (*shared.SensorReading, error) {
 	req := &pb.TileReadingRequest{
-		XPos:       v.sensor.position.X,
-		YPos:       v.sensor.position.Y,
+		XPos:       v.BaseSensor.position.X,
+		YPos:       v.BaseSensor.position.Y,
 		SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 	}
 
@@ -103,13 +74,9 @@ func (v *DroneSensor) Read() (*shared.SensorReading, error) {
 		Timestamp: time.Now(),
 		Value:     resp.SensorReading,
 		Sensor: shared.SensorInfo{
-			Id:         v.sensor.id,
-			Position:   shared.Position{X: v.sensor.position.X, Y: v.sensor.position.Y},
+			Id:         v.BaseSensor.id,
+			Position:   shared.Position{X: v.BaseSensor.position.X, Y: v.BaseSensor.position.Y},
 			SensorType: shared.PersonConfidenceSensor,
 		},
 	}, nil
-}
-
-func (v *DroneSensor) Type() string {
-	return "drone"
 }

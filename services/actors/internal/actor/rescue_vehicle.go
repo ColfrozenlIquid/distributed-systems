@@ -4,8 +4,6 @@ import (
 	"actors/internal/config"
 	"context"
 	"fmt"
-	"shared"
-	"time"
 
 	pb "actors/gen"
 
@@ -17,82 +15,44 @@ var _ Actor = (*RescueVehicle)(nil)
 const MAX_VEHICLE_CAPACITY = 20
 
 type RescueVehicle struct {
-	cfg        config.ActorConfig
 	simulation pb.WorldServiceClient
-	Actor      rescueVehicle
-	logger     *zap.Logger
+	BaseActor
+	Actor  rescueVehicle
+	logger *zap.Logger
 }
 
 type rescueVehicle struct {
-	id          string
-	position    shared.Position
-	interval    time.Duration
-	destination shared.Position
-	path        []shared.Position
-	state       ActorState
-	capacity    int // How many persons this vehicle can transport
-	count       int // How many persons are currently in the vehicle
+	capacity int // How many persons this vehicle can transport
+	count    int // How many persons are currently in the vehicle
 }
 
 func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) *RescueVehicle {
 	return &RescueVehicle{
-		cfg:        cfg,
 		simulation: simulation,
+		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND),
 		Actor: rescueVehicle{
-			id: cfg.Id,
-			position: shared.Position{
-				X: uint32(cfg.XPosition),
-				Y: uint32(cfg.YPosition),
-			},
-			interval: cfg.IntervalMs,
 			capacity: MAX_VEHICLE_CAPACITY,
 			count:    0,
-			state:    ActorStateIdle,
 		},
 		logger: logger,
 	}
 }
 
-func (v *RescueVehicle) Type() string {
-	return "rescue_vehicle"
-}
-
-func (v *RescueVehicle) Id() string {
-	return v.Actor.id
-}
-
-func (v *RescueVehicle) Interval() time.Duration {
-	return v.Actor.interval
-}
-
-func (v *RescueVehicle) Position() shared.Position {
-	return v.Actor.position
-}
-
-func (v *RescueVehicle) MovableType() pb.MovableType {
-	return pb.MovableType_MOVABLE_TYPE_LAND
-}
-
-func (v *RescueVehicle) MoveToLocation(destination shared.Position) {
-	v.calculatePathToDestination(destination)
-	v.Actor.state = ActorStateMoving
-}
-
 func (v *RescueVehicle) ExecuteMission() {
-	v.Actor.state = ActorStateWorking
+	v.BaseActor.state = ActorStateWorking
 }
 
 func (v *RescueVehicle) CompleteTask() {
 	v.performTask()
-	v.Actor.state = ActorStateDone
+	v.BaseActor.state = ActorStateDone
 }
 
 func (v *RescueVehicle) performTask() error {
 	ctx := context.Background()
 
 	reading, err := v.simulation.TileReading(ctx, &pb.TileReadingRequest{
-		XPos:       v.Actor.position.X,
-		YPos:       v.Actor.position.Y,
+		XPos:       v.BaseActor.position.X,
+		YPos:       v.BaseActor.position.Y,
 		SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 	})
 	if err != nil {
@@ -104,8 +64,8 @@ func (v *RescueVehicle) performTask() error {
 		v.Actor.count += persons
 
 		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
-			XPos:       v.Actor.position.X,
-			YPos:       v.Actor.position.Y,
+			XPos:       v.BaseActor.position.X,
+			YPos:       v.BaseActor.position.Y,
 			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 			Value:      0,
 			Default:    false,
@@ -118,8 +78,8 @@ func (v *RescueVehicle) performTask() error {
 		v.Actor.count = MAX_VEHICLE_CAPACITY
 
 		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
-			XPos:       v.Actor.position.X,
-			YPos:       v.Actor.position.Y,
+			XPos:       v.BaseActor.position.X,
+			YPos:       v.BaseActor.position.Y,
 			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 			Value:      float32(remaining),
 		})
@@ -130,82 +90,3 @@ func (v *RescueVehicle) performTask() error {
 
 	return nil
 }
-
-func (v *RescueVehicle) calculatePathToDestination(destination shared.Position) error {
-	resp, err := v.simulation.PathTo(context.Background(), &pb.PathToRequest{
-		Source: &pb.WorldPosition{
-			X: v.Actor.position.X,
-			Y: v.Actor.position.Y,
-		},
-		Destination: &pb.WorldPosition{
-			X: destination.X,
-			Y: destination.Y,
-		},
-		MovableType: v.MovableType(),
-	})
-	if err != nil {
-		return fmt.Errorf("calculate path to destination: %w", err)
-	}
-
-	path := make([]shared.Position, 0, len(resp.GetPath()))
-	for _, p := range resp.GetPath() {
-		path = append(path, shared.Position{
-			X: p.GetX(),
-			Y: p.GetY(),
-		})
-	}
-
-	v.Actor.destination = destination
-	v.Actor.path = path
-
-	return nil
-}
-
-func (v *RescueVehicle) move() {
-	if v.Actor.position == v.Actor.destination {
-		v.logger.Info("Actor arrived at destination")
-		return
-	}
-
-	v.Actor.position = v.Actor.path[0]
-
-	v.Actor.path = v.Actor.path[1:]
-}
-
-func (v *RescueVehicle) AtPosition(pos shared.Position) bool {
-	return v.Position() == pos
-}
-
-func (v *RescueVehicle) Update(ctx context.Context) {
-	switch v.Actor.state {
-	case ActorStateBlocked:
-		v.logger.Info("actor is blocked")
-	case ActorStateDone:
-		v.logger.Info("actor is done")
-		v.Actor.state = ActorStateIdle
-	case ActorStateIdle:
-		v.logger.Info("actor is idle")
-	case ActorStateWorking:
-		v.logger.Info("actor is executing the mission")
-	case ActorStateMoving:
-		v.logger.Info("actor is moving")
-		v.move()
-	default:
-		v.logger.Debug("unknown actor state ")
-	}
-}
-
-// func (p *RescueVehicle) RegisterMission(ctx context.Context, req *pb.AssignMissionRequest, ch chan<- *pb.AssignMissionResponse) error {
-// 	// Generate new mission
-// 	newMission, err := mission.NewMission(req, ch, p.simulation)
-// 	if err != nil {
-// 		return fmt.Errorf("create new mission: %w")
-// 	}
-
-// 	// Assign new mission inside of the actor
-// 	p.mission = newMission
-
-// 	p.mission.RunMission()
-
-// 	return nil
-// }
