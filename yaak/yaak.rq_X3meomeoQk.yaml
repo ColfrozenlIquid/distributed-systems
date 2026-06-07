@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_X3meomeoQk
 createdAt: 2026-05-17T20:47:18.426031
-updatedAt: 2026-05-19T15:02:36.627772
+updatedAt: 2026-06-07T13:17:28.240904
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -16,7 +16,7 @@ body:
           "x": 6,
           "y": 5
         },
-        "sensor_type": "supply_level"
+        "sensor_type": "water_level"
       }
     }
 bodyType: application/json
@@ -28,6 +28,21 @@ headers:
   id: ibHwz7hdNv
 method: POST
 name: Register sensor
-sortPriority: 1000.0
+sortPriority: 2000.0
 url: ${[ baseUrl ]}/register/sensor
 urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0
