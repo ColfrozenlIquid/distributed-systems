@@ -150,7 +150,7 @@ func (w *world) TileUpdate(_ context.Context, req *pb.TileUpdateRequest) (*pb.Ti
 		return nil, fmt.Errorf("unknown sensor type %w", err)
 	}
 
-	ok := tile.Set(sensorType, req.Value)
+	ok := tile.Set(sensorType, req.Value, req.Default)
 	if !ok {
 		return nil, fmt.Errorf("cannot set value of tile")
 	}

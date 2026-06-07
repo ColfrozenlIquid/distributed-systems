@@ -108,6 +108,7 @@ func (v *RescueVehicle) performTask() error {
 			YPos:       int32(v.Actor.position.Y),
 			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
 			Value:      0,
+			Default:    false,
 		})
 		if err != nil {
 			return fmt.Errorf("tile update: %w", err)

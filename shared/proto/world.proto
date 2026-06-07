@@ -65,6 +65,7 @@ message TileUpdateRequest {
   int32 y_pos = 2;
   SensorType sensor_type = 3;
   float value = 4;
+  bool default = 5;
 }
 
 message TileUpdateResponse {
