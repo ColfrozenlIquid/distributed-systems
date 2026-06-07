@@ -48,7 +48,7 @@ func NewVibrationVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClien
 }
 
 func (v *VibrationVehicle) Type() string {
-	return "rescue_vehicle"
+	return "vibration_vehicle"
 }
 
 func (v *VibrationVehicle) Id() string {
