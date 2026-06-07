@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_X3meomeoQk
 createdAt: 2026-05-17T20:47:18.426031
-updatedAt: 2026-06-07T13:17:28.240904
+updatedAt: 2026-06-07T15:49:30.313460
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -16,7 +16,7 @@ body:
           "x": 6,
           "y": 5
         },
-        "sensor_type": "water_level"
+        "sensor_type": "person_confidence"
       }
     }
 bodyType: application/json
