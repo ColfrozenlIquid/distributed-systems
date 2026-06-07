@@ -11,7 +11,8 @@ import (
 )
 
 type Client struct {
-	WorldClient WorldClient
+	WorldClient *WorldClient
+	ActorClient *ActorClient
 	Logger      *zap.Logger
 }
 
@@ -36,7 +37,8 @@ func NewClient(cfg config.ControlCenterConfig, logger *zap.Logger) (*Client, err
 	}
 
 	return &Client{
-		WorldClient: *worldClient,
+		WorldClient: worldClient,
+		ActorClient: NewActorClient(),
 		Logger:      logger,
 	}, err
 }
