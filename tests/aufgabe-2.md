@@ -108,3 +108,68 @@ Der Test wurde im Docker-Netz `vs-praktikum_default` ausgeführt und war erfolgr
 PASS
 ok      aufgabe1tests   0.637s
 ```
+
+
+
+# Aufgabe 2
+## Funktional: Einsatzzuweisung via gRPC-Streaming für WaterLevelAlert
+**Ziel:**
+Es wird geprüft, ob die Leitstelle bei einem kritischen Wasserstand einen Incident erzeugt und diesen per RPC/gRPC-Missionsfluss korrekt an einen passenden Fahrzeugtyp zuweist. Die Zuordnung muss für `water_level_alert` auf `water_vehicle` erfolgen und der Missionszustand muss über den Stream bis `done` fortschreiten.
+
+**Bewertung:** `PASS`
+
+**Versionsstand:** Commit `9763cd9`
+
+### Setup
+* `world-simulation`, `control-center`, `sensor-*`, `actor-*` aus `docker-compose.yaml`
+* Test gegen `CONTROL_CENTER_URL` (Default `http://control-center:8080`)
+* automatisierter Go-Test `tests/aufgabe2/aufgabe2_integration_test.go`, Testfunktion `TestAssignWaterIncidentMissionViaGRPC`
+* Testdaten: eindeutig registrierter `water_level`-Sensor auf `(1,1)`, Reading `95` (kritisch > 80), Incident-ID-Schema `<sensor-id>-1`.
+
+### Durchführung
+Repository-Wurzel:
+```shell
+make docker-compose-up-build
+```
+```shell
+docker run --rm --network vs-praktikum_default -v "$PWD/tests/aufgabe2:/tests" -w /tests -e CONTROL_CENTER_URL=http://control-center:8080 golang:1.26.2-alpine go test -v -run TestAssignWaterIncidentMissionViaGRPC .
+```
+
+### Ergebnisse
+#### Erwartetes Ergebnis
+Der Go-Test endet mit `PASS`. `POST /register/sensor` und `POST /reading` liefern HTTP `204`. Der Incident ist in `GET /status` vorhanden. `POST /incidents/:incidentID/mission` liefert HTTP `200` und einen NDJSON-Stream mit Missions-Updates, der mindestens `assigned` und `busy` enthält und mit `done` endet. Das finale Update hat `actor_type=water_vehicle`.
+
+#### Tatsächliches Ergebnis
+```
+functional result: incident_id=it2-water-1780928248317848519-1 mission_id=it2-water-1780928248317848519-1-1780928248318 actor_id=actor-3 actor_type=water_vehicle states=[assigned busy busy done]
+```
+
+## Nicht-funktional: Latenz und Zuverlässigkeit des Missions-Streams
+**Ziel:**
+Es wird messbar geprüft, ob die Missionszuweisung für Task 2 stabil und zeitnah reagiert. Bewertet werden Zuverlässigkeit (alle Versuche erfolgreich bis `done`) sowie Latenzgrenzen für erstes Stream-Update und Missionsabschluss.
+
+**Bewertung:** `PASS`
+
+**Versionsstand:** Commit `9763cd9`
+
+### Setup
+Container, Konfiguration, Testdaten: identisches Docker-Compose-Setup; automatisierter Go-Test `tests/aufgabe2/aufgabe2_integration_test.go`, Testfunktion `TestMissionAssignmentStreamLatencyAndReliability`; Messkriterien: `attempts=3`, p95 `first_update <= 2000 ms`, p95 `completion <= 15000 ms`, jeder Versuch endet mit finalem Zustand `done`.
+
+### Durchführung
+Repository-Wurzel:
+```shell
+make docker-compose-up-build
+```
+```shell
+docker run --rm --network vs-praktikum_default -v "$PWD/tests/aufgabe2:/tests" -w /tests -e CONTROL_CENTER_URL=http://control-center:8080 golang:1.26.2-alpine go test -v -run TestMissionAssignmentStreamLatencyAndReliability .
+```
+
+### Ergebnisse
+#### Erwartetes Ergebnis
+Der Go-Test endet mit `PASS`. Es werden 3 Versuche ohne Ausfälle durchgeführt, alle mit finalem Zustand `done`. Die Ausgabe enthält Latenzstatistiken und erfüllt die Schwellwerte `first_update_p95_ms < 2000` und `completion_p95_ms < 15000`.
+
+#### Tatsächliches Ergebnis
+```
+non-functional result: attempts=3
+stream latency statistics: first_update_p95_ms=1012.75 completion_p95_ms=13012.56
+```
