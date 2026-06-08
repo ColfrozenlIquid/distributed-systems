@@ -128,6 +128,7 @@ func (s *App) Run(ctx context.Context, sensor sensor.Sensor, endpoint string) {
 			reading, err := sensor.Read()
 			if err != nil {
 				log.Printf("[%s] read error: %v", sensor.ID(), err)
+				err = s.Reading(0.0)
 				continue
 			}
 			err = s.Reading(reading.Value)

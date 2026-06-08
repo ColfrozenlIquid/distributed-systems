@@ -22,7 +22,7 @@ func (p *PersonsSim) Init() {
 }
 
 func (p *PersonsSim) Read() float32 {
-	return float32(p.Count)
+	return float32(1.0)
 }
 
 func (p *PersonsSim) Set(value float32, setDefault bool) float32 {
