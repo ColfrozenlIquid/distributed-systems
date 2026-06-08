@@ -351,10 +351,8 @@ func sensorTypeLabel(sensorType shared.SensorType) string {
 		return "vibration"
 	case shared.WaterLevelSensor:
 		return "water level"
-	case shared.SupplyLevelSensor:
-		return "supply level"
-	case shared.PersonConfidenceSensor:
-		return "person confidence"
+	case shared.DroneSensor:
+		return "drone"
 	default:
 		return "unknown"
 	}
@@ -366,6 +364,8 @@ func actorTypeLabel(actorType shared.ActorType) string {
 		return "rescue vehicle"
 	case shared.VibrationVehicleActor:
 		return "vibration vehicle"
+	case shared.WaterVehicleActor:
+		return "water vehicle"
 	default:
 		return "unknown"
 	}
@@ -391,11 +391,7 @@ func readingTone(reading shared.SensorReading) string {
 		return "critical"
 	}
 	switch reading.Sensor.SensorType {
-	case shared.SupplyLevelSensor:
-		if reading.Value < 35 {
-			return "warning"
-		}
-	case shared.PersonConfidenceSensor:
+	case shared.DroneSensor:
 		if reading.Value > 0.6 {
 			return "warning"
 		}
@@ -479,9 +475,7 @@ func formatReadingValue(reading shared.SensorReading) string {
 	switch reading.Sensor.SensorType {
 	case shared.WaterLevelSensor:
 		return fmt.Sprintf("%.1f cm", value)
-	case shared.SupplyLevelSensor:
-		return fmt.Sprintf("%.1f%%", value)
-	case shared.PersonConfidenceSensor:
+	case shared.DroneSensor:
 		return fmt.Sprintf("%.1f%%", value*100)
 	default:
 		return fmt.Sprintf("%.1f", value)

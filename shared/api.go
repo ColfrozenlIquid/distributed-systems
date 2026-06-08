@@ -19,10 +19,9 @@ const (
 type SensorType string
 
 const (
-	VibrationSensor        SensorType = "vibration"
-	WaterLevelSensor       SensorType = "water_level"
-	SupplyLevelSensor      SensorType = "supply_level"
-	PersonConfidenceSensor SensorType = "person_confidence"
+	VibrationSensor  SensorType = "vibration"
+	WaterLevelSensor SensorType = "water_level"
+	DroneSensor      SensorType = "person_confidence"
 )
 
 type SensorInfo struct {
@@ -53,9 +52,7 @@ func (r *SensorReading) IsCritical() bool {
 		return r.Value > 4
 	case WaterLevelSensor:
 		return r.Value > 80
-	case SupplyLevelSensor:
-		return r.Value < 20
-	case PersonConfidenceSensor:
+	case DroneSensor:
 		return r.Value > 0.8
 	default:
 		return false
@@ -76,9 +73,7 @@ func (r SensorType) IncidentForSensorType() Incident {
 		return VibrationTooHigh
 	case WaterLevelSensor:
 		return WaterLevelAlert
-	case SupplyLevelSensor:
-		return SupplyCritical
-	case PersonConfidenceSensor:
+	case DroneSensor:
 		return PersonDetected
 	default:
 		return -1
@@ -90,6 +85,7 @@ type ActorType string
 const (
 	RescueVehicleActor    ActorType = "rescue_vehicle"
 	VibrationVehicleActor ActorType = "vibration_vehicle"
+	WaterVehicleActor     ActorType = "water_vehicle"
 )
 
 type ActorInfo struct {

@@ -76,7 +76,7 @@ func (v *DroneSensor) Read() (*shared.SensorReading, error) {
 		Sensor: shared.SensorInfo{
 			Id:         v.BaseSensor.id,
 			Position:   shared.Position{X: v.BaseSensor.position.X, Y: v.BaseSensor.position.Y},
-			SensorType: shared.PersonConfidenceSensor,
+			SensorType: shared.DroneSensor,
 		},
 	}, nil
 }
