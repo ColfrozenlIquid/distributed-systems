@@ -3,6 +3,7 @@ package world
 import (
 	"context"
 	"fmt"
+	"shared"
 	pb "simulation/gen"
 	"simulation/internal/simulatables"
 )
@@ -13,10 +14,86 @@ type World interface {
 	TileUpdate(ctx context.Context, req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error)
 	WorldData(ctx context.Context, req *pb.WorldDataRequest) (*pb.WorldDataResponse, error)
 	MoveTo(ctx context.Context, req *pb.MoveToRequest) (*pb.MoveToResponse, error)
+	PathTo(ctx context.Context, req *pb.PathToRequest) (*pb.PathToResponse, error)
+}
+
+func (w *world) PathTo(_ context.Context, req *pb.PathToRequest) (*pb.PathToResponse, error) {
+	var source shared.Position = shared.Position{
+		X: req.GetSource().GetX(),
+		Y: req.GetSource().GetY(),
+	}
+	var destination = shared.Position{
+		X: req.GetDestination().GetX(),
+		Y: req.GetDestination().GetY(),
+	}
+
+	path, err := w.findPath(source, destination, req.GetMovableType())
+	if err != nil {
+		return nil, err
+	}
+
+	positions := make([]*pb.WorldPosition, len(path))
+	for i, p := range path {
+		positions[i] = &pb.WorldPosition{
+			X: p.X,
+			Y: p.Y,
+		}
+	}
+
+	return &pb.PathToResponse{
+		Path: positions,
+	}, nil
+}
+
+func (w *world) findPath(source shared.Position, destination shared.Position, movableType pb.MovableType) ([]shared.Position, error) {
+	mtype, err := mapToMovableType(movableType)
+	if err != nil {
+		return nil, err
+	}
+
+	canWalk := func(p shared.Position) bool {
+		tile, err := w.getTile(p)
+		if err != nil {
+			return false
+		}
+		return tile.IsMovable(mtype)
+	}
+
+	queue := [][]shared.Position{{source}}
+	visited := map[shared.Position]bool{source: true}
+
+	for len(queue) > 0 {
+		path := queue[0]
+		queue = queue[1:]
+
+		current := path[len(path)-1]
+		if current == destination {
+			return path, nil
+		}
+
+		for _, n := range []shared.Position{
+			{current.X, current.Y - 1},
+			{current.X, current.Y + 1},
+			{current.X - 1, current.Y},
+			{current.X + 1, current.Y},
+		} {
+			if !visited[n] && canWalk(n) {
+				visited[n] = true
+				newPath := append([]shared.Position{}, path...)
+				newPath = append(newPath, n)
+				queue = append(queue, newPath)
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no path from (%d,%d) to (%d,%d)", source.X, source.Y, destination.X, destination.Y)
 }
 
 func (w *world) MoveTo(_ context.Context, req *pb.MoveToRequest) (*pb.MoveToResponse, error) {
-	tile, err := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
+	tile, err := w.getTile(shared.Position{
+		X: req.GetXPos(),
+		Y: req.GetYPos(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get tile: %w", err)
 	}
@@ -40,7 +117,10 @@ func (w *world) MoveTo(_ context.Context, req *pb.MoveToRequest) (*pb.MoveToResp
 }
 
 func (w *world) TileReading(_ context.Context, req *pb.TileReadingRequest) (*pb.TileReadingResponse, error) {
-	tile, err := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
+	tile, err := w.getTile(shared.Position{
+		X: req.GetXPos(),
+		Y: req.GetYPos(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get tile: %w", err)
 	}
@@ -62,7 +142,10 @@ func (w *world) TileReading(_ context.Context, req *pb.TileReadingRequest) (*pb.
 }
 
 func (w *world) TileUpdate(_ context.Context, req *pb.TileUpdateRequest) (*pb.TileUpdateResponse, error) {
-	tile, err := w.getTile(int(req.GetXPos()), int(req.GetYPos()))
+	tile, err := w.getTile(shared.Position{
+		X: req.GetXPos(),
+		Y: req.GetYPos(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get tile: %w", err)
 	}
@@ -72,7 +155,7 @@ func (w *world) TileUpdate(_ context.Context, req *pb.TileUpdateRequest) (*pb.Ti
 		return nil, fmt.Errorf("unknown sensor type %w", err)
 	}
 
-	ok := tile.Set(sensorType, req.Value)
+	ok := tile.Set(sensorType, req.Value, req.Default)
 	if !ok {
 		return nil, fmt.Errorf("cannot set value of tile")
 	}

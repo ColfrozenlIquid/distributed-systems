@@ -9,17 +9,12 @@ import (
 	"sensors/internal/config"
 )
 
-type Position struct {
-	X int
-	Y int
-}
-
 type Sensor interface {
 	ID() string
 	Type() string
 	Read() (*shared.SensorReading, error)
 	Interval() time.Duration
-	Position() Position
+	Position() shared.Position
 	Update() error
 }
 
@@ -31,6 +26,8 @@ func NewSensor(cfg config.SensorConfig, simulation pb.WorldServiceClient) (Senso
 		return NewWaterLevelSensor(cfg, simulation), nil
 	case "swimmer_beacon":
 		return NewSwimmerBeaconSensor(cfg, simulation), nil
+	case "drone":
+		return NewDroneSensor(cfg, simulation), nil
 	default:
 		return nil, fmt.Errorf("unknown sensor type: %s", cfg.SensorType)
 	}

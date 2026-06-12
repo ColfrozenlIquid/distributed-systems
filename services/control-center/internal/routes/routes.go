@@ -2,13 +2,18 @@ package routes
 
 import (
 	"context"
+	"encoding/json"
+
 	"control-center/internal/html"
+	"control-center/internal/mission"
 	"control-center/internal/model"
 	"shared"
 	"vshttp"
 )
 
-func Routes(router *vshttp.Router, state *model.State) {
+func Routes(router *vshttp.Router, state *model.State, actors mission.ActorMissionClient) {
+	missions := mission.NewService(actors, state.System())
+
 	router.Post("/reading", func(c *vshttp.Context) error {
 		var request shared.SensorReading
 		if err := c.JSONBody(&request); err != nil {
@@ -44,6 +49,26 @@ func Routes(router *vshttp.Router, state *model.State) {
 
 	router.Get("/status", func(c *vshttp.Context) error {
 		return c.JSON(vshttp.OK, state.System().Snapshot())
+	})
+
+	router.Post("/incidents/:incidentID/mission", func(c *vshttp.Context) error {
+		updates, err := missions.AssignIncident(context.Background(), c.Param("incidentID"))
+		if err != nil {
+			return vshttp.Error(vshttp.BadRequest, err.Error())
+		}
+
+		c.Writer.Header().Replace("Content-Type", "application/x-ndjson; charset=utf-8")
+		c.Writer.WriteHeader(vshttp.OK)
+
+		encoder := json.NewEncoder(c.Writer)
+		for update := range updates {
+			state.System().UpdateMission(update)
+			if err := encoder.Encode(update); err != nil {
+				return err
+			}
+			c.Writer.Write([]byte("\n"))
+		}
+		return nil
 	})
 
 	router.Get("/health", func(c *vshttp.Context) error {

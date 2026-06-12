@@ -339,6 +339,40 @@ templ DashboardAssets() {
 				white-space: nowrap;
 			}
 
+			.feed-actions {
+				display: grid;
+				justify-items: end;
+				gap: 6px;
+			}
+
+			.mission-button {
+				border: 1px solid var(--critical);
+				border-radius: 7px;
+				background: #fff7ed;
+				color: var(--critical);
+				cursor: pointer;
+				font: inherit;
+				font-size: .76rem;
+				font-weight: 750;
+				padding: 5px 8px;
+			}
+
+			.mission-button:disabled {
+				cursor: wait;
+				opacity: .65;
+			}
+
+			.actor-state {
+				display: inline-flex;
+				margin-left: 6px;
+				border-radius: 999px;
+				background: #eef6f2;
+				color: var(--normal);
+				padding: 1px 7px;
+				font-size: .72rem;
+				font-weight: 750;
+			}
+
 			.feed-empty {
 				color: var(--muted);
 				margin: 0;
@@ -366,6 +400,97 @@ templ DashboardAssets() {
 		</style>
 		<script>
 			(() => {
+				const formatPosition = (position) => {
+					const x = String(position?.x ?? 0).padStart(2, "0");
+					const y = String(position?.y ?? 0).padStart(2, "0");
+					return `${x},${y}`;
+				};
+
+				const actorLabel = (actorType) => {
+					if (actorType === "rescue_vehicle") return "rescue vehicle";
+					return actorType || "actor";
+				};
+
+				const findActorTile = (actorId) => {
+					for (const tile of document.querySelectorAll("[data-dashboard-map] [data-actor-id]")) {
+						if (tile.dataset.actorId === actorId) return tile;
+					}
+					return null;
+				};
+
+				const findTileAt = (position) => {
+					for (const tile of document.querySelectorAll("[data-dashboard-map] [data-x][data-y]")) {
+						if (Number(tile.dataset.x) === position.x && Number(tile.dataset.y) === position.y) return tile;
+					}
+					return null;
+				};
+
+				const findByDataValue = (attribute, value) => {
+					for (const element of document.querySelectorAll(`[${attribute}]`)) {
+						if (element.getAttribute(attribute) === value) return element;
+					}
+					return null;
+				};
+
+				const applyActorUpdate = (update) => {
+					if (!update || !update.actor_id) return;
+
+					const positionLabel = formatPosition(update.position);
+					const stateLabel = update.state || "unknown";
+					const position = findByDataValue("data-actor-position", update.actor_id);
+					const state = findByDataValue("data-actor-state", update.actor_id);
+					if (position) position.textContent = positionLabel;
+					if (state) state.textContent = stateLabel;
+
+					const previousTile = findActorTile(update.actor_id);
+					if (previousTile) {
+						previousTile.classList.remove("has-actor");
+						previousTile.dataset.actorId = "";
+						previousTile.dataset.actorState = "";
+						previousTile.dataset.actor = "";
+					}
+
+					const nextTile = findTileAt(update.position || {});
+					if (nextTile) {
+						nextTile.classList.add("has-actor");
+						nextTile.dataset.actorId = update.actor_id;
+						nextTile.dataset.actorState = stateLabel;
+						nextTile.dataset.actor = actorLabel(update.actor_type);
+						nextTile.title = `${nextTile.getAttribute("aria-label")}, ${actorLabel(update.actor_type)} ${stateLabel}`;
+					}
+				};
+
+				const streamMissionUpdates = async (button) => {
+					button.disabled = true;
+					button.textContent = "Assigning...";
+					try {
+						const response = await fetch(button.dataset.missionUrl, { method: "POST" });
+						if (!response.ok || !response.body) {
+							throw new Error(await response.text());
+						}
+
+						const reader = response.body.getReader();
+						const decoder = new TextDecoder();
+						let buffer = "";
+						for (;;) {
+							const { value, done } = await reader.read();
+							buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+							const lines = buffer.split("\n");
+							buffer = lines.pop() || "";
+							for (const line of lines) {
+								if (line.trim() === "") continue;
+								applyActorUpdate(JSON.parse(line));
+							}
+							if (done) break;
+						}
+						button.textContent = "Mission assigned";
+					} catch (error) {
+						button.disabled = false;
+						button.textContent = "Retry mission";
+						button.title = error instanceof Error ? error.message : "Mission assignment failed";
+					}
+				};
+
 				const maps = document.querySelectorAll("[data-dashboard-map]");
 				for (const map of maps) {
 					map.addEventListener("click", (event) => {
@@ -375,6 +500,12 @@ templ DashboardAssets() {
 						tile.setAttribute("aria-pressed", "true");
 					});
 				}
+
+				document.addEventListener("click", (event) => {
+					const trigger = event.target.closest("[data-mission-trigger]");
+					if (!trigger) return;
+					streamMissionUpdates(trigger);
+				});
 			})();
 		</script>
 	}

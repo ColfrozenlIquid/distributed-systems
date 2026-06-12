@@ -3,18 +3,28 @@ package world
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"shared"
 	pb "simulation/gen"
 	"simulation/internal/config"
+	"simulation/internal/simulatables"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 )
 
+const MAX_PERSON_TILES = 2
+const MAX_PERSONS_PER_TILE = 10
+
 type world struct {
-	Width            int
-	Height           int
+	Width            uint32
+	Height           uint32
 	Tiles            [][]Tile
 	UpdateIntervalMS float32
+	PersonTiles      int
 	mu               sync.RWMutex
+	logger           *zap.Logger
 }
 
 type MovableType int
@@ -25,6 +35,28 @@ const (
 	Air
 	Amphibious
 )
+
+func (w *world) addPersonsSimulatableToTiles() {
+	if w.PersonTiles == MAX_PERSON_TILES {
+		return
+	}
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	for w.PersonTiles < MAX_PERSON_TILES {
+		x_pos := rand.Intn(int(w.Width))
+		y_pos := rand.Intn(int(w.Height))
+		count := rand.Intn(MAX_PERSONS_PER_TILE) + 1
+
+		tile := &w.Tiles[y_pos][x_pos]
+		if tile.Terrain == simulatables.Land && tile.Infrastructure == simulatables.NoInfrastructure {
+			tile.Sensors[simulatables.PersonConfidence] = simulatables.NewPersonsSim(count)
+			w.logger.Info("add person to tile", zap.Int("x", x_pos), zap.Int("y", y_pos), zap.Int("count", count))
+			w.PersonTiles++
+		}
+	}
+}
 
 func mapToMovableType(movableType pb.MovableType) (MovableType, error) {
 	switch movableType {
@@ -41,17 +73,23 @@ func mapToMovableType(movableType pb.MovableType) (MovableType, error) {
 	}
 }
 
-func NewWorld(width int, height int, cfg config.Config) World {
+func NewWorld(width uint32, height uint32, cfg config.Config, logger *zap.Logger) World {
 	tiles, err := GenerateTiles(cfg)
 	if err != nil {
 		panic("world is nil")
 	}
-	return &world{
+	world := &world{
 		Width:            width,
 		Height:           height,
 		Tiles:            tiles,
 		UpdateIntervalMS: cfg.World.UpdateIntervalMS,
+		PersonTiles:      0,
+		logger:           logger,
 	}
+
+	world.addPersonsSimulatableToTiles()
+
+	return world
 }
 
 func (w *world) RunWorldLoop(ctx context.Context) {
@@ -68,13 +106,13 @@ func (w *world) RunWorldLoop(ctx context.Context) {
 	}
 }
 
-func (w *world) getTile(xpos int, ypos int) (Tile, error) {
+func (w *world) getTile(position shared.Position) (Tile, error) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
-	if xpos < 0 || xpos > w.Width-1 || ypos < 0 || ypos > w.Height-1 {
-		return Tile{}, fmt.Errorf("requested tile (%d, %d) out of bounds", xpos, ypos)
+	if position.X > uint32(w.Width-1) || position.Y > uint32(w.Height-1) {
+		return Tile{}, fmt.Errorf("requested tile (%d, %d) out of bounds", position.X, position.Y)
 	}
-	return w.Tiles[ypos][xpos], nil
+	return w.Tiles[position.Y][position.X], nil
 }
 
 func (w *world) update() {

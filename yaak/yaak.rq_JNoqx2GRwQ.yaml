@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_JNoqx2GRwQ
 createdAt: 2026-05-19T15:02:31.548284
-updatedAt: 2026-05-19T15:02:53.831217
+updatedAt: 2026-06-05T17:26:00.590067
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -16,3 +16,18 @@ name: Healthcheck
 sortPriority: 0.0
 url: ${[ baseUrl ]}/health
 urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0

@@ -17,9 +17,14 @@ type VibrationSim struct {
 	newTargetChance   float32
 }
 
-func (s *VibrationSim) Set(value float32) {
+func (s *VibrationSim) Set(value float32, setDefault bool) float32 {
 	s.target = s.randomTarget()
+	if setDefault {
+		s.VibrationIndex = s.MinVibrationIndex
+		return s.VibrationIndex
+	}
 	s.VibrationIndex = value
+	return s.VibrationIndex
 }
 
 func NewVibrationSim(cfg config.Config) *VibrationSim {
@@ -35,17 +40,6 @@ func NewVibrationSim(cfg config.Config) *VibrationSim {
 }
 
 func (s *VibrationSim) Type() pb.SensorType { return pb.SensorType_SENSOR_TYPE_VIBRATION }
-
-func (s *VibrationSim) Color() uint8 {
-	reading := (s.VibrationIndex - s.MinVibrationIndex) / (s.MaxVibrationIndex - s.MinVibrationIndex)
-	if reading < 0 {
-		reading = 0
-	}
-	if reading > 1 {
-		reading = 1
-	}
-	return uint8(reading * 255)
-}
 
 func (s *VibrationSim) Read() float32 { return s.VibrationIndex }
 

@@ -2,61 +2,91 @@ package actor
 
 import (
 	"actors/internal/config"
-	"time"
+	"context"
+	"fmt"
 
 	pb "actors/gen"
+
+	"go.uber.org/zap"
 )
 
 var _ Actor = (*RescueVehicle)(nil)
 
+const MAX_VEHICLE_CAPACITY = 20
+
 type RescueVehicle struct {
-	cfg        config.ActorConfig
 	simulation pb.WorldServiceClient
-	actor      rescueVehicle
-}
-
-func (v *RescueVehicle) Type() string {
-	return "rescue_vehicle"
-}
-
-func (v *RescueVehicle) Id() string {
-	return v.actor.id
-}
-
-func (v *RescueVehicle) Interval() time.Duration {
-	return v.actor.interval
-}
-
-func (v *RescueVehicle) Position() Position {
-	return v.actor.position
+	BaseActor
+	Actor  rescueVehicle
+	logger *zap.Logger
 }
 
 type rescueVehicle struct {
-	id          string
-	position    Position
-	interval    time.Duration
-	reading     float32
-	destination Position
-	status      ActorStatus
+	capacity int // How many persons this vehicle can transport
+	count    int // How many persons are currently in the vehicle
 }
 
-func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient) *RescueVehicle {
+func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) *RescueVehicle {
 	return &RescueVehicle{
-		cfg:        cfg,
 		simulation: simulation,
-		actor: rescueVehicle{
-			id: cfg.Id,
-			position: Position{
-				X: int(cfg.XPosition),
-				Y: int(cfg.YPosition),
-			},
-			interval: cfg.IntervalMs,
-			reading:  0,
-			destination: Position{
-				X: 0,
-				Y: 0,
-			},
-			status: ActorStatusIdle,
+		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND),
+		Actor: rescueVehicle{
+			capacity: MAX_VEHICLE_CAPACITY,
+			count:    0,
 		},
+		logger: logger,
 	}
+}
+
+func (v *RescueVehicle) ExecuteMission() {
+	v.BaseActor.state = ActorStateWorking
+}
+
+func (v *RescueVehicle) CompleteTask() {
+	v.performTask()
+	v.BaseActor.state = ActorStateDone
+}
+
+func (v *RescueVehicle) performTask() error {
+	ctx := context.Background()
+
+	reading, err := v.simulation.TileReading(ctx, &pb.TileReadingRequest{
+		XPos:       v.BaseActor.position.X,
+		YPos:       v.BaseActor.position.Y,
+		SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
+	})
+	if err != nil {
+		return fmt.Errorf("tile reading: %w", err)
+	}
+
+	persons := int(reading.GetSensorReading())
+	if v.Actor.count+persons <= v.Actor.capacity {
+		v.Actor.count += persons
+
+		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
+			XPos:       v.BaseActor.position.X,
+			YPos:       v.BaseActor.position.Y,
+			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
+			Value:      0,
+			Default:    false,
+		})
+		if err != nil {
+			return fmt.Errorf("tile update: %w", err)
+		}
+	} else {
+		remaining := persons - (MAX_VEHICLE_CAPACITY - v.Actor.count)
+		v.Actor.count = MAX_VEHICLE_CAPACITY
+
+		_, err := v.simulation.TileUpdate(ctx, &pb.TileUpdateRequest{
+			XPos:       v.BaseActor.position.X,
+			YPos:       v.BaseActor.position.Y,
+			SensorType: pb.SensorType_SENSOR_TYPE_PERSON_CONFIDENCE,
+			Value:      float32(remaining),
+		})
+		if err != nil {
+			return fmt.Errorf("tile update: %w", err)
+		}
+	}
+
+	return nil
 }

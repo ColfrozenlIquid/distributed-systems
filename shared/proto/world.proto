@@ -10,11 +10,28 @@ service WorldService {
   rpc WorldData(WorldDataRequest) returns (WorldDataResponse);
 
   rpc MoveTo(MoveToRequest) returns (MoveToResponse);
+
+  rpc PathTo(PathToRequest) returns (PathToResponse);
+}
+
+message WorldPosition {
+  uint32 x = 1;
+  uint32 y = 2;
+}
+
+message PathToRequest {
+  WorldPosition source = 1;
+  WorldPosition destination = 2;
+  MovableType movable_type = 3;
+}
+
+message PathToResponse {
+  repeated WorldPosition path = 1; // returns the next tile steps to reach destination including destination
 }
 
 message MoveToRequest {
-  int32 x_pos = 1;
-  int32 y_pos = 2;
+  uint32 x_pos = 1;
+  uint32 y_pos = 2;
   MovableType movable_type = 3;
 }
 
@@ -23,8 +40,8 @@ message MoveToResponse {
 }
 
 message TileReadingRequest {
-  int32 x_pos = 1;
-  int32 y_pos = 2;
+  uint32 x_pos = 1;
+  uint32 y_pos = 2;
   SensorType sensor_type = 3;
 }
 
@@ -42,10 +59,11 @@ enum SensorType {
 }
 
 message TileUpdateRequest {
-  int32 x_pos = 1;
-  int32 y_pos = 2;
+  uint32 x_pos = 1;
+  uint32 y_pos = 2;
   SensorType sensor_type = 3;
   float value = 4;
+  bool default = 5;
 }
 
 message TileUpdateResponse {

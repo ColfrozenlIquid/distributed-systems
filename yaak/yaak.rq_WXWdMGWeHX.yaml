@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_WXWdMGWeHX
 createdAt: 2026-05-21T16:18:55.343
-updatedAt: 2026-05-21T16:19:32.181918
+updatedAt: 2026-06-05T17:26:00.594073
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -21,6 +21,21 @@ headers:
   id: pFhY4bNKix
 method: GET
 name: Get Status
-sortPriority: 0.0
+sortPriority: 1000.0
 url: ${[ baseUrl ]}/status
 urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0

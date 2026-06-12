@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_NpnPQoWLrx
 createdAt: 2026-05-20T11:08:32.474627
-updatedAt: 2026-05-20T11:09:06.236162
+updatedAt: 2026-06-05T17:26:00.598932
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -28,6 +28,21 @@ headers:
   id: ibHwz7hdNv
 method: POST
 name: Register actor
-sortPriority: 1000.001
+sortPriority: 3000.0
 url: ${[ baseUrl ]}/register/actor
 urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0

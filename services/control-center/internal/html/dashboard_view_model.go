@@ -1,6 +1,7 @@
 package html
 
 import (
+	"control-center/internal/mission"
 	"control-center/internal/model"
 	"fmt"
 	"math"
@@ -53,6 +54,8 @@ type DashboardTile struct {
 	SensorLabel         string `json:"sensor_label"`
 	HasActor            bool   `json:"has_actor"`
 	ActorLabel          string `json:"actor_label"`
+	ActorID             string `json:"actor_id"`
+	ActorState          string `json:"actor_state"`
 	ReadingLabel        string `json:"reading_label"`
 	ReadingTone         string `json:"reading_tone"`
 	HasIncident         bool   `json:"has_incident"`
@@ -69,6 +72,7 @@ type ActorListItem struct {
 	ID       string
 	Type     string
 	Position string
+	State    string
 }
 
 type ReadingListItem struct {
@@ -81,6 +85,7 @@ type ReadingListItem struct {
 }
 
 type IncidentListItem struct {
+	ID        string
 	Type      string
 	SensorID  string
 	Position  string
@@ -104,6 +109,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	incidents := incidentsByPosition(status.Incidents)
 	sensorsByTile := sensorsByPosition(status.Sensors)
 	actorsByTile := actorsByPosition(status.Actors)
+	missionsByActor := latestMissionsByActor(status.Missions)
 
 	rows := make([][]DashboardTile, 0, len(island.Tiles))
 	flatTiles := make([]DashboardTile, 0, island.Width*island.Height)
@@ -118,13 +124,14 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	for y, row := range island.Tiles {
 		tileRow := make([]DashboardTile, 0, len(row))
 		for x, tile := range row {
-			key := positionKey(x, y)
+			key := positionKey(uint32(x), uint32(y))
 			reading, hasReading := latestReadings[key]
 			incident, hasIncident := incidents[key]
 			sensor, hasSensor := sensorsByTile[key]
 			actor, hasActor := actorsByTile[key]
+			actorMission, hasActorMission := missionsByActor[actor.Id]
 
-			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, actor, hasActor, reading, hasReading, incident, hasIncident)
+			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, actor, hasActor, actorMission, hasActorMission, reading, hasReading, incident, hasIncident)
 			if tileView.Terrain == "land" {
 				summary.LandTiles++
 			} else {
@@ -154,7 +161,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 		Tiles:       rows,
 		Summary:     summary,
 		Sensors:     sensorListItems(status.Sensors),
-		Actors:      actorListItems(status.Actors),
+		Actors:      actorListItems(status.Actors, status.Missions),
 		Readings:    readingListItems(status.Readings),
 		Incidents:   incidentListItems(status.Incidents),
 		Legend: []LegendItem{
@@ -174,7 +181,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	}
 }
 
-func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, actor shared.ActorInfo, hasActor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
+func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, actor shared.ActorInfo, hasActor bool, actorMission mission.Update, hasActorMission bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
 	terrain := terrainLabel(tile.Terrain)
 	infra := infrastructureLabel(tile.Infrastructure)
 	short := infrastructureShortLabel(tile.Infrastructure)
@@ -200,6 +207,12 @@ func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, h
 	}
 	if hasActor {
 		view.ActorLabel = actorTypeLabel(actor.ActorType)
+		view.ActorID = fallbackID(actor.Id)
+		if hasActorMission {
+			view.ActorState = actorMission.State
+		} else {
+			view.ActorState = "idle"
+		}
 		view.Label += ", " + view.ActorLabel
 	}
 	if hasReading {
@@ -228,11 +241,13 @@ func tileAttributes(tile DashboardTile) templ.Attributes {
 		"data-reading":        tile.ReadingLabel,
 		"data-sensor":         tile.SensorLabel,
 		"data-actor":          tile.ActorLabel,
+		"data-actor-id":       tile.ActorID,
+		"data-actor-state":    tile.ActorState,
 		"title":               tile.Label,
 	}
 }
 
-func positionKey(x int, y int) string {
+func positionKey(x uint32, y uint32) string {
 	return fmt.Sprintf("%d:%d", x, y)
 }
 
@@ -272,6 +287,17 @@ func actorsByPosition(actors []shared.ActorInfo) map[string]shared.ActorInfo {
 		byPosition[positionKey(actor.Position.X, actor.Position.Y)] = actor
 	}
 	return byPosition
+}
+
+func latestMissionsByActor(missions []mission.Update) map[string]mission.Update {
+	latest := make(map[string]mission.Update, len(missions))
+	for _, actorMission := range missions {
+		current, ok := latest[actorMission.ActorID]
+		if !ok || actorMission.UpdatedAt.After(current.UpdatedAt) {
+			latest[actorMission.ActorID] = actorMission
+		}
+	}
+	return latest
 }
 
 func terrainLabel(terrain pb.TerrainType) string {
@@ -325,10 +351,8 @@ func sensorTypeLabel(sensorType shared.SensorType) string {
 		return "vibration"
 	case shared.WaterLevelSensor:
 		return "water level"
-	case shared.SupplyLevelSensor:
-		return "supply level"
-	case shared.PersonConfidenceSensor:
-		return "person confidence"
+	case shared.DroneSensor:
+		return "drone"
 	default:
 		return "unknown"
 	}
@@ -338,6 +362,10 @@ func actorTypeLabel(actorType shared.ActorType) string {
 	switch actorType {
 	case shared.RescueVehicleActor:
 		return "rescue vehicle"
+	case shared.VibrationVehicleActor:
+		return "vibration vehicle"
+	case shared.WaterVehicleActor:
+		return "water vehicle"
 	default:
 		return "unknown"
 	}
@@ -363,11 +391,7 @@ func readingTone(reading shared.SensorReading) string {
 		return "critical"
 	}
 	switch reading.Sensor.SensorType {
-	case shared.SupplyLevelSensor:
-		if reading.Value < 35 {
-			return "warning"
-		}
-	case shared.PersonConfidenceSensor:
+	case shared.DroneSensor:
 		if reading.Value > 0.6 {
 			return "warning"
 		}
@@ -394,13 +418,19 @@ func sensorListItems(sensors []shared.SensorInfo) []SensorListItem {
 	return items
 }
 
-func actorListItems(actors []shared.ActorInfo) []ActorListItem {
+func actorListItems(actors []shared.ActorInfo, missions []mission.Update) []ActorListItem {
 	items := make([]ActorListItem, 0, len(actors))
+	missionsByActor := latestMissionsByActor(missions)
 	for _, actor := range actors {
+		state := "idle"
+		if actorMission, ok := missionsByActor[actor.Id]; ok {
+			state = actorMission.State
+		}
 		items = append(items, ActorListItem{
 			ID:       fallbackID(actor.Id),
 			Type:     actorTypeLabel(actor.ActorType),
 			Position: formatPosition(actor.Position),
+			State:    state,
 		})
 	}
 	sort.Slice(items, func(i int, j int) bool {
@@ -430,6 +460,7 @@ func incidentListItems(incidents []shared.SensorIncident) []IncidentListItem {
 	for i := len(incidents) - 1; i >= 0 && len(items) < 8; i-- {
 		incident := incidents[i]
 		items = append(items, IncidentListItem{
+			ID:        mission.IncidentID(incident),
 			Type:      incidentLabel(incident.Incident),
 			SensorID:  fallbackID(incident.Sensor.Id),
 			Position:  formatPosition(incident.Sensor.Position),
@@ -444,9 +475,7 @@ func formatReadingValue(reading shared.SensorReading) string {
 	switch reading.Sensor.SensorType {
 	case shared.WaterLevelSensor:
 		return fmt.Sprintf("%.1f cm", value)
-	case shared.SupplyLevelSensor:
-		return fmt.Sprintf("%.1f%%", value)
-	case shared.PersonConfidenceSensor:
+	case shared.DroneSensor:
 		return fmt.Sprintf("%.1f%%", value*100)
 	default:
 		return fmt.Sprintf("%.1f", value)

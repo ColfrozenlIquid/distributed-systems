@@ -17,9 +17,14 @@ type WaterSim struct {
 	newTargetChance float32
 }
 
-func (s *WaterSim) Set(value float32) {
+func (s *WaterSim) Set(value float32, setDefault bool) float32 {
 	s.target = s.randomTarget()
+	if setDefault {
+		s.WaterLevelCm = s.MinWaterLevel
+		return s.WaterLevelCm
+	}
 	s.WaterLevelCm = value
+	return s.WaterLevelCm
 }
 
 func NewWaterLevelSim(cfg config.Config) *WaterSim {
@@ -35,17 +40,6 @@ func NewWaterLevelSim(cfg config.Config) *WaterSim {
 }
 
 func (s *WaterSim) Type() pb.SensorType { return pb.SensorType_SENSOR_TYPE_WATER_LEVEL }
-
-func (s *WaterSim) Color() uint8 {
-	reading := (s.WaterLevelCm - s.MinWaterLevel) / (s.MaxWaterLevel - s.MinWaterLevel)
-	if reading < 0 {
-		reading = 0
-	}
-	if reading > 1 {
-		reading = 1
-	}
-	return uint8(reading * 255)
-}
 
 func (s *WaterSim) Read() float32 { return s.WaterLevelCm }
 

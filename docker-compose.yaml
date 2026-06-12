@@ -119,6 +119,18 @@ services:
       SENSOR_BASE_STATION_HOST: "http://control-center:8080"
       SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
 
+  sensor-7:
+    <<: *sensor-base
+    container_name: sensor-7
+    environment:
+      SENSOR_ID: "sensor-7"
+      SENSOR_TYPE: "drone"
+      SENSOR_INTERVAL_MS: "1000"
+      SENSOR_POSITION_X: "7"
+      SENSOR_POSITION_Y: "7"
+      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
+      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+
   # sensor-2:
   #   build:
   #     context: .
@@ -151,6 +163,48 @@ services:
       ACTOR_INTERVAL_MS: "1000"
       ACTOR_POSITION_X: "10"
       ACTOR_POSITION_Y: "10"
+      ACTOR_BASE_STATION_HOST: "http://control-center:8080"
+      ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+    depends_on:
+      world-simulation:
+        condition: service_healthy
+        restart: true
+      control-center:
+        condition: service_healthy
+        restart: true
+
+  actor-2:
+    build:
+      context: .
+      dockerfile: ./services/actors/Dockerfile
+    container_name: actor-2
+    environment:
+      ACTOR_ID: "actor-2"
+      ACTOR_TYPE: "vibration_vehicle"
+      ACTOR_INTERVAL_MS: "1000"
+      ACTOR_POSITION_X: "10"
+      ACTOR_POSITION_Y: "3"
+      ACTOR_BASE_STATION_HOST: "http://control-center:8080"
+      ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+    depends_on:
+      world-simulation:
+        condition: service_healthy
+        restart: true
+      control-center:
+        condition: service_healthy
+        restart: true
+
+  actor-3:
+    build:
+      context: .
+      dockerfile: ./services/actors/Dockerfile
+    container_name: actor-3
+    environment:
+      ACTOR_ID: "actor-3"
+      ACTOR_TYPE: "water_vehicle"
+      ACTOR_INTERVAL_MS: "1000"
+      ACTOR_POSITION_X: "1"
+      ACTOR_POSITION_Y: "1"
       ACTOR_BASE_STATION_HOST: "http://control-center:8080"
       ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
     depends_on:
