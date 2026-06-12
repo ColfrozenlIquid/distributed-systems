@@ -29,3 +29,12 @@
 ### 3. Water Vehicle
 - **Mission:** `MISSION_TYPE_PUMP_WATER`
 - **Movement:** `MOVABLE_TYPE_WATER`
+
+# MQTT Topic structure
+
+| **Topic** | Body | Retain? | QoS |
+| --- | --- | --- | --- |
+| **`tiles/{x}/{y}/readings/{sensor_type}`** | `SensorReading` | ✗ | 0 |
+| **`actors/{actor_id}/status`** | `ActorStatus` | ✓ | 1 |
+| **`actors/{actor_id}/telemetry`** | `ActorTelemetry` | ✗ | 0 |
+| **`missions/{mission_id}/updates`** | `MissionUpdate` | ✗ | 1 |
