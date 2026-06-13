@@ -25,7 +25,7 @@ func LoadConfig() (*SensorConfig, error) {
 	v.SetDefault("SENSOR_POSITION_X", 0)
 	v.SetDefault("SENSOR_POSITION_Y", 0)
 
-	for _, key := range []string{"SENSOR_ID", "SENSOR_TYPE", "SENSOR_BASE_STATION_HOST", "SENSOR_WORLD_SIMULATION_HOST"} {
+	for _, key := range []string{"SENSOR_ID", "SENSOR_TYPE", "CONTROL_CENTER_URL", "WORLD_SIMULATION_HOST_AND_PORT"} {
 		if v.GetString(key) == "" {
 			return nil, fmt.Errorf("missing required env var: %s", key)
 		}
@@ -37,7 +37,7 @@ func LoadConfig() (*SensorConfig, error) {
 		IntervalMs:              time.Duration(v.GetInt("SENSOR_INTERVAL_MS")) * time.Millisecond,
 		XPosition:               uint32(v.GetInt("SENSOR_POSITION_X")),
 		YPosition:               uint32(v.GetInt("SENSOR_POSITION_Y")),
-		BaseStationEndpoint:     v.GetString("SENSOR_BASE_STATION_HOST"),
-		WorldSimulationEndpoint: v.GetString("SENSOR_WORLD_SIMULATION_HOST"),
+		BaseStationEndpoint:     v.GetString("CONTROL_CENTER_URL"),
+		WorldSimulationEndpoint: v.GetString("WORLD_SIMULATION_HOST_AND_PORT"),
 	}, nil
 }
