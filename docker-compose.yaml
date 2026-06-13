@@ -14,6 +14,8 @@ x-sensor-actor-base: &sensor-actor-base
 x-common-env: &common-env
   CONTROL_CENTER_URL: "http://control-center:8080"
   WORLD_SIMULATION_HOST_AND_PORT: "world-simulation:50051"
+  MQTT_BROKER_HOST: "mqtt-broker"
+  MQTT_BROKER_PORT: "1883"
 
 x-sensor-base: &sensor-base
   <<: *sensor-actor-base
