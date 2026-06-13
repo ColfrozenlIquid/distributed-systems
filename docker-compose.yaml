@@ -11,6 +11,8 @@ x-sensor-base: &sensor-base
     control-center:
       condition: service_healthy
       restart: true
+    mqtt-broker:
+      condition: service_healthy
 
 services:
   world-simulation:
@@ -40,12 +42,31 @@ services:
       world-simulation:
         condition: service_healthy
         restart: true
+      mqtt-broker:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 2s
       timeout: 1s
       retries: 5
       start_period: 2s
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2.1.2-alpine
+    container_name: mqtt-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-i", "healthcheck", "-C", "1", "-W", "2"]
+      interval: 5s
+      timeout: 3s
+      retries: 4
+      start_period: 3s
 
   sensor-1:
     <<: *sensor-base
@@ -214,3 +235,7 @@ services:
       control-center:
         condition: service_healthy
         restart: true
+
+volumes:
+  mosquitto-data:
+  mosquitto-log:
