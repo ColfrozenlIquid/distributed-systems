@@ -10,6 +10,12 @@ const (
 	topicMissionUpdate  = "missions/%s/updates"
 )
 
+type TopicSubscription string
+
+func (s TopicSubscription) String() string {
+	return string(s)
+}
+
 // Subscription-Patterns (with wildcards)
 const (
 	SubAllTileReadings   = "tiles/+/+/readings/#"
@@ -17,6 +23,19 @@ const (
 	SubAllActorTelemetry = "actors/+/telemetry"
 	SubAllMissions       = "missions/+/updates"
 )
+
+func (s TopicSubscription) QoSLevel() byte {
+	return TopicSubscriptionsWithQoSLevels()[s]
+}
+
+func TopicSubscriptionsWithQoSLevels() map[TopicSubscription]byte {
+	return map[TopicSubscription]byte{
+		SubAllTileReadings:   0,
+		SubAllActorStatus:    1,
+		SubAllActorTelemetry: 0,
+		SubAllMissions:       1,
+	}
+}
 
 // Builder-Functions for each topic
 
