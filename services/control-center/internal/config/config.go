@@ -17,7 +17,7 @@ func LoadConfig() (*ControlCenterConfig, error) {
 	v.AutomaticEnv()
 
 	worldSimKey := "WORLD_SIMULATION_HOST_AND_PORT"
-	value := viper.GetString(worldSimKey)
+	value := v.GetString(worldSimKey)
 	if value == "" {
 		panic(fmt.Errorf("missing required env var: %s", worldSimKey))
 	}
