@@ -101,7 +101,7 @@ func (s *SystemStatus) AddMission(mission Mission) {
 	s.Missions = append(s.Missions, mission)
 }
 
-func (s *SystemStatus) UpdateMissionNew(mission shared.MissionUpdate) {
+func (s *SystemStatus) UpdateMission(mission shared.MissionUpdate) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	index := slices.IndexFunc(s.Missions, func(existing Mission) bool {

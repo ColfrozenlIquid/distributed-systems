@@ -73,7 +73,7 @@ func (s *State) StartReactiveMessageProcessing(ctx context.Context, client mqtt.
 		func(ctx context.Context) {})))
 
 	subscriptions.AddUnsubscribable(s.mqttStreams.MissionUpdates().SubscribeWithContext(ctx, ro.NewObserverWithContext(
-		func(ctx context.Context, update shared.MissionUpdate) { s.System().UpdateMissionNew(update) },
+		func(ctx context.Context, update shared.MissionUpdate) { s.System().UpdateMission(update) },
 		func(ctx context.Context, err error) { slog.ErrorContext(ctx, "error in mission updates MQTT stream") },
 		func(ctx context.Context) {})))
 
