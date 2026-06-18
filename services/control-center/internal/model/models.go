@@ -1,6 +1,7 @@
 package model
 
 import (
+	pb "control-center/gen"
 	"shared"
 	"time"
 )
@@ -50,4 +51,33 @@ func (m Mission) Update(update shared.MissionUpdate) Mission {
 	m.ActorId = update.ActorID
 	m.UpdatedAt = update.Timestamp
 	return m
+}
+
+func (m Mission) ToProtobufMission() *pb.Mission {
+	return &pb.Mission{
+		Id:       &pb.MissionId{Uuid: m.Id},
+		Type:     missionTypeForIncident(m.Incident.Incident),
+		Position: positionToProto(m.Incident.Sensor.Position),
+		Priority: pb.MissionPriority_MISSION_PRIORITY_HIGH,
+	}
+}
+
+func missionTypeForIncident(incident shared.Incident) pb.MissionType {
+	switch incident {
+	case shared.WaterLevelAlert:
+		return pb.MissionType_MISSION_TYPE_PUMP_WATER
+	case shared.VibrationTooHigh:
+		return pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION
+	case shared.PersonDetected:
+		return pb.MissionType_MISSION_TYPE_RESCUE_PERSONS
+	default:
+		return pb.MissionType_MISSION_TYPE_UNSPECIFIED
+	}
+}
+
+func positionToProto(position shared.Position) *pb.Position {
+	return &pb.Position{
+		X: position.X,
+		Y: position.Y,
+	}
 }

@@ -2,8 +2,6 @@ package routes
 
 import (
 	"context"
-	"encoding/json"
-
 	"control-center/internal/html"
 	"control-center/internal/model"
 	"shared"
@@ -51,22 +49,11 @@ func Routes(router *vshttp.Router, state *model.State, actors model.ActorMission
 	})
 
 	router.Post("/incidents/:incidentID/mission", func(c *vshttp.Context) error {
-		updates, err := missions.AssignIncident(context.Background(), c.Param("incidentID"))
+		err := missions.AssignIncident(context.Background(), c.Param("incidentID"))
 		if err != nil {
-			return vshttp.Error(vshttp.BadRequest, err.Error())
+			return vshttp.Error(vshttp.InternalServerError, err.Error())
 		}
-
-		c.Writer.Header().Replace("Content-Type", "application/x-ndjson; charset=utf-8")
-		c.Writer.WriteHeader(vshttp.OK)
-
-		encoder := json.NewEncoder(c.Writer)
-		for update := range updates {
-			state.System().UpdateMission(update)
-			if err := encoder.Encode(update); err != nil {
-				return err
-			}
-		}
-		return nil
+		return c.NoContent()
 	})
 
 	router.Get("/health", func(c *vshttp.Context) error {

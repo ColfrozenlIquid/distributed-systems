@@ -5,103 +5,51 @@ import (
 	"fmt"
 	"time"
 
-	pb "control-center/gen"
 	"shared"
 )
 
 type ActorMissionClient interface {
-	AssignMission(ctx context.Context, actorId string, mission *pb.Mission) (<-chan Update, error)
+	AssignMission(ctx context.Context, mission Mission) error
 }
 
-type Update struct {
-	MissionID string           `json:"mission_id"`
-	ActorID   string           `json:"actor_id"`
-	ActorType shared.ActorType `json:"actor_type"`
-	State     string           `json:"state"`
-	Position  shared.Position  `json:"position"`
-	UpdatedAt time.Time        `json:"updated_at"`
-}
-
-type ActorSelector interface {
+type ActorAndMissionManager interface {
 	IncidentByID(id string) (shared.SensorIncident, bool)
-	FirstActorByType(actorType shared.ActorType) (Actor, bool)
+	FirstIdleActorByType(actorType shared.ActorType) (Actor, bool)
+	AddMission(mission Mission)
 }
 
-type Service struct {
+type MissionService struct {
 	actors ActorMissionClient
-	state  ActorSelector
+	state  ActorAndMissionManager
 }
 
-func NewService(actors ActorMissionClient, state ActorSelector) *Service {
-	return &Service{
+func NewService(actors ActorMissionClient, state ActorAndMissionManager) *MissionService {
+	return &MissionService{
 		actors: actors,
 		state:  state,
 	}
 }
 
-func (s *Service) AssignIncident(ctx context.Context, incidentID string) (<-chan Update, error) {
-	if s == nil || s.actors == nil {
-		return nil, fmt.Errorf("actor gRPC client is not configured")
-	}
-
+func (s *MissionService) AssignIncident(ctx context.Context, incidentID string) error {
 	incident, ok := s.state.IncidentByID(incidentID)
 	if !ok {
-		return nil, fmt.Errorf("incident %q not found", incidentID)
+		return fmt.Errorf("incident %q not found", incidentID)
 	}
 
-	missionType, actorType, ok := mapIncidentToMission(incident.Incident)
+	actorType := incident.Incident.ToActorType()
+	actor, ok := s.state.FirstIdleActorByType(actorType)
 	if !ok {
-		return nil, fmt.Errorf("incident %q has no supported mission mapping", incidentID)
+		return fmt.Errorf("no registered actor of type %q available for incident %q", actorType, incidentID)
 	}
 
-	actor, ok := s.state.FirstActorByType(actorType)
-	if !ok {
-		return nil, fmt.Errorf("no registered actor of type %q available for incident %q", actorType, incidentID)
+	mission := Mission{
+		Id:        fmt.Sprintf("%s/%s", actorType, incident.Id),
+		ActorId:   actor.Id,
+		Incident:  incident,
+		State:     shared.MissionStateAssigned,
+		UpdatedAt: time.Now(),
 	}
+	s.state.AddMission(mission)
 
-	missionID := fmt.Sprintf("%s-%d-%d", incident.Sensor.Id, int(incident.Incident), incident.Timestamp.UnixMilli())
-	updates, err := s.actors.AssignMission(ctx, actor.Id, &pb.Mission{
-		Id:   &pb.MissionId{Uuid: missionID},
-		Type: missionType,
-		Position: &pb.Position{
-			X: incident.Sensor.Position.X,
-			Y: incident.Sensor.Position.Y,
-		},
-		Priority: pb.MissionPriority_MISSION_PRIORITY_HIGH,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	enriched := make(chan Update)
-	go func() {
-		defer close(enriched)
-		for update := range updates {
-			update.ActorID = actor.Id
-			update.ActorType = actor.Type
-			if update.MissionID == "" {
-				update.MissionID = missionID
-			}
-			enriched <- update
-		}
-	}()
-
-	return enriched, nil
-}
-
-func IncidentID(incident shared.SensorIncident) string {
-	return fmt.Sprintf("%s-%d", incident.Sensor.Id, int(incident.Incident))
-}
-
-func mapIncidentToMission(incident shared.Incident) (pb.MissionType, shared.ActorType, bool) {
-	switch incident {
-	case shared.WaterLevelAlert:
-		return pb.MissionType_MISSION_TYPE_PUMP_WATER, shared.WaterVehicleActor, true
-	case shared.VibrationTooHigh:
-		return pb.MissionType_MISSION_TYPE_STABILIZE_VIBRATION, shared.VibrationVehicleActor, true
-	case shared.PersonDetected:
-		return pb.MissionType_MISSION_TYPE_RESCUE_PERSONS, shared.RescueVehicleActor, true
-	default:
-		return pb.MissionType_MISSION_TYPE_UNSPECIFIED, "", false
-	}
+	return s.actors.AssignMission(ctx, mission)
 }
