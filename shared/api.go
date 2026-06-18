@@ -1,6 +1,9 @@
 package shared
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Position struct {
 	X uint32 `json:"x"`
@@ -62,10 +65,15 @@ func (r *SensorReading) IsCritical() bool {
 
 func (r *SensorReading) ToIncident() SensorIncident {
 	return SensorIncident{
-		Sensor:    r.Sensor,
+		Id:        r.GenerateIncidentID(),
 		Timestamp: r.Timestamp,
+		Sensor:    r.Sensor,
 		Incident:  r.Sensor.SensorType.IncidentForSensorType(),
 	}
+}
+
+func (r *SensorReading) GenerateIncidentID() string {
+	return fmt.Sprintf("%s-%s:%s", r.Sensor.Id, r.Sensor.SensorType, r.Timestamp.String())
 }
 
 func (r SensorType) IncidentForSensorType() Incident {
@@ -97,4 +105,17 @@ type ActorInfo struct {
 
 type ActorRegistration struct {
 	Actor ActorInfo `json:"actor"`
+}
+
+func (i Incident) ToActorType() ActorType {
+	switch i {
+	case VibrationTooHigh:
+		return VibrationVehicleActor
+	case WaterLevelAlert:
+		return WaterVehicleActor
+	case PersonDetected:
+		return RescueVehicleActor
+	default:
+		return ""
+	}
 }
