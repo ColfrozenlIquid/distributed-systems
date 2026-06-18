@@ -48,6 +48,10 @@ func Routes(router *vshttp.Router, state *model.State, actors model.ActorMission
 		return c.JSON(vshttp.OK, state.System().Snapshot())
 	})
 
+	router.Get("/status/incidents", func(c *vshttp.Context) error {
+		return c.JSON(vshttp.OK, state.System().Snapshot().Incidents)
+	})
+
 	router.Post("/incidents/:incidentID/mission", func(c *vshttp.Context) error {
 		err := missions.AssignIncident(context.Background(), c.Param("incidentID"))
 		if err != nil {

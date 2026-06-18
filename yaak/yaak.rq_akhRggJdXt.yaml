@@ -1,0 +1,41 @@
+type: http_request
+model: http_request
+id: rq_akhRggJdXt
+createdAt: 2026-06-18T18:36:49.588473
+updatedAt: 2026-06-18T18:36:59.204335
+workspaceId: wk_XFprmkwA7A
+folderId: fl_5D9MP2NwY4
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers:
+- enabled: true
+  name: Accept
+  value: application/json
+  id: qn5B6eCfBy
+- enabled: true
+  name: ''
+  value: ''
+  id: pFhY4bNKix
+method: GET
+name: Get Incidents
+sortPriority: 1000.001
+url: ${[ baseUrl ]}/status/incidents
+urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0
