@@ -36,10 +36,14 @@ func (c *ActorClient) AssignMission(ctx context.Context, mission model.Mission) 
 		return fmt.Errorf("connect to actor %q over gRPC: %w", mission.ActorId, err)
 	}
 
-	_, err = pb.NewActorServiceClient(conn).AssignMission(ctx, &pb.AssignMissionRequest{Mission: mission.ToProtobufMission()})
+	response, err := pb.NewActorServiceClient(conn).AssignMission(ctx, &pb.AssignMissionRequest{Mission: mission.ToProtobufMission()})
 	if err != nil {
 		_ = conn.Close()
 		return fmt.Errorf("assign mission over gRPC: %w", err)
+	}
+	if !response.GetMissionAccepted() {
+		_ = conn.Close()
+		return fmt.Errorf("mission rejected by actor %q", mission.ActorId)
 	}
 	return nil
 }
