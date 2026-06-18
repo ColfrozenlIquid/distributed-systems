@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 
 	"control-center/internal/html"
-	"control-center/internal/mission"
 	"control-center/internal/model"
 	"shared"
 	"vshttp"
 )
 
-func Routes(router *vshttp.Router, state *model.State, actors mission.ActorMissionClient) {
-	missions := mission.NewService(actors, state.System())
+func Routes(router *vshttp.Router, state *model.State, actors model.ActorMissionClient) {
+	missions := model.NewService(actors, state.System())
 
 	router.Post("/reading", func(c *vshttp.Context) error {
 		var request shared.SensorReading
@@ -66,7 +65,6 @@ func Routes(router *vshttp.Router, state *model.State, actors mission.ActorMissi
 			if err := encoder.Encode(update); err != nil {
 				return err
 			}
-			c.Writer.Write([]byte("\n"))
 		}
 		return nil
 	})

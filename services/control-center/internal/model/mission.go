@@ -1,4 +1,4 @@
-package mission
+package model
 
 import (
 	"context"
@@ -24,7 +24,7 @@ type Update struct {
 
 type ActorSelector interface {
 	IncidentByID(id string) (shared.SensorIncident, bool)
-	FirstActorByType(actorType shared.ActorType) (shared.ActorInfo, bool)
+	FirstActorByType(actorType shared.ActorType) (Actor, bool)
 }
 
 type Service struct {
@@ -78,7 +78,7 @@ func (s *Service) AssignIncident(ctx context.Context, incidentID string) (<-chan
 		defer close(enriched)
 		for update := range updates {
 			update.ActorID = actor.Id
-			update.ActorType = actor.ActorType
+			update.ActorType = actor.Type
 			if update.MissionID == "" {
 				update.MissionID = missionID
 			}

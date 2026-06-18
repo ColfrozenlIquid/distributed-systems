@@ -1,29 +1,32 @@
 package model
 
 import (
-	"control-center/internal/mission"
 	"fmt"
 	"shared"
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type SystemStatus struct {
-	mu        sync.RWMutex
-	Sensors   []shared.SensorInfo     `json:"sensors"`
-	Actors    []shared.ActorInfo      `json:"actors"`
-	Readings  []shared.SensorReading  `json:"readings"`
-	Incidents []shared.SensorIncident `json:"incidents"`
-	Missions  []mission.Update        `json:"missions"`
+	mu          sync.RWMutex
+	Sensors     []shared.SensorInfo `json:"sensors"`
+	Actors      []shared.ActorInfo  `json:"actors"`
+	ActorsNew   []Actor
+	Readings    []shared.SensorReading  `json:"readings"`
+	Incidents   []shared.SensorIncident `json:"incidents"`
+	Missions    []Update                `json:"missions"`
+	MissionsNew []Mission
 }
 
 type SystemStatusSnapshot struct {
 	Sensors   []shared.SensorInfo     `json:"sensors"`
-	Actors    []shared.ActorInfo      `json:"actors"`
+	Actors    []Actor                 `json:"actors"`
 	Readings  []shared.SensorReading  `json:"readings"`
 	Incidents []shared.SensorIncident `json:"incidents"`
-	Missions  []mission.Update        `json:"missions"`
+	Missions  []Mission               `json:"missions"`
 }
 
 func (s *SystemStatus) AddSensor(sensor shared.SensorInfo) {
@@ -33,15 +36,17 @@ func (s *SystemStatus) AddSensor(sensor shared.SensorInfo) {
 }
 
 func (s *SystemStatus) AddActor(actor shared.ActorInfo) {
+	actorDomain := ActorFromActorInfo(actor)
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if index := slices.IndexFunc(s.Actors, func(existing shared.ActorInfo) bool {
-		return existing.Id == actor.Id
+	if index := slices.IndexFunc(s.ActorsNew, func(existing Actor) bool {
+		return existing.Id == actorDomain.Id
 	}); index >= 0 {
-		s.Actors[index] = actor
+		s.ActorsNew[index] = actorDomain
 		return
 	}
-	s.Actors = append(s.Actors, actor)
+	s.ActorsNew = append(s.ActorsNew, actorDomain)
 }
 
 func (s *SystemStatus) AddReading(reading shared.SensorReading) {
@@ -68,15 +73,65 @@ func (s *SystemStatus) AddIncident(incident shared.SensorIncident) {
 	s.addIncidentLocked(incident)
 }
 
+func (s *SystemStatus) UpdateActorFromStatus(actorStatus shared.ActorStatus) {
+	actor, index := s.getActor(actorStatus.ActorID)
+	if index < 0 {
+		return
+	}
+	s.ActorsNew[index] = actor.UpdateWithStatus(actorStatus)
+}
+
+func (s *SystemStatus) UpdateActorFromTelemetry(actorTelemetry shared.ActorTelemetry) {
+	actor, index := s.getActor(actorTelemetry.ActorID)
+	if index < 0 {
+		return
+	}
+	s.ActorsNew[index] = actor.UpdateWithTelemetry(actorTelemetry)
+}
+
+func (s *SystemStatus) getActor(id string) (actor *Actor, index int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	actor = nil
+	index = slices.IndexFunc(s.ActorsNew, func(existing Actor) bool {
+		return existing.Id == id
+	})
+	if index >= 0 {
+		actor = &s.ActorsNew[index]
+	}
+	return actor, index
+}
+
+func (s *SystemStatus) UpdateMissionNew(mission shared.MissionUpdate) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	index := slices.IndexFunc(s.MissionsNew, func(existing Mission) bool {
+		return existing.Id == mission.MissionID
+	})
+	if index < 0 {
+		return
+	}
+
+	s.MissionsNew[index] = s.MissionsNew[index].Update(mission)
+	switch mission.State {
+	case shared.MissionStateCompleted:
+		s.Incidents = slices.DeleteFunc(s.Incidents, func(i shared.SensorIncident) bool {
+			return i == s.MissionsNew[index].Incident
+		})
+	case shared.MissionStateFailed:
+		// TODO Handle failed missions?
+	}
+}
+
 func (s *SystemStatus) Snapshot() SystemStatusSnapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return SystemStatusSnapshot{
 		Sensors:   append([]shared.SensorInfo(nil), s.Sensors...),
-		Actors:    append([]shared.ActorInfo(nil), s.Actors...),
+		Actors:    append([]Actor(nil), s.ActorsNew...),
 		Readings:  append([]shared.SensorReading(nil), s.Readings...),
 		Incidents: append([]shared.SensorIncident(nil), s.Incidents...),
-		Missions:  append([]mission.Update(nil), s.Missions...),
+		Missions:  append([]Mission(nil), s.MissionsNew...),
 	}
 }
 
@@ -88,32 +143,32 @@ func (s *SystemStatus) IncidentByID(id string) (shared.SensorIncident, bool) {
 
 func (s *SystemStatus) incidentByIdLocked(id string) (shared.SensorIncident, bool) {
 	for _, incident := range s.Incidents {
-		if mission.IncidentID(incident) == id {
+		if IncidentID(incident) == id {
 			return incident, true
 		}
 	}
 	return shared.SensorIncident{}, false
 }
 
-func (s *SystemStatus) FirstActorByType(actorType shared.ActorType) (shared.ActorInfo, bool) {
+func (s *SystemStatus) FirstActorByType(actorType shared.ActorType) (Actor, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	for _, actor := range s.Actors {
-		if actor.ActorType == actorType {
+	for _, actor := range s.ActorsNew {
+		if actor.Type == actorType {
 			return actor, true
 		}
 	}
-	return shared.ActorInfo{}, false
+	return Actor{}, false
 }
 
-func (s *SystemStatus) UpdateMission(update mission.Update) {
+func (s *SystemStatus) UpdateMission(update Update) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if update.MissionID == "" {
 		update.MissionID = fmt.Sprintf("%s-%s", update.ActorID, update.UpdatedAt.Format("150405.000"))
 	}
 
-	if index := slices.IndexFunc(s.Missions, func(existing mission.Update) bool {
+	if index := slices.IndexFunc(s.Missions, func(existing Update) bool {
 		return existing.MissionID == update.MissionID && existing.ActorID == update.ActorID
 	}); index >= 0 {
 		s.Missions[index] = update
@@ -141,6 +196,13 @@ func (s *SystemStatus) UpdateMission(update mission.Update) {
 }
 
 func (s *SystemStatus) addIncidentLocked(incident shared.SensorIncident) {
+	if incident.Id == "" {
+		id, err := uuid.NewV7()
+		if err != nil {
+			panic(err)
+		}
+		incident.Id = id.String()
+	}
 	if slices.ContainsFunc(s.Incidents, func(i shared.SensorIncident) bool {
 		return i.Sensor == incident.Sensor
 	}) {

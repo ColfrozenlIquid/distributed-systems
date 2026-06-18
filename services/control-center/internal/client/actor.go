@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"control-center/internal/model"
 	"errors"
 	"fmt"
 	"io"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	pb "control-center/gen"
-	"control-center/internal/mission"
 	"shared"
 
 	"google.golang.org/grpc"
@@ -29,7 +29,7 @@ func NewActorClient() *ActorClient {
 	}
 }
 
-func (c *ActorClient) AssignMission(ctx context.Context, actorId string, pbMission *pb.Mission) (<-chan mission.Update, error) {
+func (c *ActorClient) AssignMission(ctx context.Context, actorId string, pbMission *pb.Mission) (<-chan model.Update, error) {
 	host := strings.TrimSpace(actorId)
 	if host == "" {
 		return nil, errors.New("actor id is required for gRPC dialing")
@@ -46,7 +46,7 @@ func (c *ActorClient) AssignMission(ctx context.Context, actorId string, pbMissi
 		return nil, fmt.Errorf("assign mission over gRPC: %w", err)
 	}
 
-	updates := make(chan mission.Update)
+	updates := make(chan model.Update)
 	go func() {
 		defer close(updates)
 		defer conn.Close()
@@ -57,7 +57,7 @@ func (c *ActorClient) AssignMission(ctx context.Context, actorId string, pbMissi
 			}
 			if err != nil {
 				fmt.Printf("error while receiving stream response: %v\n", err)
-				updates <- mission.Update{
+				updates <- model.Update{
 					MissionID: pbMission.GetId().GetUuid(),
 					State:     actorStateLabel(pb.ActorState_ACTOR_STATE_UNSPECIFIED),
 					Position:  shared.Position{},
@@ -67,7 +67,7 @@ func (c *ActorClient) AssignMission(ctx context.Context, actorId string, pbMissi
 			}
 
 			position := response.GetCurrentPosition()
-			updates <- mission.Update{
+			updates <- model.Update{
 				MissionID: response.GetMissionId().GetUuid(),
 				State:     actorStateLabel(response.GetState()),
 				Position: shared.Position{
