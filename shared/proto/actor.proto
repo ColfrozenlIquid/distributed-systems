@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "./proto";
 
 service ActorService {
-  rpc AssignMission(AssignMissionRequest) returns (stream AssignMissionResponse);
+  rpc AssignMission(AssignMissionRequest) returns (AssignMissionResponse);
 }
 
 message AssignMissionRequest {
@@ -11,9 +11,7 @@ message AssignMissionRequest {
 }
 
 message AssignMissionResponse {
-  MissionId missionId = 1;
-  Position currentPosition = 2;
-  ActorState state = 3;
+  bool missionAccepted = 1;
 }
 
 message Mission {
@@ -44,14 +42,4 @@ enum MissionPriority {
   MISSION_PRIORITY_LOW = 1;
   MISSION_PRIORITY_MEDIUM = 2;
   MISSION_PRIORITY_HIGH = 3;
-}
-
-enum ActorState {
-  ACTOR_STATE_UNSPECIFIED = 0;
-  ACTOR_STATE_IDLE = 1;
-  ACTOR_STATE_ASSIGNED = 2;
-  ACTOR_STATE_ON_THE_WAY = 3;
-  ACTOR_STATE_BUSY = 4;
-  ACTOR_STATE_DONE = 5;
-  ACTOR_STATE_ERROR = 6;
 }
