@@ -437,7 +437,7 @@ func incidentListItems(incidents []shared.SensorIncident) []IncidentListItem {
 	for i := len(incidents) - 1; i >= 0 && len(items) < 8; i-- {
 		incident := incidents[i]
 		items = append(items, IncidentListItem{
-			ID:        model.IncidentID(incident),
+			ID:        incident.Id,
 			Type:      incidentLabel(incident.Incident),
 			SensorID:  fallbackID(incident.Sensor.Id),
 			Position:  formatPosition(incident.Sensor.Position),
