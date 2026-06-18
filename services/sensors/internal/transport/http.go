@@ -1,4 +1,4 @@
-package client
+package transport
 
 import (
 	"bytes"
@@ -6,38 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"shared"
 	"time"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
-	pb "sensors/gen"
 )
 
-type ClientConfig struct {
-	ClientId    string
-	HttpAddress string
-	HttpTimeout time.Duration
-
-	GrpcAddress string
-	MQTTConfig  *shared.MqttConfig
-}
-
-type Client struct {
-	Http   HTTPClient
-	Grpc   GRPCClient
-	Logger *zap.Logger
-	MQTT   mqtt.Client
-}
-
-type GRPCClient struct {
-	grpcConn *grpc.ClientConn
-	Grpc     pb.WorldServiceClient
-}
-
+// Handle HTTP transport layer
 type HTTPClient struct {
 	httpClient *http.Client
 	BaseURL    string
@@ -50,38 +22,12 @@ type Response struct {
 	Header     http.Header
 }
 
-func (c *GRPCClient) Close() error {
-	return c.grpcConn.Close()
-}
-
-func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
-	conn, err := grpc.NewClient(cfg.GrpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to gRPC: %w", err)
-	}
-
-	grpc := &GRPCClient{
-		grpcConn: conn,
-		Grpc:     pb.NewWorldServiceClient(conn),
-	}
-
-	http := &HTTPClient{
+func NewHTTPClient(cfg TransportConfig) *HTTPClient {
+	return &HTTPClient{
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 		BaseURL:    cfg.HttpAddress,
 		Timeout:    cfg.HttpTimeout,
 	}
-
-	mqtt, err := shared.ConnectToMqttBroker(cfg.MQTTConfig, cfg.ClientId, true)
-	if err != nil {
-		return nil, fmt.Errorf("connect to mqtt broker: %w", err)
-	}
-
-	return &Client{
-		Logger: logger,
-		Http:   *http,
-		Grpc:   *grpc,
-		MQTT:   mqtt,
-	}, nil
 }
 
 func (c *HTTPClient) send(method string, path string, body any) (*Response, error) {
