@@ -1,4 +1,4 @@
-package client
+package transport
 
 import (
 	pb "actors/gen"
@@ -20,6 +20,14 @@ type ActorHandler struct {
 	mission    mission.Mission
 }
 
+func NewActorHandler(logger *zap.Logger, actor actor.Actor, simulation pb.WorldServiceClient) *ActorHandler {
+	return &ActorHandler{
+		logger:     logger,
+		actor:      actor,
+		simulation: simulation,
+	}
+}
+
 func (a *ActorHandler) AssignMission(req *pb.AssignMissionRequest, stream grpc.ServerStreamingServer[pb.AssignMissionResponse]) error {
 	resultsCh := make(chan *pb.AssignMissionResponse)
 
@@ -39,12 +47,4 @@ func (a *ActorHandler) AssignMission(req *pb.AssignMissionRequest, stream grpc.S
 	}
 
 	return nil
-}
-
-func NewActorHandler(logger *zap.Logger, actor actor.Actor, simulation pb.WorldServiceClient) *ActorHandler {
-	return &ActorHandler{
-		logger:     logger,
-		actor:      actor,
-		simulation: simulation,
-	}
 }
