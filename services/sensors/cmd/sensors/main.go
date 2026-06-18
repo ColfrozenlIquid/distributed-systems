@@ -35,6 +35,8 @@ func main() {
 	clientCfg := client.ClientConfig{
 		HttpAddress: sensorCfg.BaseStationEndpoint,
 		GrpcAddress: sensorCfg.WorldSimulationEndpoint,
+		MQTTConfig:  sensorCfg.MQTTConfig,
+		ClientId:    sensorCfg.Id,
 	}
 
 	client, err := client.NewClient(clientCfg, logger)
@@ -100,14 +102,23 @@ func (s *App) Reading(reading float32) error {
 		Value: reading,
 	}
 
-	resp, err := s.client.Http.Post("/reading", payload)
-	if err != nil {
-		return fmt.Errorf("post sensor reading: %w", err)
-	}
+	// Replaced with MQTT Publish
+	// resp, err := s.client.Http.Post("/reading", payload)
+	// if err != nil {
+	// 	return fmt.Errorf("post sensor reading: %w", err)
+	// }
 
-	if resp.StatusCode != http.StatusNoContent {
-		s.logger.Error("sensor reading failed", zap.Any("response", resp))
-	}
+	// if resp.StatusCode != http.StatusNoContent {
+	// 	s.logger.Error("sensor reading failed", zap.Any("response", resp))
+	// }
+
+	// Retain = false, QoS = 0
+	s.client.MQTT.Publish(
+		shared.TileReadingTopic(s.sensor.Position().X, s.sensor.Position().Y, shared.SensorType(s.sensor.Type())),
+		byte(0),
+		false,
+		payload,
+	)
 
 	return nil
 }

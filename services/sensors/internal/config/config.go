@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"shared"
 	"time"
 
 	"github.com/spf13/viper"
@@ -15,6 +16,7 @@ type SensorConfig struct {
 	YPosition               uint32
 	BaseStationEndpoint     string
 	WorldSimulationEndpoint string
+	MQTTConfig              *shared.MqttConfig
 }
 
 func LoadConfig() (*SensorConfig, error) {
@@ -31,6 +33,11 @@ func LoadConfig() (*SensorConfig, error) {
 		}
 	}
 
+	mqttConfig, err := shared.LoadMqttConfig(v)
+	if err != nil {
+		return nil, fmt.Errorf("mqtt config missing: %w", err)
+	}
+
 	return &SensorConfig{
 		Id:                      v.GetString("SENSOR_ID"),
 		SensorType:              v.GetString("SENSOR_TYPE"),
@@ -39,5 +46,6 @@ func LoadConfig() (*SensorConfig, error) {
 		YPosition:               uint32(v.GetInt("SENSOR_POSITION_Y")),
 		BaseStationEndpoint:     v.GetString("CONTROL_CENTER_URL"),
 		WorldSimulationEndpoint: v.GetString("WORLD_SIMULATION_HOST_AND_PORT"),
+		MQTTConfig:              mqttConfig,
 	}, nil
 }

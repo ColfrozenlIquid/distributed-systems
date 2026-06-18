@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"shared"
 	"time"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,16 +18,19 @@ import (
 )
 
 type ClientConfig struct {
+	ClientId    string
 	HttpAddress string
 	HttpTimeout time.Duration
 
 	GrpcAddress string
+	MQTTConfig  *shared.MqttConfig
 }
 
 type Client struct {
 	Http   HTTPClient
 	Grpc   GRPCClient
 	Logger *zap.Logger
+	MQTT   mqtt.Client
 }
 
 type GRPCClient struct {
@@ -66,10 +71,16 @@ func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
 		Timeout:    cfg.HttpTimeout,
 	}
 
+	mqtt, err := shared.ConnectToMqttBroker(cfg.MQTTConfig, cfg.ClientId, true)
+	if err != nil {
+		return nil, fmt.Errorf("connect to mqtt broker: %w", err)
+	}
+
 	return &Client{
 		Logger: logger,
 		Http:   *http,
 		Grpc:   *grpc,
+		MQTT:   mqtt,
 	}, nil
 }
 
