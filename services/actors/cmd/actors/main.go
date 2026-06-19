@@ -3,6 +3,7 @@ package main
 import (
 	"actors/internal/actor"
 	"actors/internal/config"
+	"actors/internal/mission"
 	"actors/internal/transport"
 	"context"
 	"fmt"
@@ -51,7 +52,7 @@ func main() {
 		logger.Fatal("failed to create new actor", zap.Error(err))
 	}
 
-	handler := transport.NewActorHandler(logger, actor, client.Grpc.WorldServiceClient)
+	handler := mission.NewActorHandler(logger, actor, client.Grpc.WorldServiceClient)
 
 	client.Grpc.RegisterActorHandler(handler)
 

@@ -4,6 +4,7 @@ import (
 	pb "actors/gen"
 	proto "actors/gen"
 	"actors/internal/actor"
+	"actors/internal/transport"
 	"actors/internal/types"
 	"context"
 	"shared"
@@ -24,9 +25,9 @@ type MissionConfig struct {
 
 func NewMission(
 	req *pb.AssignMissionRequest,
-	ch chan<- *pb.AssignMissionResponse,
 	simulation pb.WorldServiceClient,
 	actor actor.Actor,
+	mqtt *transport.MQTTClient,
 ) (Mission, error) {
 	missionType, err := MissionTypeToDomain(req.GetMission().GetType())
 	if err != nil {
@@ -46,7 +47,7 @@ func NewMission(
 		},
 		Priority: missionPriority,
 	}
-	base := NewBaseMission(cfg, ch, simulation, actor)
+	base := NewBaseMission(cfg, simulation, actor, mqtt)
 
 	switch missionType {
 	case MissionTypePumpWater:

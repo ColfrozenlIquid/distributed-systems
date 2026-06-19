@@ -4,6 +4,7 @@ package mission
 import (
 	pb "actors/gen"
 	"actors/internal/actor"
+	"actors/internal/transport"
 	"context"
 	"fmt"
 	"math/rand"
@@ -21,14 +22,14 @@ type BaseMission struct {
 	State        MissionState
 	simulation   pb.WorldServiceClient
 	actor        actor.Actor
-	channel      chan<- *pb.AssignMissionResponse
+	mqtt         *transport.MQTTClient
 }
 
 func NewBaseMission(
 	cfg MissionConfig,
-	ch chan<- *pb.AssignMissionResponse,
 	simulation pb.WorldServiceClient,
 	actor actor.Actor,
+	mqtt *transport.MQTTClient,
 ) BaseMission {
 	return BaseMission{
 		Id:          cfg.Id,
@@ -39,12 +40,11 @@ func NewBaseMission(
 		State:       MissionStateAssigned,
 		simulation:  simulation,
 		actor:       actor,
-		channel:     ch,
+		mqtt:        mqtt,
 	}
 }
 
 func (b *BaseMission) RunMission(ctx context.Context) error {
-	defer close(b.channel)
 	ticker := time.NewTicker(b.actor.Interval())
 	defer ticker.Stop()
 	for {
@@ -125,6 +125,15 @@ func (b *BaseMission) send(state MissionState) error {
 	if err != nil {
 		return err
 	}
+
+	// retain = false, Qos = 1
+	b.mqtt.MQTT.Publish(shared.MissionUpdateTopic(b.Id), byte(1), false, shared.MissionUpdate{
+		MissionID: b.Id,
+		ActorID:   b.actor.Id(),
+		State:     missin,
+		Timestamp: time.Time{},
+	})
+
 	b.channel <- &pb.AssignMissionResponse{
 		MissionId:       &pb.MissionId{Uuid: b.Id},
 		CurrentPosition: &pb.Position{X: uint32(b.actor.Position().X), Y: uint32(b.actor.Position().Y)},
