@@ -4,15 +4,18 @@ import (
 	"shared"
 	"slices"
 	"sync"
+
+	"github.com/samber/ro"
 )
 
 type SystemStatus struct {
-	mu        sync.RWMutex
-	Sensors   []shared.SensorInfo     `json:"sensors"`
-	Actors    []Actor                 `json:"actors"`
-	Readings  []shared.SensorReading  `json:"readings"`
-	Incidents []shared.SensorIncident `json:"incidents"`
-	Missions  []Mission               `json:"missions"`
+	mu             sync.RWMutex
+	Sensors        []shared.SensorInfo     `json:"sensors"`
+	Actors         []Actor                 `json:"actors"`
+	Readings       []shared.SensorReading  `json:"readings"`
+	Incidents      []shared.SensorIncident `json:"incidents"`
+	Missions       []Mission               `json:"missions"`
+	missionUpdates ro.Subject[Mission]
 }
 
 type SystemStatusSnapshot struct {
@@ -21,6 +24,12 @@ type SystemStatusSnapshot struct {
 	Readings  []shared.SensorReading  `json:"readings"`
 	Incidents []shared.SensorIncident `json:"incidents"`
 	Missions  []Mission               `json:"missions"`
+}
+
+func NewSystemStatus() SystemStatus {
+	return SystemStatus{
+		missionUpdates: ro.NewPublishSubject[Mission](),
+	}
 }
 
 func (s *SystemStatus) AddSensor(sensor shared.SensorInfo) {
@@ -57,69 +66,83 @@ func (s *SystemStatus) updateSensorInfo(reading shared.SensorReading) {
 	if index := slices.IndexFunc(s.Sensors, func(sensor shared.SensorInfo) bool {
 		return sensor.Id == reading.Sensor.Id
 	}); index >= 0 {
-		slices.Replace(s.Sensors, index, index+1, reading.Sensor)
+		s.Sensors[index] = reading.Sensor
 	}
 }
 
 func (s *SystemStatus) UpdateActorFromStatus(actorStatus shared.ActorStatus) {
-	actor, index := s.getActor(actorStatus.ActorID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	index := slices.IndexFunc(s.Actors, func(existing Actor) bool {
+		return existing.Id == actorStatus.ActorID
+	})
 	if index < 0 {
 		return
 	}
-	s.Actors[index] = actor.UpdateWithStatus(actorStatus)
+	s.Actors[index] = s.Actors[index].UpdateWithStatus(actorStatus)
 }
 
 func (s *SystemStatus) UpdateActorFromTelemetry(actorTelemetry shared.ActorTelemetry) {
-	actor, index := s.getActor(actorTelemetry.ActorID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	index := slices.IndexFunc(s.Actors, func(existing Actor) bool {
+		return existing.Id == actorTelemetry.ActorID
+	})
 	if index < 0 {
 		return
 	}
-	s.Actors[index] = actor.UpdateWithTelemetry(actorTelemetry)
-}
-
-func (s *SystemStatus) getActor(id string) (actor *Actor, index int) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	actor = nil
-	index = slices.IndexFunc(s.Actors, func(existing Actor) bool {
-		return existing.Id == id
-	})
-	if index >= 0 {
-		actor = &s.Actors[index]
-	}
-	return actor, index
+	s.Actors[index] = s.Actors[index].UpdateWithTelemetry(actorTelemetry)
 }
 
 func (s *SystemStatus) AddMission(mission Mission) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if slices.ContainsFunc(s.Missions, func(m Mission) bool {
 		return m.Id == mission.Id
 	}) {
+		s.mu.Unlock()
 		return
 	}
 	s.Missions = append(s.Missions, mission)
+	s.mu.Unlock()
+	s.publishMissionUpdate(mission)
 }
 
 func (s *SystemStatus) UpdateMission(mission shared.MissionUpdate) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	index := slices.IndexFunc(s.Missions, func(existing Mission) bool {
 		return existing.Id == mission.MissionID
 	})
 	if index < 0 {
+		s.mu.Unlock()
 		return
 	}
 
-	s.Missions[index] = s.Missions[index].Update(mission)
-	switch mission.State {
-	case shared.MissionStateCompleted:
+	updated := s.Missions[index].Update(mission)
+	s.Missions[index] = updated
+
+	if mission.State == shared.MissionStateCompleted {
 		s.Incidents = slices.DeleteFunc(s.Incidents, func(i shared.SensorIncident) bool {
-			return i == s.Missions[index].Incident
+			return i == updated.Incident
 		})
-	case shared.MissionStateFailed:
-		// TODO Handle failed missions?
 	}
+	s.mu.Unlock()
+	s.publishMissionUpdate(updated)
+}
+
+func (s *SystemStatus) MissionUpdates() ro.Observable[Mission] {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.missionUpdates == nil {
+		s.missionUpdates = ro.NewPublishSubject[Mission]()
+	}
+	return s.missionUpdates
+}
+
+func (s *SystemStatus) publishMissionUpdate(mission Mission) {
+	if s.missionUpdates == nil {
+		return
+	}
+	s.missionUpdates.Next(mission)
 }
 
 func (s *SystemStatus) Snapshot() SystemStatusSnapshot {

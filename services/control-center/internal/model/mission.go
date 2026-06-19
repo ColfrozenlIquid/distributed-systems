@@ -30,16 +30,16 @@ func NewService(actors ActorMissionClient, state ActorAndMissionManager) *Missio
 	}
 }
 
-func (s *MissionService) AssignIncident(ctx context.Context, incidentID string) error {
+func (s *MissionService) AssignIncident(ctx context.Context, incidentID string) (string, error) {
 	incident, ok := s.state.IncidentByID(incidentID)
 	if !ok {
-		return fmt.Errorf("incident %q not found", incidentID)
+		return "", fmt.Errorf("incident %q not found", incidentID)
 	}
 
 	actorType := incident.Incident.ToActorType()
 	actor, ok := s.state.FirstIdleActorByType(actorType)
 	if !ok {
-		return fmt.Errorf("no registered actor of type %q available for incident %q", actorType, incidentID)
+		return "", fmt.Errorf("no registered actor of type %q available for incident %q", actorType, incidentID)
 	}
 
 	mission := Mission{
@@ -51,5 +51,5 @@ func (s *MissionService) AssignIncident(ctx context.Context, incidentID string) 
 	}
 	s.state.AddMission(mission)
 
-	return s.actors.AssignMission(ctx, mission)
+	return mission.Id, s.actors.AssignMission(ctx, mission)
 }

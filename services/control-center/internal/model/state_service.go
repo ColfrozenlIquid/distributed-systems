@@ -29,7 +29,7 @@ var state State
 
 func NewState(worldClient pb.WorldServiceClient) *State {
 	state = State{
-		system:      SystemStatus{},
+		system:      NewSystemStatus(),
 		world:       getWorld(worldClient),
 		mqttStreams: shared.NewStreams(),
 	}

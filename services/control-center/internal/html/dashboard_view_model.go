@@ -1,8 +1,10 @@
 package html
 
 import (
+	"context"
 	"control-center/internal/model"
 	"fmt"
+	"io"
 	"math"
 	"sort"
 	"strings"
@@ -84,11 +86,13 @@ type ReadingListItem struct {
 }
 
 type IncidentListItem struct {
-	ID        string
-	Type      string
-	SensorID  string
-	Position  string
-	Timestamp string
+	ID           string
+	Type         string
+	SensorID     string
+	Position     string
+	Timestamp    string
+	MissionID    string
+	MissionState string
 }
 
 type LegendItem struct {
@@ -160,7 +164,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 		Sensors:     sensorListItems(status.Sensors),
 		Actors:      actorListItems(status.Actors),
 		Readings:    readingListItems(status.Readings),
-		Incidents:   incidentListItems(status.Incidents),
+		Incidents:   incidentListItems(status.Incidents, status.Missions),
 		Legend: []LegendItem{
 			{Label: "Land", Class: "legend-land"},
 			{Label: "Water", Class: "legend-water"},
@@ -432,19 +436,63 @@ func readingListItems(readings []shared.SensorReading) []ReadingListItem {
 	return items
 }
 
-func incidentListItems(incidents []shared.SensorIncident) []IncidentListItem {
+func incidentListItems(incidents []shared.SensorIncident, missions []model.Mission) []IncidentListItem {
 	items := make([]IncidentListItem, 0, len(incidents))
+	// build map from incident id to mission
+	missionByIncident := make(map[string]model.Mission)
+	for _, m := range missions {
+		missionByIncident[m.Incident.Id] = m
+	}
+
 	for i := len(incidents) - 1; i >= 0 && len(items) < 8; i-- {
 		incident := incidents[i]
-		items = append(items, IncidentListItem{
-			ID:        incident.Id,
-			Type:      incidentLabel(incident.Incident),
-			SensorID:  fallbackID(incident.Sensor.Id),
-			Position:  formatPosition(incident.Sensor.Position),
-			Timestamp: formatTimestamp(incident.Timestamp),
-		})
+		if mission, ok := missionByIncident[incident.Id]; ok {
+			items = append(items, IncidentListItemFromIncident(incident, &mission))
+			continue
+		}
+		items = append(items, IncidentListItemFromIncident(incident, nil))
 	}
 	return items
+}
+
+func IncidentListItemFromIncident(incident shared.SensorIncident, mission *model.Mission) IncidentListItem {
+	item := IncidentListItem{
+		ID:        incident.Id,
+		Type:      incidentLabel(incident.Incident),
+		SensorID:  fallbackID(incident.Sensor.Id),
+		Position:  formatPosition(incident.Sensor.Position),
+		Timestamp: formatTimestamp(incident.Timestamp),
+	}
+	if mission != nil {
+		item.MissionID = mission.Id
+		item.MissionState = string(mission.State)
+	}
+	return item
+}
+
+func IncidentItemForMission(snapshot model.SystemStatusSnapshot, mission model.Mission) (IncidentListItem, bool) {
+	for _, incident := range snapshot.Incidents {
+		if incident.Id == mission.Incident.Id {
+			return IncidentListItemFromIncident(incident, &mission), true
+		}
+	}
+	return IncidentListItem{}, false
+}
+
+func WriteIncidentItemSSE(ctx context.Context, w io.Writer, snapshot model.SystemStatusSnapshot, mission model.Mission) error {
+	item, ok := IncidentItemForMission(snapshot, mission)
+	if !ok {
+		return nil
+	}
+
+	var buf strings.Builder
+	if err := IncidentItem(item).Render(ctx, &buf); err != nil {
+		return err
+	}
+
+	data := strings.ReplaceAll(buf.String(), "\n", "\ndata: ")
+	_, err := fmt.Fprintf(w, "data: %s\n\n", data)
+	return err
 }
 
 func formatReadingValue(reading shared.SensorReading) string {
