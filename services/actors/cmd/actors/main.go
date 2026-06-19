@@ -52,7 +52,7 @@ func main() {
 		logger.Fatal("failed to create new actor", zap.Error(err))
 	}
 
-	handler := mission.NewActorHandler(logger, actor, client.Grpc.WorldServiceClient, &client.Mqtt)
+	handler := mission.NewMissionHandler(logger, actor, client.Grpc.WorldServiceClient, &client.Mqtt)
 
 	client.Grpc.RegisterActorHandler(handler)
 

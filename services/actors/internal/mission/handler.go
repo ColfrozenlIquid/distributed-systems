@@ -10,9 +10,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ pb.ActorServiceServer = (*ActorHandler)(nil)
+var _ pb.ActorServiceServer = (*MissionHandler)(nil)
 
-type ActorHandler struct {
+type MissionHandler struct {
 	pb.UnimplementedActorServiceServer
 	simulation pb.WorldServiceClient
 	mqtt       *transport.MQTTClient
@@ -21,8 +21,8 @@ type ActorHandler struct {
 	mission    Mission
 }
 
-func NewActorHandler(logger *zap.Logger, actor actor.Actor, simulation pb.WorldServiceClient, mqtt *transport.MQTTClient) *ActorHandler {
-	return &ActorHandler{
+func NewMissionHandler(logger *zap.Logger, actor actor.Actor, simulation pb.WorldServiceClient, mqtt *transport.MQTTClient) *MissionHandler {
+	return &MissionHandler{
 		logger:     logger,
 		actor:      actor,
 		simulation: simulation,
@@ -30,7 +30,7 @@ func NewActorHandler(logger *zap.Logger, actor actor.Actor, simulation pb.WorldS
 	}
 }
 
-func (a *ActorHandler) AssignMission(ctx context.Context, req *pb.AssignMissionRequest) (*pb.AssignMissionResponse, error) {
+func (a *MissionHandler) AssignMission(ctx context.Context, req *pb.AssignMissionRequest) (*pb.AssignMissionResponse, error) {
 	mission, err := NewMission(req, a.simulation, a.actor, a.mqtt)
 	if err != nil {
 		return &pb.AssignMissionResponse{
