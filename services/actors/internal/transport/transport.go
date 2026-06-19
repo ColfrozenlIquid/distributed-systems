@@ -20,6 +20,7 @@ type TransportConfig struct {
 type Transport struct {
 	Http   HTTPClient
 	Grpc   GRPCClient
+	Mqtt   MQTTClient
 	Logger *zap.Logger
 }
 
@@ -31,9 +32,15 @@ func NewClient(cfg TransportConfig, logger *zap.Logger) (*Transport, error) {
 
 	http := NewHTTPClient(cfg)
 
+	mqtt, err := NewMQTTClient(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("create mqtt client: %w", err)
+	}
+
 	return &Transport{
 		Logger: logger,
 		Http:   *http,
 		Grpc:   *grpc,
+		Mqtt:   *mqtt,
 	}, nil
 }

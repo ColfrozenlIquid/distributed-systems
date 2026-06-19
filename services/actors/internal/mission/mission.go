@@ -140,33 +140,3 @@ func MissionWithinBounds(position *pb.Position) error {
 	}
 	return nil
 }
-
-type MissionState int
-
-const (
-	MissionStateIdle MissionState = iota
-	MissionStateAssigned
-	MissionStateOnTheWay
-	MissionStateBusy
-	MissionStateDone
-	MissionStateError
-)
-
-func MissionStateToProto(actorState MissionState) (pb.ActorState, error) {
-	switch actorState {
-	case MissionStateAssigned:
-		return pb.ActorState_ACTOR_STATE_ASSIGNED, nil
-	case MissionStateBusy:
-		return pb.ActorState_ACTOR_STATE_BUSY, nil
-	case MissionStateDone:
-		return pb.ActorState_ACTOR_STATE_DONE, nil
-	case MissionStateError:
-		return pb.ActorState_ACTOR_STATE_ERROR, nil
-	case MissionStateIdle:
-		return pb.ActorState_ACTOR_STATE_IDLE, nil
-	case MissionStateOnTheWay:
-		return pb.ActorState_ACTOR_STATE_ON_THE_WAY, nil
-	default:
-		return pb.ActorState_ACTOR_STATE_ASSIGNED, fmt.Errorf("unknown actor state")
-	}
-}

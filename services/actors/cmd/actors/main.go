@@ -47,12 +47,12 @@ func main() {
 	}
 	defer client.Grpc.Close()
 
-	actor, err := actor.NewActor(*actorCfg, client.Grpc.WorldServiceClient, logger)
+	actor, err := actor.NewActor(*actorCfg, client.Grpc.WorldServiceClient, logger, &client.Mqtt)
 	if err != nil {
 		logger.Fatal("failed to create new actor", zap.Error(err))
 	}
 
-	handler := mission.NewActorHandler(logger, actor, client.Grpc.WorldServiceClient)
+	handler := mission.NewActorHandler(logger, actor, client.Grpc.WorldServiceClient, &client.Mqtt)
 
 	client.Grpc.RegisterActorHandler(handler)
 

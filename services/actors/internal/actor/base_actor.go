@@ -3,6 +3,7 @@ package actor
 import (
 	pb "actors/gen"
 	"actors/internal/config"
+	"actors/internal/transport"
 	"context"
 	"fmt"
 	"shared"
@@ -21,10 +22,17 @@ type BaseActor struct {
 	state       ActorState
 	movableType pb.MovableType
 	simulation  pb.WorldServiceClient
+	mqtt        *transport.MQTTClient
 	logger      *zap.Logger
 }
 
-func NewBaseActor(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, movableType pb.MovableType) BaseActor {
+func NewBaseActor(
+	cfg config.ActorConfig,
+	simulation pb.WorldServiceClient,
+	logger *zap.Logger,
+	movableType pb.MovableType,
+	mqtt *transport.MQTTClient,
+) BaseActor {
 	return BaseActor{
 		id:        cfg.Id,
 		actorType: cfg.ActorType,
@@ -36,6 +44,7 @@ func NewBaseActor(cfg config.ActorConfig, simulation pb.WorldServiceClient, logg
 		state:       ActorStateIdle,
 		simulation:  simulation,
 		movableType: movableType,
+		mqtt:        mqtt,
 		logger:      logger,
 	}
 }
@@ -111,18 +120,41 @@ func (a *BaseActor) calculatePathToDestination(destination shared.Position) erro
 func (a *BaseActor) Update(ctx context.Context) {
 	switch a.state {
 	case ActorStateBlocked:
-		a.logger.Info("actor is blocked")
+		a.send(shared.ActorStateError, "actor blocked")
 	case ActorStateDone:
-		a.logger.Info("actor is done")
 		a.state = ActorStateIdle
 	case ActorStateIdle:
-		a.logger.Info("actor is idle")
+		a.send(shared.ActorStateIdle, "")
 	case ActorStateWorking:
-		a.logger.Info("actor is executing the mission")
+		a.send(shared.ActorStateOnAMission, "")
 	case ActorStateMoving:
-		a.logger.Info("actor is moving")
 		a.move()
+		a.send(shared.ActorStateOnAMission, "")
 	default:
 		a.logger.Debug("unknown actor state ")
+		a.send(shared.ActorStateError, "unknown actor state")
 	}
+}
+
+func (a *BaseActor) send(state shared.ActorState, reason string) error {
+	// ActorStatus
+	status := shared.ActorStatus{
+		ActorID:   a.Id(),
+		State:     state,
+		Reason:    reason,
+		Timestamp: time.Now(),
+	}
+	// Retain = true, QoS = 1
+	a.mqtt.MQTT.Publish(shared.ActorStatusTopic(a.Id()), byte(1), true, status)
+
+	// ActorTelemetry
+	telemetry := shared.ActorTelemetry{
+		ActorID:   a.Id(),
+		Position:  a.Position(),
+		Timestamp: time.Now(),
+	}
+	// Retain = false, QoS = 0
+	a.mqtt.MQTT.Publish(shared.ActorTelemetryTopic(a.Id()), byte(0), false, telemetry)
+
+	return nil
 }

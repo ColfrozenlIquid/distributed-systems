@@ -19,7 +19,7 @@ type BaseMission struct {
 	Priority     MissionPriority
 	Duration     time.Duration
 	MissionTimer *time.Timer
-	State        MissionState
+	State        shared.MissionState
 	simulation   pb.WorldServiceClient
 	actor        actor.Actor
 	mqtt         *transport.MQTTClient
@@ -37,7 +37,7 @@ func NewBaseMission(
 		Destination: shared.Position{X: cfg.Position.X, Y: cfg.Position.Y},
 		Priority:    cfg.Priority,
 		Duration:    time.Duration(rand.Intn(10)+1) * time.Second,
-		State:       MissionStateAssigned,
+		State:       shared.MissionStateAssigned,
 		simulation:  simulation,
 		actor:       actor,
 		mqtt:        mqtt,
@@ -61,55 +61,50 @@ func (b *BaseMission) RunMission(ctx context.Context) error {
 
 func (b *BaseMission) missionUpdate() error {
 	switch b.State {
-	case MissionStateAssigned:
+	case shared.MissionStateAssigned:
 		if err := b.send(b.State); err != nil {
 			return err
 		}
 		if !b.actor.AtPosition(b.Destination) {
-			b.State = MissionStateOnTheWay
+			b.State = shared.MissionStateOnTheWay
 			b.actor.MoveToLocation(b.Destination)
 		} else {
-			b.State = MissionStateBusy
+			b.State = shared.MissionStateBusy
 		}
 
-	case MissionStateOnTheWay:
+	case shared.MissionStateOnTheWay:
 		if err := b.send(b.State); err != nil {
 			return err
 		}
 		if b.actor.AtPosition(b.Destination) {
-			b.State = MissionStateBusy
+			b.State = shared.MissionStateBusy
 		}
 
-	case MissionStateBusy:
+	case shared.MissionStateBusy:
 		b.actor.ExecuteMission()
 		b.startTimer()
 		select {
 		case <-b.MissionTimer.C:
 			b.actor.CompleteTask()
 			b.MissionTimer = nil
-			b.State = MissionStateDone
+			b.State = shared.MissionStateCompleted
 		default:
 			if err := b.send(b.State); err != nil {
 				return err
 			}
 		}
 
-	case MissionStateDone:
+	case shared.MissionStateCompleted:
 		if err := b.send(b.State); err != nil {
 			return err
 		}
 		return fmt.Errorf("mission done")
 
-	case MissionStateError:
+	case shared.MissionStateFailed:
 		if err := b.send(b.State); err != nil {
 			return err
 		}
 		return fmt.Errorf("mission error")
-
-	case MissionStateIdle:
-		if err := b.send(b.State); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -120,24 +115,14 @@ func (b *BaseMission) startTimer() {
 	}
 }
 
-func (b *BaseMission) send(state MissionState) error {
-	actorState, err := MissionStateToProto(state)
-	if err != nil {
-		return err
-	}
-
+func (b *BaseMission) send(state shared.MissionState) error {
 	// retain = false, Qos = 1
 	b.mqtt.MQTT.Publish(shared.MissionUpdateTopic(b.Id), byte(1), false, shared.MissionUpdate{
 		MissionID: b.Id,
 		ActorID:   b.actor.Id(),
-		State:     missin,
-		Timestamp: time.Time{},
+		State:     b.State,
+		Timestamp: time.Now(),
 	})
 
-	b.channel <- &pb.AssignMissionResponse{
-		MissionId:       &pb.MissionId{Uuid: b.Id},
-		CurrentPosition: &pb.Position{X: uint32(b.actor.Position().X), Y: uint32(b.actor.Position().Y)},
-		State:           actorState,
-	}
 	return nil
 }
