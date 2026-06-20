@@ -17,10 +17,19 @@ import (
 
 	pb "performance/gen"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
+
+type TelemetryPayload struct {
+	ActorID   string `json:"actor_id"`
+	PosX      int32  `json:"pos_x"`
+	PosY      int32  `json:"pos_y"`
+	Timestamp uint64 `json:"timestamp"`
+}
 
 func main() {
 	logger, err := zap.NewDevelopment()
@@ -30,15 +39,13 @@ func main() {
 
 	router := vshttp.NewRouter()
 
-	router.Post("/reading", func(c *vshttp.Context) error {
-		var request shared.ActorRegistration
-		if err := c.JSONBody(&request); err != nil {
+	router.Post("/telemetry", func(c *vshttp.Context) error {
+		var req TelemetryPayload
+		if err := c.JSONBody(&req); err != nil {
 			return err
 		}
-		println("Received request on /reading")
 		return c.NoContent()
 	})
-
 	server, err := vshttp.Serve(":8080", router)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
@@ -53,6 +60,14 @@ func main() {
 			logger.Fatal("gRPC serve error", zap.Error(err))
 		}
 	}()
+
+	v := viper.New()
+	v.AutomaticEnv()
+	mqttCfg, err := shared.LoadMqttConfig(v)
+	if err != nil {
+		logger.Fatal("failed to load mqtt config", zap.Error(err))
+	}
+	startMqttThroughputCounter(logger, mqttCfg)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -121,7 +136,6 @@ func (s *grpcServer) ActorTelemetryStream(stream grpc.ClientStreamingServer[pb.A
 	for {
 		msg, err := stream.Recv()
 		if err == io.EOF {
-			// actor closed the stream — send final response
 			elapsed := time.Since(start)
 			s.logger.Info("stream closed",
 				zap.Uint64("messages_received", count),
@@ -135,9 +149,37 @@ func (s *grpcServer) ActorTelemetryStream(stream grpc.ClientStreamingServer[pb.A
 		}
 
 		count++
-		// optional: log every Nth message instead of every message
 		if count%1000 == 0 {
 			s.logger.Debug("progress", zap.String("actor_id", msg.ActorId), zap.Uint64("count", count))
 		}
 	}
+}
+
+func startMqttThroughputCounter(logger *zap.Logger, cfg *shared.MqttConfig) {
+	client, err := shared.ConnectToMqttBroker(cfg, "perf-server", true)
+	if err != nil {
+		logger.Fatal("mqtt connect failed", zap.Error(err))
+	}
+
+	var count uint64
+	var start time.Time
+	var once sync.Once
+
+	token := client.Subscribe(shared.SubAllActorTelemetry, 0, func(_ mqtt.Client, msg mqtt.Message) {
+		once.Do(func() { start = time.Now() })
+		c := atomic.AddUint64(&count, 1)
+		if c%1000 == 0 {
+			elapsed := time.Since(start)
+			logger.Debug("mqtt progress",
+				zap.Uint64("count", c),
+				zap.Float64("msgs_per_sec", float64(c)/elapsed.Seconds()),
+			)
+		}
+	})
+	token.Wait()
+	if err := token.Error(); err != nil {
+		logger.Fatal("mqtt subscribe failed", zap.Error(err))
+	}
+
+	logger.Info("mqtt throughput counter subscribed", zap.String("topic", shared.SubAllActorTelemetry))
 }
