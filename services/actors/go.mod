@@ -3,6 +3,7 @@ module actors
 go 1.26.2
 
 require (
+	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.28.0
 	google.golang.org/grpc v1.81.1
@@ -13,7 +14,6 @@ require (
 replace shared => ../../shared
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.5.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
