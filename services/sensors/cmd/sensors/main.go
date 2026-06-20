@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -89,7 +90,7 @@ func (s *App) Register() error {
 }
 
 func (s *App) Reading(reading float32) error {
-	payload := shared.SensorReading{
+	sensorReading := shared.SensorReading{
 		Timestamp: time.Now(),
 		Sensor: shared.SensorInfo{
 			Id: s.sensor.ID(),
@@ -101,6 +102,7 @@ func (s *App) Reading(reading float32) error {
 		},
 		Value: reading,
 	}
+	payload, _ := json.Marshal(sensorReading)
 
 	// Replaced with MQTT Publish
 	// resp, err := s.client.Http.Post("/reading", payload)
@@ -113,14 +115,14 @@ func (s *App) Reading(reading float32) error {
 	// }
 
 	// Retain = false, QoS = 0
-	s.transport.Mqtt.MQTT.Publish(
+	token := s.transport.Mqtt.MQTT.Publish(
 		shared.TileReadingTopic(s.sensor.Position().X, s.sensor.Position().Y, shared.SensorType(s.sensor.Type())),
 		byte(0),
 		false,
 		payload,
 	)
-
-	return nil
+	token.Wait()
+	return token.Error()
 }
 
 func (s *App) Run(ctx context.Context, sensor sensor.Sensor, endpoint string) {

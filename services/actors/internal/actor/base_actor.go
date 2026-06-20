@@ -5,6 +5,7 @@ import (
 	"actors/internal/config"
 	"actors/internal/transport"
 	"context"
+	"encoding/json"
 	"fmt"
 	"shared"
 	"time"
@@ -144,8 +145,11 @@ func (a *BaseActor) send(state shared.ActorState, reason string) error {
 		Reason:    reason,
 		Timestamp: time.Now(),
 	}
+	payload, _ := json.Marshal(status)
 	// Retain = true, QoS = 1
-	a.mqtt.MQTT.Publish(shared.ActorStatusTopic(a.Id()), byte(1), true, status)
+	token := a.mqtt.MQTT.Publish(shared.ActorStatusTopic(a.Id()), byte(1), true, payload)
+	token.Wait()
+	statusError := token.Error()
 
 	// ActorTelemetry
 	telemetry := shared.ActorTelemetry{
@@ -153,8 +157,13 @@ func (a *BaseActor) send(state shared.ActorState, reason string) error {
 		Position:  a.Position(),
 		Timestamp: time.Now(),
 	}
+	payload, _ = json.Marshal(telemetry)
 	// Retain = false, QoS = 0
-	a.mqtt.MQTT.Publish(shared.ActorTelemetryTopic(a.Id()), byte(0), false, telemetry)
+	token = a.mqtt.MQTT.Publish(shared.ActorTelemetryTopic(a.Id()), byte(0), false, payload)
+	token.Wait()
 
-	return nil
+	if statusError != nil {
+		return statusError
+	}
+	return token.Error()
 }
