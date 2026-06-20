@@ -3,6 +3,7 @@ package actor
 import (
 	pb "actors/gen"
 	"actors/internal/config"
+	"actors/internal/transport"
 	"context"
 	"fmt"
 	"shared"
@@ -26,14 +27,14 @@ type Actor interface {
 	Update(ctx context.Context)
 }
 
-func NewActor(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) (Actor, error) {
+func NewActor(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, mqtt *transport.MQTTClient) (Actor, error) {
 	switch cfg.ActorType {
 	case "rescue_vehicle":
-		return NewRescueVehicle(cfg, simulation, logger), nil
+		return NewRescueVehicle(cfg, simulation, logger, mqtt), nil
 	case "vibration_vehicle":
-		return NewVibrationVehicle(cfg, simulation, logger), nil
+		return NewVibrationVehicle(cfg, simulation, logger, mqtt), nil
 	case "water_vehicle":
-		return NewWaterVehicle(cfg, simulation, logger), nil
+		return NewWaterVehicle(cfg, simulation, logger, mqtt), nil
 	default:
 		return nil, fmt.Errorf("unknown sensor type: %s", cfg.ActorType)
 	}

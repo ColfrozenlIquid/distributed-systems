@@ -2,9 +2,9 @@ package main
 
 import (
 	"actors/internal/actor"
-	"actors/internal/client"
-	cl "actors/internal/client"
 	"actors/internal/config"
+	"actors/internal/mission"
+	"actors/internal/transport"
 	"context"
 	"fmt"
 	"log"
@@ -16,9 +16,9 @@ import (
 )
 
 type App struct {
-	logger *zap.Logger
-	client cl.Client
-	actor  actor.Actor
+	logger    *zap.Logger
+	transport transport.Transport
+	actor     actor.Actor
 }
 
 func main() {
@@ -35,23 +35,24 @@ func main() {
 		logger.Fatal("failed to read actor config", zap.Error(err))
 	}
 
-	clientCfg := client.ClientConfig{
+	clientCfg := transport.TransportConfig{
 		HttpAddress: actorCfg.BaseStationEndpoint,
 		GrpcAddress: actorCfg.WorldSimulationEndpoint,
+		ClientId:    actorCfg.Id,
 	}
 
-	client, err := client.NewClient(clientCfg, logger)
+	client, err := transport.NewClient(clientCfg, logger)
 	if err != nil {
 		logger.Fatal("creating client failed", zap.Error(err))
 	}
 	defer client.Grpc.Close()
 
-	actor, err := actor.NewActor(*actorCfg, client.Grpc.WorldServiceClient, logger)
+	actor, err := actor.NewActor(*actorCfg, client.Grpc.WorldServiceClient, logger, &client.Mqtt)
 	if err != nil {
 		logger.Fatal("failed to create new actor", zap.Error(err))
 	}
 
-	handler := cl.NewActorHandler(logger, actor, client.Grpc.WorldServiceClient)
+	handler := mission.NewMissionHandler(logger, actor, client.Grpc.WorldServiceClient, &client.Mqtt)
 
 	client.Grpc.RegisterActorHandler(handler)
 
@@ -62,9 +63,9 @@ func main() {
 	}()
 
 	app := App{
-		logger: logger,
-		client: *client,
-		actor:  actor,
+		logger:    logger,
+		transport: *client,
+		actor:     actor,
 	}
 
 	err = app.Register()
@@ -74,8 +75,6 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	logger.Info("Initializationn successful")
 
 	app.Run(ctx, actor, clientCfg.HttpAddress)
 }
@@ -92,7 +91,7 @@ func (s *App) Register() error {
 		},
 	}
 
-	resp, err := s.client.Http.Post("/register/actor", payload)
+	resp, err := s.transport.Http.Post("/register/actor", payload)
 	if err != nil {
 		return fmt.Errorf("post register actor: %w", err)
 	}
