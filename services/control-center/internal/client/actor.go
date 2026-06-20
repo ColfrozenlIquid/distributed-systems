@@ -41,7 +41,7 @@ func (c *ActorClient) AssignMission(ctx context.Context, mission model.Mission) 
 		_ = conn.Close()
 		return fmt.Errorf("assign mission over gRPC: %w", err)
 	}
-	if !response.GetMissionAccepted() {
+	if !response.GetSuccess() {
 		_ = conn.Close()
 		return fmt.Errorf("mission rejected by actor %q", mission.ActorId)
 	}
