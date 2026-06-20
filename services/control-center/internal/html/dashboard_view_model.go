@@ -332,16 +332,7 @@ func infrastructureShortLabel(infrastructure pb.InfrastructureType) string {
 }
 
 func sensorTypeLabel(sensorType shared.SensorType) string {
-	switch sensorType {
-	case shared.VibrationSensor:
-		return "vibration"
-	case shared.WaterLevelSensor:
-		return "water level"
-	case shared.DroneSensor:
-		return "drone"
-	default:
-		return "unknown"
-	}
+	return strings.ReplaceAll(string(sensorType), "_", " ")
 }
 
 func actorTypeLabel(actorType shared.ActorType) string {

@@ -24,7 +24,7 @@ type SensorType string
 const (
 	VibrationSensor  SensorType = "vibration"
 	WaterLevelSensor SensorType = "water_level"
-	DroneSensor      SensorType = "person_confidence"
+	DroneSensor      SensorType = "drone"
 )
 
 type SensorInfo struct {
