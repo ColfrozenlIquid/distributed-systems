@@ -25,3 +25,6 @@ run-client:
 			MQTT_BROKER_HOST=$(MQTT_BROKER_HOST) MQTT_BROKER_PORT=$(MQTT_BROKER_PORT) go run ./cmd/client
 
 .PHONY: generate-proto run-broker run-server run-client
+
+build-server:
+	go build ./cmd/server
