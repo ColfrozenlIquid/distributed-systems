@@ -1,0 +1,16 @@
+{
+  "benchmark_runs": [
+    {
+      "run_id": 1,
+      "timestamp": "2026-06-21T15:01:28Z",
+      "results": {
+        "mqtt": {
+          "label": "MQTT",
+          "num_messages": 100000,
+          "elapsed_seconds": 0.479988219,
+          "msgs_per_sec": 208338.44674008552
+        }
+      }
+    }
+  ]
+}

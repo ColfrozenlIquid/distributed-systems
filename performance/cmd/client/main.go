@@ -11,6 +11,7 @@ import (
 	"time"
 
 	pb "performance/gen"
+	"performance/internal"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -83,6 +84,9 @@ func (c *Client) runStreamLoad() {
 
 	log.Printf("sent %d messages in %v (%.0f msgs/sec)",
 		numMessages, time.Since(start), float64(numMessages)/time.Since(start).Seconds())
+
+	elapsed := time.Since(start)
+	internal.SaveResult("stream_grpc", "gRPC Stream", numMessages, elapsed)
 }
 
 func (c *Client) runUnaryLoad() {
@@ -115,6 +119,7 @@ func (c *Client) runUnaryLoad() {
 
 	elapsed := time.Since(start)
 	log.Printf("sent %d unary calls in %v (%.0f req/sec)", numRequests, elapsed, float64(numRequests)/elapsed.Seconds())
+	internal.SaveResult("unary_grpc", "gRPC Unary", numRequests, elapsed)
 }
 
 func (c *Client) runHTTPLoad() {
@@ -155,6 +160,8 @@ func (c *Client) runHTTPLoad() {
 	wg.Wait()
 	elapsed := time.Since(start)
 	log.Printf("sent %d HTTP calls in %v (%.0f req/sec)", numRequests, elapsed, float64(numRequests)/elapsed.Seconds())
+
+	internal.SaveResult("http", "HTTP REST", numRequests, elapsed)
 }
 
 func (c *Client) runMqttLoad(cfg *shared.MqttConfig) {
@@ -185,4 +192,6 @@ func (c *Client) runMqttLoad(cfg *shared.MqttConfig) {
 	elapsed := time.Since(start)
 	log.Printf("published %d mqtt messages in %v (%.0f msgs/sec)",
 		numMessages, elapsed, float64(numMessages)/elapsed.Seconds())
+
+	internal.SaveResult("mqtt", "MQTT", numMessages, elapsed)
 }

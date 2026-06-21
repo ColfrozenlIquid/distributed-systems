@@ -10,6 +10,7 @@ generate-proto:
 		MQTT_BROKER_HOST ?= localhost
 
 
+SERVER_HOST ?= localhost
 MQTT_BROKER_HOST ?= localhost
 MQTT_BROKER_PORT ?= 1883
 
@@ -22,7 +23,10 @@ run-server:
 	MQTT_BROKER_HOST=$(MQTT_BROKER_HOST) MQTT_BROKER_PORT=$(MQTT_BROKER_PORT) go run ./cmd/server/
 
 run-client:
-			MQTT_BROKER_HOST=$(MQTT_BROKER_HOST) MQTT_BROKER_PORT=$(MQTT_BROKER_PORT) go run ./cmd/client
+	MQTT_BROKER_HOST=$(MQTT_BROKER_HOST) \
+	MQTT_BROKER_PORT=$(MQTT_BROKER_PORT) \
+	GRPC_SERVER_ADDR=$(SERVER_HOST):50051 \
+	go run ./cmd/client
 
 .PHONY: generate-proto run-broker run-server run-client
 
