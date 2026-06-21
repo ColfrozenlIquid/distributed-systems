@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"shared"
-	"sync"
 	"time"
 
 	pb "performance/gen"
-	"performance/internal"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -19,179 +18,173 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type TelemetryPayload struct {
+// numMessages must match the server constant so the receiver knows when it's done.
+const numMessages = 100_000
+
+// clientConfig holds every address/URL the client dials or posts to. All
+// fields are overridable via environment variables (and a .env file in the
+// working directory) by name, e.g. GRPC_TARGET, HTTP_URL.
+type clientConfig struct {
+	GRPCTarget string `mapstructure:"GRPC_TARGET"`
+	HTTPURL    string `mapstructure:"HTTP_URL"`
+}
+
+// loadClientConfig reads ./.env (if present) plus the real environment,
+// falling back to sane defaults when a key isn't set either place.
+func loadClientConfig(v *viper.Viper) (*clientConfig, error) {
+	v.SetConfigName(".env")
+	v.SetConfigType("env")
+	v.AddConfigPath(".")
+
+	v.SetDefault("GRPC_TARGET", "localhost:50051")
+	v.SetDefault("HTTP_URL", "http://localhost:8080/telemetry")
+
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, fmt.Errorf("reading .env: %w", err)
+		}
+		// no .env file present — that's fine, fall back to env vars/defaults
+	}
+
+	cfg := &clientConfig{
+		GRPCTarget: v.GetString("GRPC_TARGET"),
+		HTTPURL:    v.GetString("HTTP_URL"),
+	}
+	return cfg, nil
+}
+
+// wirePayload is the JSON envelope used by HTTP and MQTT.
+type wirePayload struct {
 	ActorID   string `json:"actor_id"`
 	PosX      int32  `json:"pos_x"`
 	PosY      int32  `json:"pos_y"`
 	Timestamp uint64 `json:"timestamp"`
-}
-
-type Client struct {
-	client pb.PerformanceServiceClient
+	SentAt    uint64 `json:"sent_at"`
 }
 
 func main() {
 	v := viper.New()
 	v.AutomaticEnv()
+
+	cfg, err := loadClientConfig(v)
+	if err != nil {
+		log.Fatalf("failed to load client config: %v", err)
+	}
+
 	mqttCfg, err := shared.LoadMqttConfig(v)
 	if err != nil {
 		log.Fatal("failed to load mqtt config", zap.Error(err))
 	}
 
-	conn, err := grpc.NewClient("localhost:50051",
+	conn, err := grpc.NewClient(cfg.GRPCTarget,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
+	grpcClient := pb.NewPerformanceServiceClient(conn)
 
-	client := Client{
-		client: pb.NewPerformanceServiceClient(conn),
-	}
+	runStreamLoad(grpcClient)
+	time.Sleep(500 * time.Millisecond) // let the server flush its result before the next run
 
-	// client.runStreamLoad()
-	// client.runUnaryLoad()
-	// client.runHTTPLoad()
-	client.runMqttLoad(mqttCfg)
+	runUnaryLoad(grpcClient)
+	time.Sleep(500 * time.Millisecond)
+
+	runHTTPLoad(cfg.HTTPURL)
+	time.Sleep(500 * time.Millisecond)
+
+	runMQTTLoad(mqttCfg)
 }
 
-func (c *Client) runStreamLoad() {
-	stream, err := c.client.ActorTelemetryStream(context.Background())
+// runStreamLoad opens a single client-streaming RPC and pushes all messages
+// down it sequentially. The stream provides its own framing so there is no
+// per-message round-trip cost — this is the natural operating mode of gRPC
+// streaming.
+func runStreamLoad(client pb.PerformanceServiceClient) {
+	stream, err := client.ActorTelemetryStream(context.Background())
 	if err != nil {
-		log.Fatalf("failed to open stream: %v", err)
+		log.Fatalf("stream: failed to open: %v", err)
 	}
-
-	const numMessages = 100_000
-	start := time.Now()
-
 	for i := 0; i < numMessages; i++ {
-		msg := &pb.ActorTelemetryStreamRequest{
+		if err := stream.Send(&pb.ActorTelemetryStreamRequest{
 			ActorId:   "actor-1",
 			PosX:      int32(i),
 			PosY:      int32(i * 2),
 			Timestamp: uint64(time.Now().UnixNano()),
+		}); err != nil {
+			log.Fatalf("stream: send failed at %d: %v", i, err)
 		}
-		if err := stream.Send(msg); err != nil {
-			log.Fatalf("failed to send: %v", err)
-		}
 	}
-
-	resp, err := stream.CloseAndRecv()
-	_ = resp
-	if err != nil {
-		log.Fatalf("failed to close stream: %v", err)
+	// CloseAndRecv blocks until the server has processed every message and
+	// replied, so we know the benchmark is fully complete before returning.
+	if _, err := stream.CloseAndRecv(); err != nil {
+		log.Fatalf("stream: close failed: %v", err)
 	}
-
-	log.Printf("sent %d messages in %v (%.0f msgs/sec)",
-		numMessages, time.Since(start), float64(numMessages)/time.Since(start).Seconds())
-
-	elapsed := time.Since(start)
-	internal.SaveResult("stream_grpc", "gRPC Stream", numMessages, elapsed)
+	log.Printf("stream: sent %d messages", numMessages)
 }
 
-func (c *Client) runUnaryLoad() {
-	const numRequests = 100_000
-	const concurrency = 50
-
-	sem := make(chan struct{}, concurrency)
-	var wg sync.WaitGroup
-
-	start := time.Now()
-	for i := 0; i < numRequests; i++ {
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(i int) {
-			defer wg.Done()
-			defer func() { <-sem }()
-
-			_, err := c.client.ActorTelemetry(context.Background(), &pb.ActorTelemetryRequest{
-				ActorId:   "actor-1",
-				PosX:      int32(i),
-				PosY:      int32(i * 2),
-				Timestamp: uint64(time.Now().UnixNano()),
-			})
-			if err != nil {
-				log.Printf("call failed: %v", err)
-			}
-		}(i)
-	}
-	wg.Wait()
-
-	elapsed := time.Since(start)
-	log.Printf("sent %d unary calls in %v (%.0f req/sec)", numRequests, elapsed, float64(numRequests)/elapsed.Seconds())
-	internal.SaveResult("unary_grpc", "gRPC Unary", numRequests, elapsed)
-}
-
-func (c *Client) runHTTPLoad() {
-	const numRequests = 100_000
-	const concurrency = 50
-	sem := make(chan struct{}, concurrency)
-	var wg sync.WaitGroup
-	httpClient := &http.Client{}
-	start := time.Now()
-
-	for i := 0; i < numRequests; i++ {
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(i int) {
-			defer wg.Done()
-			defer func() { <-sem }()
-
-			payload := TelemetryPayload{
-				ActorID:   "actor-1",
-				PosX:      int32(i),
-				PosY:      int32(i * 2),
-				Timestamp: uint64(time.Now().UnixNano()),
-			}
-			body, _ := json.Marshal(payload)
-
-			resp, err := httpClient.Post(
-				"http://localhost:8080/telemetry",
-				"application/json",
-				bytes.NewReader(body),
-			)
-			if err != nil {
-				log.Printf("call failed: %v", err)
-				return
-			}
-			resp.Body.Close()
-		}(i)
-	}
-	wg.Wait()
-	elapsed := time.Since(start)
-	log.Printf("sent %d HTTP calls in %v (%.0f req/sec)", numRequests, elapsed, float64(numRequests)/elapsed.Seconds())
-
-	internal.SaveResult("http", "HTTP REST", numRequests, elapsed)
-}
-
-func (c *Client) runMqttLoad(cfg *shared.MqttConfig) {
-	client, err := shared.ConnectToMqttBroker(cfg, "perf-client", true)
-	if err != nil {
-		log.Fatalf("mqtt connect failed: %v", err)
-	}
-	defer client.Disconnect(250)
-
-	const numMessages = 100_000
-	topic := shared.ActorTelemetryTopic("actor-1")
-
-	start := time.Now()
+// runUnaryLoad sends each message as a separate RPC and waits for the
+// response before sending the next. No goroutines, no pipelining — this
+// exposes the true per-message round-trip cost of unary gRPC.
+func runUnaryLoad(client pb.PerformanceServiceClient) {
 	for i := 0; i < numMessages; i++ {
-		payload := map[string]any{
-			"actor_id":  "actor-1",
-			"pos_x":     int32(i),
-			"pos_y":     int32(i * 2),
-			"timestamp": uint64(time.Now().UnixNano()),
+		if _, err := client.ActorTelemetry(context.Background(), &pb.ActorTelemetryRequest{
+			ActorId:   "actor-1",
+			PosX:      int32(i),
+			PosY:      int32(i * 2),
+			Timestamp: uint64(time.Now().UnixNano()),
+		}); err != nil {
+			log.Fatalf("unary: call failed at %d: %v", i, err)
 		}
-		body, _ := json.Marshal(payload)
-
-		token := client.Publish(topic, 0, false, body)
-		// don't Wait() here if you want max publish throughput —
-		// see note below on what Wait() actually measures
-		_ = token
 	}
-	elapsed := time.Since(start)
-	log.Printf("published %d mqtt messages in %v (%.0f msgs/sec)",
-		numMessages, elapsed, float64(numMessages)/elapsed.Seconds())
+	log.Printf("unary: sent %d messages", numMessages)
+}
 
-	internal.SaveResult("mqtt", "MQTT", numMessages, elapsed)
+// runHTTPLoad posts each message and waits for the 204 before continuing.
+// Same discipline as unary gRPC — one round-trip at a time.
+func runHTTPLoad(url string) {
+	httpClient := &http.Client{}
+	for i := 0; i < numMessages; i++ {
+		body, _ := json.Marshal(wirePayload{
+			ActorID:   "actor-1",
+			PosX:      int32(i),
+			PosY:      int32(i * 2),
+			Timestamp: uint64(time.Now().UnixNano()),
+		})
+		resp, err := httpClient.Post(
+			url,
+			"application/json",
+			bytes.NewReader(body),
+		)
+		if err != nil {
+			log.Fatalf("http: post failed at %d: %v", i, err)
+		}
+		resp.Body.Close()
+	}
+	log.Printf("http: sent %d messages", numMessages)
+}
+
+// runMQTTLoad publishes messages sequentially. token.Wait() ensures each
+// publish has been handed to the network stack before moving on — without it,
+// the loop races far ahead of the broker and the comparison becomes meaningless.
+func runMQTTLoad(cfg *shared.MqttConfig) {
+	mqttClient, err := shared.ConnectToMqttBroker(cfg, "perf-client", true)
+	if err != nil {
+		log.Fatalf("mqtt: connect failed: %v", err)
+	}
+	defer mqttClient.Disconnect(250)
+
+	topic := shared.ActorTelemetryTopic("actor-1")
+	for i := 0; i < numMessages; i++ {
+		body, _ := json.Marshal(wirePayload{
+			ActorID:   "actor-1",
+			PosX:      int32(i),
+			PosY:      int32(i * 2),
+			Timestamp: uint64(time.Now().UnixNano()),
+			SentAt:    uint64(time.Now().UnixNano()),
+		})
+		token := mqttClient.Publish(topic, 1, false, body)
+		token.Wait()
+	}
+	log.Printf("mqtt: sent %d messages", numMessages)
 }
