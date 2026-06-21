@@ -110,7 +110,7 @@ def plot(run: dict, output_path: str) -> None:
 
     # titles
     ax.set_title(
-        f"Transport Throughput Comparison  –  Run #{run_id}",
+        f"Transport Throughput Comparison  –  Run with ~20ms RTT latency",
         color="white",
         fontsize=15,
         fontweight="bold",

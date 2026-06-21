@@ -204,7 +204,7 @@ func runMQTTLoad(cfg *shared.MqttConfig) {
 			Timestamp: uint64(time.Now().UnixNano()),
 			SentAt:    uint64(time.Now().UnixNano()),
 		})
-		token := mqttClient.Publish(topic, 1, false, body)
+		token := mqttClient.Publish(topic, 0, false, body)
 		token.Wait()
 		logProgress("mqtt", i, numMessages)
 	}
