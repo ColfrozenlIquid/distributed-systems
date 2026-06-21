@@ -19,7 +19,25 @@ import (
 )
 
 // numMessages must match the server constant so the receiver knows when it's done.
-const numMessages = 10_000
+const numMessages = 100_000
+
+// progressEvery controls how often (in messages sent) each run logs a
+// progress update. Set to 0 to disable progress logging entirely.
+const progressEvery = 500
+
+// logProgress prints a periodic "N/total" update for a named run. i is the
+// 0-based loop index, so we report on i+1 (i.e. after the 500th, 1000th, ...
+// message has actually been sent), plus a final update on the very last
+// message in case numMessages isn't a multiple of progressEvery.
+func logProgress(name string, i, total int) {
+	if progressEvery <= 0 {
+		return
+	}
+	sent := i + 1
+	if sent%progressEvery == 0 || sent == total {
+		log.Printf("%s: progress %d/%d", name, sent, total)
+	}
+}
 
 // clientConfig holds every address/URL the client dials or posts to. All
 // fields are overridable via environment variables (and a .env file in the
@@ -114,6 +132,7 @@ func runStreamLoad(client pb.PerformanceServiceClient) {
 		}); err != nil {
 			log.Fatalf("stream: send failed at %d: %v", i, err)
 		}
+		logProgress("stream", i, numMessages)
 	}
 	// CloseAndRecv blocks until the server has processed every message and
 	// replied, so we know the benchmark is fully complete before returning.
@@ -136,6 +155,7 @@ func runUnaryLoad(client pb.PerformanceServiceClient) {
 		}); err != nil {
 			log.Fatalf("unary: call failed at %d: %v", i, err)
 		}
+		logProgress("unary", i, numMessages)
 	}
 	log.Printf("unary: sent %d messages", numMessages)
 }
@@ -152,7 +172,7 @@ func runHTTPLoad(url string) {
 			Timestamp: uint64(time.Now().UnixNano()),
 		})
 		resp, err := httpClient.Post(
-			url,
+			"http://localhost:8080/telemetry",
 			"application/json",
 			bytes.NewReader(body),
 		)
@@ -160,6 +180,7 @@ func runHTTPLoad(url string) {
 			log.Fatalf("http: post failed at %d: %v", i, err)
 		}
 		resp.Body.Close()
+		logProgress("http", i, numMessages)
 	}
 	log.Printf("http: sent %d messages", numMessages)
 }
@@ -185,6 +206,7 @@ func runMQTTLoad(cfg *shared.MqttConfig) {
 		})
 		token := mqttClient.Publish(topic, 1, false, body)
 		token.Wait()
+		logProgress("mqtt", i, numMessages)
 	}
 	log.Printf("mqtt: sent %d messages", numMessages)
 }
