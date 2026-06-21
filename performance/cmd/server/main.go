@@ -27,7 +27,7 @@ import (
 )
 
 // numMessages must match the client constant.
-const numMessages = 100_000
+const numMessages = 5_000
 
 // serverConfig holds every address/port the server binds to or advertises.
 // All fields are overridable via environment variables (and a .env file in

@@ -25,7 +25,7 @@ Logs, Screenshots oder Reports
 
 ## Nicht-funktional: Vergleich Durchsatzmessung der Transportschichten
 
-**Ziel:** Es wird gemessen, wie der Durchsatz einer Nutzlast durch die eingesetzte Transportschicht beeinflusst wird. Dazu wird die Nutzlast über HTTP, gRPC (unary + stream) sowie MQTT (QoS 0 & QoS 1) versendet und der Durchsatz auf Empfängerseite gemessen. Das geprüfte Qualitätsmerkmal ist der Durchsatz.
+**Ziel:** Es wird gemessen, wie der Durchsatz einer Nutzlast durch die eingesetzte Transportschicht beeinflusst wird. Dazu wird die Nutzlast über HTTP, gRPC (unary + stream) sowie MQTT (QoS 0 & QoS 1) versendet und der Durchsatz auf Empfängerseite gemessen. Der Test simuliert einen Knoten im Netzwerk, welcher so schnell wie moeglich eine Nutzlast produziert, und diese an einen Konsumenten abgeben moechte. Hierbei wird getest Das geprüfte Qualitätsmerkmal ist der Durchsatz.
 
 **Bewertung:** `PASS`
 

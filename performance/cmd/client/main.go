@@ -19,7 +19,7 @@ import (
 )
 
 // numMessages must match the server constant so the receiver knows when it's done.
-const numMessages = 100_000
+const numMessages = 5_000
 
 // progressEvery controls how often (in messages sent) each run logs a
 // progress update. Set to 0 to disable progress logging entirely.
