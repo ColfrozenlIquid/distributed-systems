@@ -19,7 +19,7 @@ import (
 )
 
 // numMessages must match the server constant so the receiver knows when it's done.
-const numMessages = 100_000
+const numMessages = 10_000
 
 // clientConfig holds every address/URL the client dials or posts to. All
 // fields are overridable via environment variables (and a .env file in the
