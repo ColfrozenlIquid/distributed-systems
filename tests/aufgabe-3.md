@@ -1,26 +1,68 @@
-# Aufgabe X
-## Funktional: [Titel]
+# Aufgabe 3
+## Funktional: MQTT-Nachrichtenfluss für Sensordaten und Actor-Status
 **Ziel:**
+Es wird geprüft, ob die für Aufgabe 3 eingeführte MQTT-Kommunikation im deployten Docker-Compose-System funktional
+arbeitet. Der Test verbindet sich als echter MQTT-Client mit Mosquitto, abonniert die Wildcard-Topics der Anwendung,
+publiziert eine kritische Sensorlesung sowie Actor-Status und Actor-Telemetrie und prüft anschließend, ob die
+Leitstelle diese Nachrichten in `/status` übernommen hat. Damit werden Broker-Zustellung, Topic-Schema, JSON-Payloads
+und die reaktive Verarbeitung im `control-center` gemeinsam getestet.
 
-**Bewertung:** `PASS`, `FAIL` oder `BLOCKED`
+**Bewertung:** `PASS`
 
-**Versionsstand:** Commit `#`
+**Versionsstand:** Commit `acdc92f`
 
 ### Setup
-Container, Konfiguration, Testdaten
+**Container:** `mqtt-broker`, `control-center`, `world-simulation`, `sensor-*`, `actor-*` aus `docker-compose.yaml`.
+
+**Konfiguration:** Der Test nutzt `CONTROL_CENTER_URL` (Default `http://control-center:8080`) und `MQTT_BROKER_URL`
+oder alternativ `MQTT_BROKER_HOST`/`MQTT_BROKER_PORT` (Default `tcp://mqtt-broker:1883`).
+
+**Testdaten:** Der Go-Test registriert einen eindeutigen `water_level`-Sensor und einen eindeutigen `water_vehicle`
+ueber die HTTP-Schnittstelle, publiziert danach eine kritische MQTT-Sensorlesung mit Wert `95.0` auf
+`tiles/<x>/<y>/readings/water_level`, einen Actor-Status `on_a_mission` auf `actors/<actor-id>/status` und eine
+Actor-Telemetrie auf `actors/<actor-id>/telemetry`.
+
+**Automatisierter Test:** `tests/aufgabe3/aufgabe3_mqtt_integration_test.go`, Testfunktion
+`TestMQTTSensorAndActorMessagesReachControlCenter`.
 
 ### Durchführung
+Aus dem Repository-Wurzelverzeichnis:
 
+```bash
+docker compose up -d --build
+docker run --rm \
+  --network vs-praktikum_default \
+  -v "$PWD/tests/aufgabe3:/tests" \
+  -w /tests \
+  -e CONTROL_CENTER_URL=http://control-center:8080 \
+  -e MQTT_BROKER_URL=tcp://mqtt-broker:1883 \
+  golang:1.26.2-alpine \
+  go test -v -run TestMQTTSensorAndActorMessagesReachControlCenter .
+```
 
 ### Ergebnisse
 #### Erwartetes Ergebnis
+Der Go-Test endet mit `PASS`. Die MQTT-Subscription empfängt die publizierten Nachrichten auf den erwarteten Topics.
+`GET /status` enthaelt die kritische Sensorlesung, einen `WaterLevelAlert` (`incident=1`) für diesen Sensor sowie den
+per MQTT aktualisierten Actor mit Status `on_a_mission` und der publizierten Position.
 
 
 #### Tatsächliches Ergebnis
+Der Test wurde im Docker-Netz `vs-praktikum_default` ausgefuehrt und war erfolgreich:
+
+```text
+=== RUN   TestMQTTSensorAndActorMessagesReachControlCenter
+    aufgabe3_mqtt_integration_test.go:164: functional result: mqtt_broker=tcp://mqtt-broker:1883 reading_topic=tiles/6/6/readings/water_level status_topic=actors/it3-actor-1782148678786595540/status telemetry_topic=actors/it3-actor-1782148678786595540/telemetry
+    aufgabe3_mqtt_integration_test.go:165: status summary: sensors=8 actors=4 readings=1061 incidents=5
+    aufgabe3_mqtt_integration_test.go:166: verified mqtt control-center projection: sensor_id=it3-water-1782148678786595540 value=95.0 incident=WaterLevelAlert actor_id=it3-actor-1782148678786595540 state=on_a_mission position=(6,6)
+--- PASS: TestMQTTSensorAndActorMessagesReachControlCenter (0.05s)
+PASS
+ok  	aufgabe3tests	0.053s
+```
 
 
 #### Artefakte
-Logs, Screenshots oder Reports
+Automatisierter Test: `tests/aufgabe3/aufgabe3_mqtt_integration_test.go`.
 
 
 ## Nicht-funktional: Vergleich Durchsatzmessung der Transportschichten
