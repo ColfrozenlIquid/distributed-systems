@@ -11,6 +11,8 @@ import (
 	"math/rand"
 	"shared"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type BaseMission struct {
@@ -24,6 +26,7 @@ type BaseMission struct {
 	simulation   pb.WorldServiceClient
 	actor        actor.Actor
 	mqtt         *transport.MQTTClient
+	logger       *zap.Logger
 }
 
 func NewBaseMission(
@@ -31,6 +34,7 @@ func NewBaseMission(
 	simulation pb.WorldServiceClient,
 	actor actor.Actor,
 	mqtt *transport.MQTTClient,
+	logger *zap.Logger,
 ) BaseMission {
 	return BaseMission{
 		Id:          cfg.Id,
@@ -42,6 +46,7 @@ func NewBaseMission(
 		simulation:  simulation,
 		actor:       actor,
 		mqtt:        mqtt,
+		logger:      logger,
 	}
 }
 

@@ -31,7 +31,8 @@ func NewMissionHandler(logger *zap.Logger, actor actor.Actor, simulation pb.Worl
 }
 
 func (a *MissionHandler) AssignMission(ctx context.Context, req *pb.AssignMissionRequest) (*pb.AssignMissionResponse, error) {
-	mission, err := NewMission(req, a.simulation, a.actor, a.mqtt)
+	a.logger.Info("Calling assign mission")
+	mission, err := NewMission(req, a.simulation, a.actor, a.mqtt, a.logger)
 	if err != nil {
 		return &pb.AssignMissionResponse{
 			Success: false,
@@ -40,7 +41,7 @@ func (a *MissionHandler) AssignMission(ctx context.Context, req *pb.AssignMissio
 
 	a.mission = mission
 
-	go a.mission.RunMission(ctx)
+	go a.mission.RunMission(context.Background())
 
 	return &pb.AssignMissionResponse{
 		Success: true,
