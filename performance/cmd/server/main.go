@@ -247,7 +247,7 @@ func (h *grpcHandler) ActorTelemetryStream(
 // =============================================================================
 
 func startMQTTReceiver(logger *zap.Logger, cfg *shared.MqttConfig, rx *receiver) {
-	client, err := shared.ConnectToMqttBroker(cfg, "perf-server", true)
+	client, err := shared.ConnectToMqttBroker(cfg, "perf-server", true, nil)
 	if err != nil {
 		logger.Fatal("mqtt: connect failed", zap.Error(err))
 	}

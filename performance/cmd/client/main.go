@@ -189,7 +189,7 @@ func runHTTPLoad(url string) {
 // publish has been handed to the network stack before moving on — without it,
 // the loop races far ahead of the broker and the comparison becomes meaningless.
 func runMQTTLoad(cfg *shared.MqttConfig) {
-	mqttClient, err := shared.ConnectToMqttBroker(cfg, "perf-client", true)
+	mqttClient, err := shared.ConnectToMqttBroker(cfg, "perf-client", true, nil)
 	if err != nil {
 		log.Fatalf("mqtt: connect failed: %v", err)
 	}
