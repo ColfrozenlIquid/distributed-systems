@@ -38,6 +38,7 @@ func main() {
 	clientCfg := transport.TransportConfig{
 		HttpAddress: actorCfg.BaseStationEndpoint,
 		GrpcAddress: actorCfg.WorldSimulationEndpoint,
+		MQTTConfig:  actorCfg.MQTTConfig,
 		ClientId:    actorCfg.Id,
 	}
 
