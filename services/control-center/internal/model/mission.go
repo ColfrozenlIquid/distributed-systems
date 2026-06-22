@@ -43,7 +43,7 @@ func (s *MissionService) AssignIncident(ctx context.Context, incidentID string) 
 	}
 
 	mission := Mission{
-		Id:        fmt.Sprintf("%s/%s", actorType, incident.Id),
+		Id:        fmt.Sprintf("%s-%s", actorType, incident.Id),
 		ActorId:   actor.Id,
 		Incident:  incident,
 		State:     shared.MissionStateAssigned,

@@ -73,7 +73,7 @@ func (r *SensorReading) ToIncident() SensorIncident {
 }
 
 func (r *SensorReading) GenerateIncidentID() string {
-	return fmt.Sprintf("%s-%s:%s", r.Sensor.Id, r.Sensor.SensorType, r.Timestamp.String())
+	return fmt.Sprintf("%s-%s:%d", r.Sensor.Id, r.Sensor.SensorType, r.Timestamp.Unix())
 }
 
 func (r SensorType) IncidentForSensorType() Incident {
