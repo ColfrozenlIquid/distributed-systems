@@ -13,7 +13,7 @@ type MQTTClient struct {
 }
 
 func NewMQTTClient(cfg TransportConfig) (*MQTTClient, error) {
-	mqtt, err := shared.ConnectToMqttBroker(cfg.MQTTConfig, cfg.ClientId, true)
+	mqtt, err := shared.ConnectToMqttBroker(cfg.MQTTConfig, cfg.ClientId, true, nil)
 	if err != nil {
 		return nil, fmt.Errorf("connect to mqtt broker: %w", err)
 	}

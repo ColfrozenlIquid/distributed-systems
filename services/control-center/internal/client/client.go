@@ -39,7 +39,7 @@ func NewClient(cfg config.ControlCenterConfig, logger *zap.Logger) (*Client, err
 		WorldServiceClient: pb.NewWorldServiceClient(conn),
 	}
 
-	mqttClient, err := shared.ConnectToMqttBroker(cfg, "control-center", false)
+	mqttClient, err := shared.ConnectToMqttBroker(cfg, "control-center", false, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MQTT broker: %w", err)
 	}
