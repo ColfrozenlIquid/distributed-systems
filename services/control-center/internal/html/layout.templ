@@ -464,7 +464,11 @@ templ DashboardAssets() {
 					button.disabled = true;
 					button.textContent = "Assigning...";
 					try {
-						const response = await fetch(button.dataset.missionUrl, { method: "POST" });
+						const missionUrl = button.dataset.missionUrl || button.getAttribute("hx-post");
+						if (!missionUrl) {
+							throw new Error("mission URL is missing");
+						}
+						const response = await fetch(missionUrl, { method: "POST" });
 						if (!response.ok || !response.body) {
 							throw new Error(await response.text());
 						}
