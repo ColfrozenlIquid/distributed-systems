@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "./proto";
 
 service ActorService {
-  rpc AssignMission(AssignMissionRequest) returns (stream AssignMissionResponse);
+  rpc AssignMission(AssignMissionRequest) returns (AssignMissionResponse);
 }
 
 message AssignMissionRequest {
@@ -11,9 +11,7 @@ message AssignMissionRequest {
 }
 
 message AssignMissionResponse {
-  MissionId missionId = 1;
-  Position currentPosition = 2;
-  ActorState state = 3;
+  bool success = 1;
 }
 
 message Mission {

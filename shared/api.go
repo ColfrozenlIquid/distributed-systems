@@ -41,6 +41,7 @@ type SensorReading struct {
 }
 
 type SensorIncident struct {
+	Id        string     `json:"id"`
 	Timestamp time.Time  `json:"timestamp"`
 	Sensor    SensorInfo `json:"sensor"`
 	Incident  Incident   `json:"incident"`

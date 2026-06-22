@@ -2,6 +2,7 @@ package actor
 
 import (
 	"actors/internal/config"
+	"actors/internal/transport"
 	"context"
 	"fmt"
 
@@ -26,10 +27,10 @@ type rescueVehicle struct {
 	count    int // How many persons are currently in the vehicle
 }
 
-func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) *RescueVehicle {
+func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, mqtt *transport.MQTTClient) *RescueVehicle {
 	return &RescueVehicle{
 		simulation: simulation,
-		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND),
+		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND, mqtt),
 		Actor: rescueVehicle{
 			capacity: MAX_VEHICLE_CAPACITY,
 			count:    0,

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"shared"
 	"time"
 
 	"github.com/spf13/viper"
@@ -15,6 +16,7 @@ type ActorConfig struct {
 	YPosition               uint32
 	BaseStationEndpoint     string
 	WorldSimulationEndpoint string
+	MQTTConfig              *shared.MqttConfig
 }
 
 func LoadConfig() (*ActorConfig, error) {
@@ -31,6 +33,11 @@ func LoadConfig() (*ActorConfig, error) {
 		}
 	}
 
+	mqttConfig, err := shared.LoadMqttConfig(v)
+	if err != nil {
+		return nil, fmt.Errorf("mqtt config missing: %w", err)
+	}
+
 	return &ActorConfig{
 		Id:                      v.GetString("ACTOR_ID"),
 		ActorType:               v.GetString("ACTOR_TYPE"),
@@ -39,5 +46,6 @@ func LoadConfig() (*ActorConfig, error) {
 		YPosition:               v.GetUint32("ACTOR_POSITION_Y"),
 		BaseStationEndpoint:     v.GetString("CONTROL_CENTER_URL"),
 		WorldSimulationEndpoint: v.GetString("WORLD_SIMULATION_HOST_AND_PORT"),
+		MQTTConfig:              mqttConfig,
 	}, nil
 }

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sensors/internal/client"
 	"sensors/internal/config"
 	"sensors/internal/sensor"
+	"sensors/internal/transport"
 	"shared"
 	"time"
 
@@ -15,9 +15,9 @@ import (
 )
 
 type App struct {
-	logger *zap.Logger
-	client client.Client
-	sensor sensor.Sensor
+	logger    *zap.Logger
+	transport transport.Transport
+	sensor    sensor.Sensor
 }
 
 func main() {
@@ -32,23 +32,25 @@ func main() {
 		logger.Fatal("failed to read sensor config", zap.Error(err))
 	}
 
-	clientCfg := client.ClientConfig{
+	clientCfg := transport.TransportConfig{
 		HttpAddress: sensorCfg.BaseStationEndpoint,
 		GrpcAddress: sensorCfg.WorldSimulationEndpoint,
+		MQTTConfig:  sensorCfg.MQTTConfig,
+		ClientId:    sensorCfg.Id,
 	}
 
-	client, err := client.NewClient(clientCfg, logger)
-	defer client.Grpc.Close()
+	transport, err := transport.NewTransport(clientCfg, logger)
+	defer transport.Grpc.Close()
 
-	sensor, err := sensor.NewSensor(*sensorCfg, client.Grpc.Grpc)
+	sensor, err := sensor.NewSensor(*sensorCfg, transport.Grpc.Grpc)
 	if err != nil {
 		logger.Fatal("failed to create new sensor", zap.Error(err))
 	}
 
 	app := App{
-		logger: logger,
-		client: *client,
-		sensor: sensor,
+		logger:    logger,
+		transport: *transport,
+		sensor:    sensor,
 	}
 
 	err = app.Register()
@@ -74,7 +76,7 @@ func (s *App) Register() error {
 		},
 	}
 
-	resp, err := s.client.Http.Post("/register/sensor", payload)
+	resp, err := s.transport.Http.Post("/register/sensor", payload)
 	if err != nil {
 		return fmt.Errorf("post register sensor: %w", err)
 	}
@@ -100,14 +102,23 @@ func (s *App) Reading(reading float32) error {
 		Value: reading,
 	}
 
-	resp, err := s.client.Http.Post("/reading", payload)
-	if err != nil {
-		return fmt.Errorf("post sensor reading: %w", err)
-	}
+	// Replaced with MQTT Publish
+	// resp, err := s.client.Http.Post("/reading", payload)
+	// if err != nil {
+	// 	return fmt.Errorf("post sensor reading: %w", err)
+	// }
 
-	if resp.StatusCode != http.StatusNoContent {
-		s.logger.Error("sensor reading failed", zap.Any("response", resp))
-	}
+	// if resp.StatusCode != http.StatusNoContent {
+	// 	s.logger.Error("sensor reading failed", zap.Any("response", resp))
+	// }
+
+	// Retain = false, QoS = 0
+	s.transport.Mqtt.MQTT.Publish(
+		shared.TileReadingTopic(s.sensor.Position().X, s.sensor.Position().Y, shared.SensorType(s.sensor.Type())),
+		byte(0),
+		false,
+		payload,
+	)
 
 	return nil
 }
