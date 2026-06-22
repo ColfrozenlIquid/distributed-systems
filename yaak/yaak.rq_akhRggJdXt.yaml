@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_akhRggJdXt
 createdAt: 2026-06-18T18:36:49.588473
-updatedAt: 2026-06-18T18:36:59.204335
+updatedAt: 2026-06-22T11:20:50.509307
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -21,7 +21,7 @@ headers:
   id: pFhY4bNKix
 method: GET
 name: Get Incidents
-sortPriority: 1000.001
+sortPriority: 3000.0
 url: ${[ baseUrl ]}/status/incidents
 urlParameters: []
 settingSendCookies:
