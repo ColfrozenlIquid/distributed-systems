@@ -110,7 +110,7 @@ Es wird erwartet, dass bei niedrigen Subscriber-Zahlen (N = 1–10) der Durchsat
 
 #### Tatsächliches Ergebnis
 
-Das Ergebnis ist in den folgenden Grafiken visualisiert. Die erste Grafik zeigt den Gesamtdurchsatz (Nachrichten/Sekunde) in Abhängigkeit der Subscriber-Anzahl. Die zweite Grafik zeigt den Spread zwischen schnellstem und langsamsten Subscriber pro Run, welcher als Indikator für Serialisierungsverhalten des Brokers dient.
+Das Ergebnis ist in den folgenden Grafiken visualisiert. Die Grafik zeigt den Gesamtdurchsatz (Nachrichten/Sekunde) in Abhängigkeit der Subscriber-Anzahl.
 
 ![](./aufgabe3/benchmark_chart_fanout.png)
 
