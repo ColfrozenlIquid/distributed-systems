@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_aCTUM4DBwP
 createdAt: 2026-05-17T20:50:38.079559
-updatedAt: 2026-06-07T15:49:41.378068
+updatedAt: 2026-06-22T11:20:50.516515
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -30,7 +30,7 @@ headers:
   id: ibHwz7hdNv
 method: POST
 name: Add Reading
-sortPriority: 4000.0
+sortPriority: 6000.0
 url: ${[ baseUrl ]}/reading
 urlParameters: []
 settingSendCookies:

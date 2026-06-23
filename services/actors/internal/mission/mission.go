@@ -10,6 +10,8 @@ import (
 	"shared"
 
 	"fmt"
+
+	"go.uber.org/zap"
 )
 
 type Mission interface {
@@ -28,6 +30,7 @@ func NewMission(
 	simulation pb.WorldServiceClient,
 	actor actor.Actor,
 	mqtt *transport.MQTTClient,
+	logger *zap.Logger,
 ) (Mission, error) {
 	missionType, err := MissionTypeToDomain(req.GetMission().GetType())
 	if err != nil {
@@ -47,7 +50,7 @@ func NewMission(
 		},
 		Priority: missionPriority,
 	}
-	base := NewBaseMission(cfg, simulation, actor, mqtt)
+	base := NewBaseMission(cfg, simulation, actor, mqtt, logger)
 
 	switch missionType {
 	case MissionTypePumpWater:

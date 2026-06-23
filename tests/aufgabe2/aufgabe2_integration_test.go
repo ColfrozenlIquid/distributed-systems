@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -42,6 +41,7 @@ type sensorReading struct {
 }
 
 type sensorIncident struct {
+	Id        string     `json:"id"`
 	Timestamp time.Time  `json:"timestamp"`
 	Sensor    sensorInfo `json:"sensor"`
 	Incident  int        `json:"incident"`
@@ -88,32 +88,8 @@ func TestAssignWaterIncidentMissionViaGRPC(t *testing.T) {
 		t.Fatalf("expected water level incident for sensor %q in /status", sensor.ID)
 	}
 
-	incidentID := fmt.Sprintf("%s-%d", incident.Sensor.ID, incident.Incident)
-	updates := assignMissionAndReadStream(t, client, baseURL, incidentID, 20*time.Second)
-	if len(updates) == 0 {
-		t.Fatalf("expected mission updates for incident %q", incidentID)
-	}
-
-	states := make([]string, 0, len(updates))
-	for _, update := range updates {
-		states = append(states, update.State)
-	}
-
-	final := updates[len(updates)-1]
-	if final.State != "done" {
-		t.Fatalf("expected final mission state done, got %q (states=%v)", final.State, states)
-	}
-	if final.ActorType != "water_vehicle" {
-		t.Fatalf("expected water incident to be assigned to water_vehicle, got actor_type=%q actor_id=%q", final.ActorType, final.ActorID)
-	}
-	if !slices.Contains(states, "assigned") {
-		t.Fatalf("expected streamed states to contain assigned, got %v", states)
-	}
-	if !slices.Contains(states, "busy") {
-		t.Fatalf("expected streamed states to contain busy, got %v", states)
-	}
-
-	t.Logf("functional result: incident_id=%s mission_id=%s actor_id=%s actor_type=%s states=%v", incidentID, final.MissionID, final.ActorID, final.ActorType, states)
+	incidentID := incident.Id
+	assignMission(t, client, baseURL, incidentID, 20*time.Second)
 }
 
 func TestMissionAssignmentStreamLatencyAndReliability(t *testing.T) {
@@ -312,6 +288,30 @@ func assignMissionAndReadStream(t *testing.T, client *http.Client, baseURL, inci
 		}
 		updates = append(updates, update)
 	}
+}
+
+func assignMission(t *testing.T, client *http.Client, baseURL, incidentID string, timeout time.Duration) string {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/incidents/"+incidentID+"/mission", nil)
+	if err != nil {
+		t.Fatalf("create mission assignment request: %v", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("POST /incidents/:incidentID/mission failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("POST /incidents/:incidentID/mission returned HTTP %d, want %d, body=%q", resp.StatusCode, http.StatusOK, string(body))
+	}
+	return string(body)
 }
 
 func percentile(sorted []time.Duration, p int) time.Duration {

@@ -6,10 +6,13 @@ import (
 	"actors/internal/actor"
 	"actors/internal/transport"
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"shared"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type BaseMission struct {
@@ -23,6 +26,7 @@ type BaseMission struct {
 	simulation   pb.WorldServiceClient
 	actor        actor.Actor
 	mqtt         *transport.MQTTClient
+	logger       *zap.Logger
 }
 
 func NewBaseMission(
@@ -30,6 +34,7 @@ func NewBaseMission(
 	simulation pb.WorldServiceClient,
 	actor actor.Actor,
 	mqtt *transport.MQTTClient,
+	logger *zap.Logger,
 ) BaseMission {
 	return BaseMission{
 		Id:          cfg.Id,
@@ -41,6 +46,7 @@ func NewBaseMission(
 		simulation:  simulation,
 		actor:       actor,
 		mqtt:        mqtt,
+		logger:      logger,
 	}
 }
 
@@ -62,7 +68,7 @@ func (b *BaseMission) RunMission(ctx context.Context) error {
 func (b *BaseMission) missionUpdate() error {
 	switch b.State {
 	case shared.MissionStateAssigned:
-		if err := b.send(b.State); err != nil {
+		if err := b.send(); err != nil {
 			return err
 		}
 		if !b.actor.AtPosition(b.Destination) {
@@ -73,7 +79,7 @@ func (b *BaseMission) missionUpdate() error {
 		}
 
 	case shared.MissionStateOnTheWay:
-		if err := b.send(b.State); err != nil {
+		if err := b.send(); err != nil {
 			return err
 		}
 		if b.actor.AtPosition(b.Destination) {
@@ -89,19 +95,19 @@ func (b *BaseMission) missionUpdate() error {
 			b.MissionTimer = nil
 			b.State = shared.MissionStateCompleted
 		default:
-			if err := b.send(b.State); err != nil {
+			if err := b.send(); err != nil {
 				return err
 			}
 		}
 
 	case shared.MissionStateCompleted:
-		if err := b.send(b.State); err != nil {
+		if err := b.send(); err != nil {
 			return err
 		}
 		return fmt.Errorf("mission done")
 
 	case shared.MissionStateFailed:
-		if err := b.send(b.State); err != nil {
+		if err := b.send(); err != nil {
 			return err
 		}
 		return fmt.Errorf("mission error")
@@ -115,14 +121,17 @@ func (b *BaseMission) startTimer() {
 	}
 }
 
-func (b *BaseMission) send(state shared.MissionState) error {
+func (b *BaseMission) send() error {
 	// retain = false, Qos = 1
-	b.mqtt.MQTT.Publish(shared.MissionUpdateTopic(b.Id), byte(1), false, shared.MissionUpdate{
+	missionUpdate := shared.MissionUpdate{
 		MissionID: b.Id,
 		ActorID:   b.actor.Id(),
 		State:     b.State,
 		Timestamp: time.Now(),
-	})
+	}
 
-	return nil
+	payload, _ := json.Marshal(missionUpdate)
+	token := b.mqtt.MQTT.Publish(shared.MissionUpdateTopic(b.Id), byte(1), false, payload)
+	token.Wait()
+	return token.Error()
 }

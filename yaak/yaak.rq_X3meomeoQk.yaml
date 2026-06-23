@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_X3meomeoQk
 createdAt: 2026-05-17T20:47:18.426031
-updatedAt: 2026-06-07T15:49:30.313460
+updatedAt: 2026-06-22T11:20:50.511313
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -28,7 +28,7 @@ headers:
   id: ibHwz7hdNv
 method: POST
 name: Register sensor
-sortPriority: 2000.0
+sortPriority: 4000.0
 url: ${[ baseUrl ]}/register/sensor
 urlParameters: []
 settingSendCookies:

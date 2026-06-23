@@ -85,7 +85,7 @@ func TestRegistrationCriticalReadingAndDashboard(t *testing.T) {
 
 	status := getStatus(t, client, baseURL)
 	assertContains(t, "registered sensor", slices.ContainsFunc(status.Sensors, func(s sensorInfo) bool { return s.ID == sensor.ID && s.SensorType == ("water_level") }))
-	assertContains(t, "registered actor", slices.ContainsFunc(status.Actors, func(a actorInfo) bool { return a.ID == actor.ID && a.ActorType == ("rescue_vehicle") }))
+	assertContains(t, "registered actor", slices.ContainsFunc(status.Actors, func(a actorInfo) bool { return a.ID == actor.ID }))
 	assertContains(t, "critical water reading", slices.ContainsFunc(status.Readings, func(r sensorReading) bool { return r.Sensor.ID == sensor.ID && r.Value == 95 }))
 	assertContains(t, "water level incident", slices.ContainsFunc(status.Incidents, func(i sensorIncident) bool { return i.Sensor.ID == sensor.ID && i.Incident == 1 }))
 

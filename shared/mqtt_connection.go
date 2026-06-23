@@ -7,7 +7,14 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-func ConnectToMqttBroker(brokerUrl MqttBrokerUrlProvider, clientID string, cleanSession bool) (mqtt.Client, error) {
+type MqttLwtConfig struct {
+	Topic   string
+	Payload []byte
+	Qos     byte
+	Retain  bool
+}
+
+func ConnectToMqttBroker(brokerUrl MqttBrokerUrlProvider, clientID string, cleanSession bool, lwtConfig *MqttLwtConfig) (mqtt.Client, error) {
 	mqttOptions := mqtt.NewClientOptions().
 		SetClientID(clientID).
 		AddBroker(brokerUrl.GetMqttBrokerUrl()).
@@ -19,6 +26,10 @@ func ConnectToMqttBroker(brokerUrl MqttBrokerUrlProvider, clientID string, clean
 		SetAutoReconnect(true).
 		SetMaxReconnectInterval(30 * time.Second).
 		SetOrderMatters(false)
+
+	if lwtConfig != nil {
+		mqttOptions.SetBinaryWill(lwtConfig.Topic, lwtConfig.Payload, lwtConfig.Qos, lwtConfig.Retain)
+	}
 
 	mqttClient := mqtt.NewClient(mqttOptions)
 
