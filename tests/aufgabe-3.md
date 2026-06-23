@@ -288,7 +288,7 @@ type fanoutWirePayload struct {
 
 ### Durchführung
 
-Im Test wurden sequentiell 5.000 Nachrichtenpakete mit der angegebenen Nutzlast über MQTT (QoS 0) an einen Broker versendet. Die Anzahl der aktiven Subscriber wurde dabei schrittweise auf `N ∈ {1, 10, 50, 100, 500}` erhöht. Jeder Subscriber ist ein unabhängiger MQTT-Client mit eindeutiger Client-ID, der denselben Topic-Wildcard abonniert. Die Messung startet mit dem Timestamp der ersten gesendeten Nachricht (`SentAt`) und endet, wenn der jeweilige Subscriber die letzte seiner 5.000 Nachrichten empfangen hat. Als Gesamtergebnis pro Run wird die Zeit des *langsamsten* Subscribers gewertet, da der Broker erst dann alle Nachrichten vollständig ausgeliefert hat.
+Im Test wurden sequenziell 5000 Nachrichtenpakete mit der angegebenen Nutzlast über MQTT (QoS 0) an einen Broker versendet. Die Anzahl der aktiven Subscriber wurde dabei schrittweise auf `N ∈ {1, 10, 50, 100, 500}` erhöht. Jeder Subscriber ist ein unabhängiger MQTT-Client mit eindeutiger Client-ID, der dieselbe Topic-Wildcard abonniert. Die Messung startet mit dem Timestamp der ersten gesendeten Nachricht (`SentAt`) und endet, wenn der jeweilige Subscriber die letzte seiner 5000 Nachrichten empfangen hat. Als Gesamtergebnis pro Run wird die Zeit des *langsamsten* Subscribers gewertet, da der Broker erst dann alle Nachrichten vollständig ausgeliefert hat.
 
 ### Ergebnisse
 
