@@ -4,6 +4,7 @@ import (
 	"shared"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/samber/ro"
 )
@@ -79,6 +80,11 @@ func (s *SystemStatus) UpdateActorFromStatus(actorStatus shared.ActorStatus) {
 	if index < 0 {
 		return
 	}
+	actor := s.Actors[index]
+	if actor.State == shared.ActorStateOnAMission &&
+		(actorStatus.State == shared.ActorStateError || actorStatus.State == shared.ActorStateOffline) {
+		s.failMissionOfActorLocked(actor.Id)
+	}
 	s.Actors[index] = s.Actors[index].UpdateWithStatus(actorStatus)
 }
 
@@ -92,6 +98,21 @@ func (s *SystemStatus) UpdateActorFromTelemetry(actorTelemetry shared.ActorTelem
 		return
 	}
 	s.Actors[index] = s.Actors[index].UpdateWithTelemetry(actorTelemetry)
+}
+
+func (s *SystemStatus) failMissionOfActorLocked(actorId string) {
+	index := slices.IndexFunc(s.Missions, func(m Mission) bool {
+		return m.ActorId == actorId
+	})
+	if index < 0 {
+		return
+	}
+	s.updateMissionLocked(index, shared.MissionUpdate{
+		MissionID: s.Missions[index].Id,
+		ActorID:   s.Missions[index].ActorId,
+		State:     shared.MissionStateFailed,
+		Timestamp: time.Now(),
+	})
 }
 
 func (s *SystemStatus) AddMission(mission Mission) {
@@ -116,7 +137,11 @@ func (s *SystemStatus) UpdateMission(mission shared.MissionUpdate) {
 		s.mu.Unlock()
 		return
 	}
+	s.updateMissionLocked(index, mission)
+	s.mu.Unlock()
+}
 
+func (s *SystemStatus) updateMissionLocked(index int, mission shared.MissionUpdate) {
 	updated := s.Missions[index].Update(mission)
 	s.Missions[index] = updated
 
@@ -125,7 +150,6 @@ func (s *SystemStatus) UpdateMission(mission shared.MissionUpdate) {
 			return i == updated.Incident
 		})
 	}
-	s.mu.Unlock()
 	s.publishMissionUpdate(updated)
 }
 
