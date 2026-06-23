@@ -1,3 +1,155 @@
+# Aufgabe 1
+
+## Funktional: Registrierung, kritischer Messwert und Dashboard-Status
+
+**Ziel:**
+Es wird geprüft, ob die Leitstelle im deployten Docker-Compose-System über die selbst implementierte
+HTTP/REST-Schnittstelle einen Sensor und einen Actor registriert, einen kritischen Wasserstand annimmt und daraus im
+verteilten Systemzustand einen `WaterLevelAlert` ableitet. Zusätzlich wird geprüft, ob `/map` weiterhin renderbares HTML
+für das Dashboard liefert.
+
+**Bewertung:** `PASS`
+
+**Versionsstand:** Commit `efe762d2`
+
+### Setup
+
+**Container:** `world-simulation`, `control-center`, `sensor-*`, `actor-*` aus `docker-compose.yaml`.
+
+**Testdaten:** Der Go-Test erzeugt eindeutige IDs für einen zusätzlichen Sensor vom Typ `water_level`, einen
+zusätzlichen
+Actor vom Typ `rescue_vehicle` und sendet einen Messwert `95.0` an Position `(3,3)`. Der Schwellwert für `water_level`
+liegt bei `> 80`, daher muss ein Vorfall entstehen.
+
+**Automatisierter Test:** `tests/aufgabe1/aufgabe1_integration_test.go`, Testfunktion
+`TestRegistrationCriticalReadingAndDashboard`.
+
+### Durchführung
+
+Aus dem Repository-Wurzelverzeichnis:
+
+```bash
+docker compose up -d --build
+docker run --rm \
+  --network vs-praktikum_default \
+  -v "$PWD/tests/aufgabe1:/tests" \
+  -w /tests \
+  -e CONTROL_CENTER_URL=http://control-center:8080 \
+  golang:1.26.2-alpine \
+  go test -v -run TestRegistrationCriticalReadingAndDashboard .
+```
+
+### Ergebnisse
+#### Tatsächliches Ergebnis
+
+Der Test wurde im Docker-Netz `vs-praktikum_default` ausgeführt und war erfolgreich:
+
+```text
+=== RUN   TestRegistrationCriticalReadingAndDashboard
+    aufgabe1_integration_test.go:97: functional result: registered_sensor=it-water-1782192902617889721 registered_actor=it-actor-1782192902617890596 critical_value=95.0 incident=WaterLevelAlert
+    aufgabe1_integration_test.go:98: status summary: sensors=9 actors=5 readings=4397 incidents=5
+    aufgabe1_integration_test.go:99: dashboard result: content_type="text/html; charset=utf-8" bytes=292610
+--- PASS: TestRegistrationCriticalReadingAndDashboard (0.06s)
+PASS
+ok  	aufgabe1tests	0.063s
+```
+
+## Nicht-funktional: Verfügbarkeit und Antwortzeit des Status-Endpunkts
+
+**Ziel:** Es wird gemessen, ob die Leitstelle ihren Gesamtzustand unter wiederholten Client-/Dashboard-Abfragen stabil
+und schnell
+ausliefert. Die geprüften Qualitätsmerkmale sind Verfügbarkeit und Antwortzeit.
+
+**Bewertung:** `PASS`
+
+**Versionsstand:** Commit `efe762d2`
+
+### Setup
+
+**Container:** `world-simulation`, `control-center`, `sensor-*`, `actor-*` aus `docker-compose.yaml`.
+
+**Messkriterien:** 200 sequenzielle `GET /status`-Anfragen, 0 HTTP-/Transportfehler, alle Antworten HTTP `200`,
+p95-Antwortzeit unter `200 ms`.
+
+**Automatisierter Test:** `tests/aufgabe1/aufgabe1_integration_test.go`, Testfunktion
+`TestStatusEndpointAvailabilityAndLatency`.
+
+### Durchführung
+
+Aus dem Repository-Wurzelverzeichnis:
+
+```bash
+docker compose up -d --build
+docker run --rm \
+  --network vs-praktikum_default \
+  -v "$PWD/tests/aufgabe1:/tests" \
+  -w /tests \
+  -e CONTROL_CENTER_URL=http://control-center:8080 \
+  golang:1.26.2-alpine \
+  go test -v -run TestStatusEndpointAvailabilityAndLatency .
+```
+
+### Ergebnisse
+
+#### Erwartetes Ergebnis
+
+Der Go-Test endet mit `PASS`. Die Ausgabe enthält `requests=200`, `status_counts=map[200:200]` und Latenzstatistiken mit
+`p95_ms < 200.00`.
+
+#### Tatsächliches Ergebnis
+
+Der Test wurde im Docker-Netz `vs-praktikum_default` ausgeführt und war erfolgreich:
+
+```text
+=== RUN   TestStatusEndpointAvailabilityAndLatency
+    aufgabe1_integration_test.go:144: non-functional result: requests=200 status_counts=map[200:200]
+    aufgabe1_integration_test.go:145: latency statistics: min_ms=6.02 avg_ms=6.69 p50_ms=6.42 p95_ms=7.75 max_ms=12.79
+--- PASS: TestStatusEndpointAvailabilityAndLatency (1.35s)
+PASS
+ok  	aufgabe1tests	1.354s
+```
+
+
+
+# Aufgabe 2
+## Funktional: Einsatzzuweisung via gRPC-Streaming für WaterLevelAlert
+**Ziel:**
+Es wird geprüft, ob die Leitstelle bei einem kritischen Wasserstand einen Incident erzeugt und diesen per RPC/gRPC-Missionsfluss korrekt an einen passenden Fahrzeugtyp zuweist. Die Zuordnung muss für `water_level_alert` auf `water_vehicle` erfolgen und der Missionszustand muss über den Stream bis `done` fortschreiten.
+
+**Bewertung:** `PASS`
+
+**Versionsstand:** Commit `efe762d2`
+
+### Setup
+* `world-simulation`, `control-center`, `sensor-*`, `actor-*` aus `docker-compose.yaml`
+* Test gegen `CONTROL_CENTER_URL` (Default `http://control-center:8080`)
+* automatisierter Go-Test `tests/aufgabe2/aufgabe2_integration_test.go`, Testfunktion `TestAssignWaterIncidentMissionViaGRPC`
+* Testdaten: eindeutig registrierter `water_level`-Sensor auf `(1,1)`, Reading `95` (kritisch > 80), Incident-ID-Schema `<sensor-id>-1`.
+
+### Durchführung
+Repository-Wurzel:
+```shell
+make docker-compose-up-build
+```
+```shell
+docker run --rm --network vs-praktikum_default -v "$PWD/tests/aufgabe2:/tests" -w /tests -e CONTROL_CENTER_URL=http://control-center:8080 golang:1.26.2-alpine go test -v -run TestAssignWaterIncidentMissionViaGRPC .
+```
+
+### Ergebnisse
+#### Erwartetes Ergebnis
+Der Go-Test endet mit `PASS`. `POST /register/sensor` und `POST /reading` liefern HTTP `204`. Der Incident ist in `GET /status` vorhanden. `POST /incidents/:incidentID/mission` liefert HTTP `200` und einen NDJSON-Stream mit Missions-Updates, der mindestens `assigned` und `busy` enthält und mit `done` endet. Das finale Update hat `actor_type=water_vehicle`.
+
+#### Tatsächliches Ergebnis
+```
+=== RUN   TestAssignWaterIncidentMissionViaGRPC
+--- PASS: TestAssignWaterIncidentMissionViaGRPC (0.34s)
+PASS
+ok  	aufgabe2tests	0.345s
+```
+
+## Nicht-funktional: Latenz und Zuverlässigkeit des Missions-Streams
+Der Test ist aufgrund der Migration von gRPC Streams zu MQTT nicht mehr anwendbar.
+
 # Aufgabe 3
 ## Funktional: MQTT-Nachrichtenfluss für Sensordaten und Actor-Status
 **Ziel:**
@@ -59,7 +211,6 @@ Der Test wurde im Docker-Netz `vs-praktikum_default` ausgefuehrt und war erfolgr
 PASS
 ok  	aufgabe3tests	0.053s
 ```
-
 
 #### Artefakte
 Automatisierter Test: `tests/aufgabe3/aufgabe3_mqtt_integration_test.go`.
