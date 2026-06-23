@@ -36,6 +36,12 @@ func NewSystemStatus() SystemStatus {
 func (s *SystemStatus) AddSensor(sensor shared.SensorInfo) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if index := slices.IndexFunc(s.Sensors, func(existing shared.SensorInfo) bool {
+		return existing.Id == sensor.Id
+	}); index >= 0 {
+		s.Sensors[index] = sensor
+		return
+	}
 	s.Sensors = append(s.Sensors, sensor)
 }
 
