@@ -301,3 +301,7 @@ Es wird erwartet, dass bei niedrigen Subscriber-Zahlen (N = 1–10) der Durchsat
 Das Ergebnis ist in den folgenden Grafiken visualisiert. Die Grafik zeigt den Gesamtdurchsatz (Nachrichten/Sekunde) in Abhängigkeit der Subscriber-Anzahl.
 
 ![](./aufgabe3/benchmark_chart_fanout.png)
+
+
+## Nicht-funktional: MQTT Fan-in Skalierung
+![](./aufgabe3/benchmark_fan_in_qos1.png)
