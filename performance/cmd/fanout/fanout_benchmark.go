@@ -85,7 +85,7 @@ func spawnSubscribers(cfg *shared.MqttConfig, fb *fanoutBenchmark) {
 			// same ID. We embed the subscriber count in the ID so runs don't
 			// accidentally share persistent sessions.
 			clientID := fmt.Sprintf("fanout-sub-%d-%d", fb.numSubscribers, subID)
-			client, err := shared.ConnectToMqttBroker(cfg, clientID, true)
+			client, err := shared.ConnectToMqttBroker(cfg, clientID, true, nil)
 			if err != nil {
 				log.Fatalf("fanout: sub-%d connect failed: %v", subID, err)
 			}
@@ -135,7 +135,7 @@ func spawnSubscribers(cfg *shared.MqttConfig, fb *fanoutBenchmark) {
 // so subscribers share a common start time regardless of when they each
 // receive that first message.
 func runFanoutPublisher(cfg *shared.MqttConfig, n int) {
-	client, err := shared.ConnectToMqttBroker(cfg, fmt.Sprintf("fanout-pub-%d", n), true)
+	client, err := shared.ConnectToMqttBroker(cfg, fmt.Sprintf("fanout-pub-%d", n), true, nil)
 	if err != nil {
 		log.Fatalf("fanout: publisher connect failed: %v", err)
 	}
