@@ -266,7 +266,7 @@ Das Ergebnis ist in den folgenden Grafiken visualisiert. Die erste Grafik zeigt 
 
 **Bewertung:** `PASS`
 
-**Versionsstand:** Commit `TODO`
+**Versionsstand:** Commit `3afde28f`
 
 ### Setup
 
@@ -294,7 +294,7 @@ Im Test wurden sequenziell 5000 Nachrichtenpakete mit der angegebenen Nutzlast �
 
 #### Erwartetes Ergebnis
 
-Es wird erwartet, dass bei niedrigen Subscriber-Zahlen (N = 1–10) der Durchsatz nahezu konstant bleibt, da der Broker die Nachrichten parallel ausliefern kann. Ab einem bestimmten Schwellenwert — erwartet zwischen N = 50 und N = 100 — sollte der Broker beginnen, die Auslieferung zu serialisieren, wodurch der Durchsatz pro Subscriber merklich sinkt und die Finish-Zeiten der einzelnen Subscriber stärker auseinanderdriften. Bei N = 500 wird ein deutlich erhöhter Spread zwischen schnellstem und langsamsten Subscriber erwartet.
+Es wird erwartet, dass bei niedrigen Subscriber-Zahlen (N = 1–10) der Durchsatz nahezu konstant bleibt, da der Broker die Nachrichten parallel ausliefern kann. Ab einem bestimmten Schwellenwert — erwartet zwischen N = 50 und N = 100 — sollte der Broker beginnen, die Auslieferung zu serialisieren, wodurch der Durchsatz pro Subscriber merklich sinkt und die Finish-Zeiten der einzelnen Subscriber stärker auseinanderdriften. Bei N = 500 wird ein deutlich erhöhter Spread zwischen schnellstem und langsamstem Subscriber erwartet.
 
 #### Tatsächliches Ergebnis
 
