@@ -165,6 +165,30 @@ templ ActorsFeed(actors []ActorListItem) {
 	</section>
 }
 
+templ IncidentItem(incident IncidentListItem) {
+	<li class="feed-item" data-testid={ "incident-" + incident.ID }>
+		<div>
+			<div class="feed-primary critical-text">{ incident.Type }</div>
+			<div class="feed-secondary">{ incident.SensorID } at { incident.Position }</div>
+			<div class="mission-state" data-incident-mission={ incident.ID }>{ incident.MissionState }</div>
+		</div>
+		<div class="feed-actions">
+			<time class="feed-time">{ incident.Timestamp }</time>
+			<button
+				type="button"
+				class="mission-button"
+				data-mission-trigger
+				data-incident-id={ incident.ID }
+				hx-post={ "/incidents/" + incident.ID + "/mission" }
+				hx-swap="outerHTML"
+				hx-target={ "[data-testid='incident-" + incident.ID + "']" }
+			>
+				Assign mission
+			</button>
+		</div>
+	</li>
+}
+
 templ IncidentsFeed(incidents []IncidentListItem) {
 	<section class="feed-card" data-testid="incidents-feed">
 		<h2 class="feed-title">Incident queue</h2>
@@ -173,24 +197,7 @@ templ IncidentsFeed(incidents []IncidentListItem) {
 		} else {
 			<ul class="feed-list">
 				for _, incident := range incidents {
-					<li class="feed-item">
-						<div>
-							<div class="feed-primary critical-text">{ incident.Type }</div>
-							<div class="feed-secondary">{ incident.SensorID } at { incident.Position }</div>
-						</div>
-						<div class="feed-actions">
-							<time class="feed-time">{ incident.Timestamp }</time>
-							<button
-								type="button"
-								class="mission-button"
-								data-mission-trigger
-								data-incident-id={ incident.ID }
-								data-mission-url={ "/incidents/" + incident.ID + "/mission" }
-							>
-								Assign mission
-							</button>
-						</div>
-					</li>
+					@IncidentItem(incident)
 				}
 			</ul>
 		}

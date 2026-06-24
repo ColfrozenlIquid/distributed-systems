@@ -2,6 +2,7 @@ package actor
 
 import (
 	"actors/internal/config"
+	"actors/internal/transport"
 	"context"
 	"fmt"
 
@@ -19,11 +20,11 @@ type WaterVehicle struct {
 	logger *zap.Logger
 }
 
-func NewWaterVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) *WaterVehicle {
+func NewWaterVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, mqtt *transport.MQTTClient) *WaterVehicle {
 	return &WaterVehicle{
 		cfg:        cfg,
 		simulation: simulation,
-		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_WATER),
+		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_WATER, mqtt),
 		logger:     logger,
 	}
 }

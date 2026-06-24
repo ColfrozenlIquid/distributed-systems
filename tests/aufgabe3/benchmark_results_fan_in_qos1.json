@@ -1,0 +1,46 @@
+{
+  "benchmark_runs": [
+    {
+      "run_id": 1,
+      "timestamp": "2026-06-23T09:41:08Z",
+      "results": {
+        "mqtt_fanin_1000_producers": {
+          "label": "MQTT Fan-in (1000 producers)",
+          "num_messages": 2000000,
+          "elapsed_seconds": 108.791602457,
+          "msgs_per_sec": 18383.771861348418
+        },
+        "mqtt_fanin_100_producers": {
+          "label": "MQTT Fan-in (100 producers)",
+          "num_messages": 200000,
+          "elapsed_seconds": 8.162668403,
+          "msgs_per_sec": 24501.791586498188
+        },
+        "mqtt_fanin_10_producers": {
+          "label": "MQTT Fan-in (10 producers)",
+          "num_messages": 20000,
+          "elapsed_seconds": 1.646797514,
+          "msgs_per_sec": 12144.783939721201
+        },
+        "mqtt_fanin_1_producers": {
+          "label": "MQTT Fan-in (1 producers)",
+          "num_messages": 2000,
+          "elapsed_seconds": 0.945642007,
+          "msgs_per_sec": 2114.9652671891085
+        },
+        "mqtt_fanin_500_producers": {
+          "label": "MQTT Fan-in (500 producers)",
+          "num_messages": 1000000,
+          "elapsed_seconds": 53.024615023,
+          "msgs_per_sec": 18859.165683074534
+        },
+        "mqtt_fanin_50_producers": {
+          "label": "MQTT Fan-in (50 producers)",
+          "num_messages": 100000,
+          "elapsed_seconds": 5.588481875,
+          "msgs_per_sec": 17893.9472716819
+        }
+      }
+    }
+  ]
+}

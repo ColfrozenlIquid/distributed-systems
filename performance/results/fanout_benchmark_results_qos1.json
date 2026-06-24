@@ -1,0 +1,46 @@
+{
+  "benchmark_runs": [
+    {
+      "run_id": 1,
+      "timestamp": "2026-06-22T22:09:21Z",
+      "results": {
+        "mqtt_fanout_1000_subs": {
+          "label": "MQTT Fan-out (1000 subscribers)",
+          "num_messages": 5000,
+          "elapsed_seconds": 19.568635484,
+          "msgs_per_sec": 255.51091715557655
+        },
+        "mqtt_fanout_100_subs": {
+          "label": "MQTT Fan-out (100 subscribers)",
+          "num_messages": 5000,
+          "elapsed_seconds": 2.2844861610000002,
+          "msgs_per_sec": 2188.675985592893
+        },
+        "mqtt_fanout_10_subs": {
+          "label": "MQTT Fan-out (10 subscribers)",
+          "num_messages": 5000,
+          "elapsed_seconds": 0.284070558,
+          "msgs_per_sec": 17601.26088110828
+        },
+        "mqtt_fanout_1_subs": {
+          "label": "MQTT Fan-out (1 subscribers)",
+          "num_messages": 5000,
+          "elapsed_seconds": 0.153647672,
+          "msgs_per_sec": 32541.98345419773
+        },
+        "mqtt_fanout_500_subs": {
+          "label": "MQTT Fan-out (500 subscribers)",
+          "num_messages": 5000,
+          "elapsed_seconds": 9.542247988,
+          "msgs_per_sec": 523.9855436882196
+        },
+        "mqtt_fanout_50_subs": {
+          "label": "MQTT Fan-out (50 subscribers)",
+          "num_messages": 5000,
+          "elapsed_seconds": 1.367444002,
+          "msgs_per_sec": 3656.4568586992127
+        }
+      }
+    }
+  ]
+}

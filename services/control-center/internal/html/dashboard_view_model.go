@@ -1,9 +1,10 @@
 package html
 
 import (
-	"control-center/internal/mission"
+	"context"
 	"control-center/internal/model"
 	"fmt"
+	"io"
 	"math"
 	"sort"
 	"strings"
@@ -85,11 +86,13 @@ type ReadingListItem struct {
 }
 
 type IncidentListItem struct {
-	ID        string
-	Type      string
-	SensorID  string
-	Position  string
-	Timestamp string
+	ID           string
+	Type         string
+	SensorID     string
+	Position     string
+	Timestamp    string
+	MissionID    string
+	MissionState string
 }
 
 type LegendItem struct {
@@ -109,7 +112,6 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	incidents := incidentsByPosition(status.Incidents)
 	sensorsByTile := sensorsByPosition(status.Sensors)
 	actorsByTile := actorsByPosition(status.Actors)
-	missionsByActor := latestMissionsByActor(status.Missions)
 
 	rows := make([][]DashboardTile, 0, len(island.Tiles))
 	flatTiles := make([]DashboardTile, 0, island.Width*island.Height)
@@ -129,9 +131,8 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 			incident, hasIncident := incidents[key]
 			sensor, hasSensor := sensorsByTile[key]
 			actor, hasActor := actorsByTile[key]
-			actorMission, hasActorMission := missionsByActor[actor.Id]
 
-			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, actor, hasActor, actorMission, hasActorMission, reading, hasReading, incident, hasIncident)
+			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, actor, hasActor, reading, hasReading, incident, hasIncident)
 			if tileView.Terrain == "land" {
 				summary.LandTiles++
 			} else {
@@ -161,9 +162,9 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 		Tiles:       rows,
 		Summary:     summary,
 		Sensors:     sensorListItems(status.Sensors),
-		Actors:      actorListItems(status.Actors, status.Missions),
+		Actors:      actorListItems(status.Actors),
 		Readings:    readingListItems(status.Readings),
-		Incidents:   incidentListItems(status.Incidents),
+		Incidents:   incidentListItems(status.Incidents, status.Missions),
 		Legend: []LegendItem{
 			{Label: "Land", Class: "legend-land"},
 			{Label: "Water", Class: "legend-water"},
@@ -181,7 +182,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	}
 }
 
-func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, actor shared.ActorInfo, hasActor bool, actorMission mission.Update, hasActorMission bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
+func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, actor model.Actor, hasActor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
 	terrain := terrainLabel(tile.Terrain)
 	infra := infrastructureLabel(tile.Infrastructure)
 	short := infrastructureShortLabel(tile.Infrastructure)
@@ -206,13 +207,9 @@ func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, h
 		view.SensorLabel = sensorTypeLabel(sensor.SensorType)
 	}
 	if hasActor {
-		view.ActorLabel = actorTypeLabel(actor.ActorType)
+		view.ActorLabel = actorTypeLabel(actor.Type)
 		view.ActorID = fallbackID(actor.Id)
-		if hasActorMission {
-			view.ActorState = actorMission.State
-		} else {
-			view.ActorState = "idle"
-		}
+		view.ActorState = string(actor.State)
 		view.Label += ", " + view.ActorLabel
 	}
 	if hasReading {
@@ -281,23 +278,12 @@ func sensorsByPosition(sensors []shared.SensorInfo) map[string]shared.SensorInfo
 	return byPosition
 }
 
-func actorsByPosition(actors []shared.ActorInfo) map[string]shared.ActorInfo {
-	byPosition := make(map[string]shared.ActorInfo, len(actors))
+func actorsByPosition(actors []model.Actor) map[string]model.Actor {
+	byPosition := make(map[string]model.Actor, len(actors))
 	for _, actor := range actors {
 		byPosition[positionKey(actor.Position.X, actor.Position.Y)] = actor
 	}
 	return byPosition
-}
-
-func latestMissionsByActor(missions []mission.Update) map[string]mission.Update {
-	latest := make(map[string]mission.Update, len(missions))
-	for _, actorMission := range missions {
-		current, ok := latest[actorMission.ActorID]
-		if !ok || actorMission.UpdatedAt.After(current.UpdatedAt) {
-			latest[actorMission.ActorID] = actorMission
-		}
-	}
-	return latest
 }
 
 func terrainLabel(terrain pb.TerrainType) string {
@@ -346,16 +332,7 @@ func infrastructureShortLabel(infrastructure pb.InfrastructureType) string {
 }
 
 func sensorTypeLabel(sensorType shared.SensorType) string {
-	switch sensorType {
-	case shared.VibrationSensor:
-		return "vibration"
-	case shared.WaterLevelSensor:
-		return "water level"
-	case shared.DroneSensor:
-		return "drone"
-	default:
-		return "unknown"
-	}
+	return strings.ReplaceAll(string(sensorType), "_", " ")
 }
 
 func actorTypeLabel(actorType shared.ActorType) string {
@@ -418,19 +395,14 @@ func sensorListItems(sensors []shared.SensorInfo) []SensorListItem {
 	return items
 }
 
-func actorListItems(actors []shared.ActorInfo, missions []mission.Update) []ActorListItem {
+func actorListItems(actors []model.Actor) []ActorListItem {
 	items := make([]ActorListItem, 0, len(actors))
-	missionsByActor := latestMissionsByActor(missions)
 	for _, actor := range actors {
-		state := "idle"
-		if actorMission, ok := missionsByActor[actor.Id]; ok {
-			state = actorMission.State
-		}
 		items = append(items, ActorListItem{
 			ID:       fallbackID(actor.Id),
-			Type:     actorTypeLabel(actor.ActorType),
+			Type:     actorTypeLabel(actor.Type),
 			Position: formatPosition(actor.Position),
-			State:    state,
+			State:    string(actor.State),
 		})
 	}
 	sort.Slice(items, func(i int, j int) bool {
@@ -455,19 +427,63 @@ func readingListItems(readings []shared.SensorReading) []ReadingListItem {
 	return items
 }
 
-func incidentListItems(incidents []shared.SensorIncident) []IncidentListItem {
+func incidentListItems(incidents []shared.SensorIncident, missions []model.Mission) []IncidentListItem {
 	items := make([]IncidentListItem, 0, len(incidents))
+	// build map from incident id to mission
+	missionByIncident := make(map[string]model.Mission)
+	for _, m := range missions {
+		missionByIncident[m.Incident.Id] = m
+	}
+
 	for i := len(incidents) - 1; i >= 0 && len(items) < 8; i-- {
 		incident := incidents[i]
-		items = append(items, IncidentListItem{
-			ID:        mission.IncidentID(incident),
-			Type:      incidentLabel(incident.Incident),
-			SensorID:  fallbackID(incident.Sensor.Id),
-			Position:  formatPosition(incident.Sensor.Position),
-			Timestamp: formatTimestamp(incident.Timestamp),
-		})
+		if mission, ok := missionByIncident[incident.Id]; ok {
+			items = append(items, IncidentListItemFromIncident(incident, &mission))
+			continue
+		}
+		items = append(items, IncidentListItemFromIncident(incident, nil))
 	}
 	return items
+}
+
+func IncidentListItemFromIncident(incident shared.SensorIncident, mission *model.Mission) IncidentListItem {
+	item := IncidentListItem{
+		ID:        incident.Id,
+		Type:      incidentLabel(incident.Incident),
+		SensorID:  fallbackID(incident.Sensor.Id),
+		Position:  formatPosition(incident.Sensor.Position),
+		Timestamp: formatTimestamp(incident.Timestamp),
+	}
+	if mission != nil {
+		item.MissionID = mission.Id
+		item.MissionState = string(mission.State)
+	}
+	return item
+}
+
+func IncidentItemForMission(snapshot model.SystemStatusSnapshot, mission model.Mission) (IncidentListItem, bool) {
+	for _, incident := range snapshot.Incidents {
+		if incident.Id == mission.Incident.Id {
+			return IncidentListItemFromIncident(incident, &mission), true
+		}
+	}
+	return IncidentListItem{}, false
+}
+
+func WriteIncidentItemSSE(ctx context.Context, w io.Writer, snapshot model.SystemStatusSnapshot, mission model.Mission) error {
+	item, ok := IncidentItemForMission(snapshot, mission)
+	if !ok {
+		return nil
+	}
+
+	var buf strings.Builder
+	if err := IncidentItem(item).Render(ctx, &buf); err != nil {
+		return err
+	}
+
+	data := strings.ReplaceAll(buf.String(), "\n", "\ndata: ")
+	_, err := fmt.Fprintf(w, "data: %s\n\n", data)
+	return err
 }
 
 func formatReadingValue(reading shared.SensorReading) string {

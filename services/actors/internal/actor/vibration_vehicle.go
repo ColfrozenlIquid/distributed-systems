@@ -2,6 +2,7 @@ package actor
 
 import (
 	"actors/internal/config"
+	"actors/internal/transport"
 	"context"
 	"fmt"
 
@@ -19,11 +20,11 @@ type VibrationVehicle struct {
 	logger *zap.Logger
 }
 
-func NewVibrationVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger) *VibrationVehicle {
+func NewVibrationVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, mqtt *transport.MQTTClient) *VibrationVehicle {
 	return &VibrationVehicle{
 		cfg:        cfg,
 		simulation: simulation,
-		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND),
+		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND, mqtt),
 		logger:     logger,
 	}
 }

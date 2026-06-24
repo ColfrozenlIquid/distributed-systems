@@ -4,11 +4,14 @@ import (
 	pb "actors/gen"
 	proto "actors/gen"
 	"actors/internal/actor"
+	"actors/internal/transport"
 	"actors/internal/types"
 	"context"
 	"shared"
 
 	"fmt"
+
+	"go.uber.org/zap"
 )
 
 type Mission interface {
@@ -24,9 +27,10 @@ type MissionConfig struct {
 
 func NewMission(
 	req *pb.AssignMissionRequest,
-	ch chan<- *pb.AssignMissionResponse,
 	simulation pb.WorldServiceClient,
 	actor actor.Actor,
+	mqtt *transport.MQTTClient,
+	logger *zap.Logger,
 ) (Mission, error) {
 	missionType, err := MissionTypeToDomain(req.GetMission().GetType())
 	if err != nil {
@@ -46,7 +50,7 @@ func NewMission(
 		},
 		Priority: missionPriority,
 	}
-	base := NewBaseMission(cfg, ch, simulation, actor)
+	base := NewBaseMission(cfg, simulation, actor, mqtt, logger)
 
 	switch missionType {
 	case MissionTypePumpWater:
@@ -138,34 +142,4 @@ func MissionWithinBounds(position *pb.Position) error {
 		return fmt.Errorf("mission position outside of world bounds")
 	}
 	return nil
-}
-
-type MissionState int
-
-const (
-	MissionStateIdle MissionState = iota
-	MissionStateAssigned
-	MissionStateOnTheWay
-	MissionStateBusy
-	MissionStateDone
-	MissionStateError
-)
-
-func MissionStateToProto(actorState MissionState) (pb.ActorState, error) {
-	switch actorState {
-	case MissionStateAssigned:
-		return pb.ActorState_ACTOR_STATE_ASSIGNED, nil
-	case MissionStateBusy:
-		return pb.ActorState_ACTOR_STATE_BUSY, nil
-	case MissionStateDone:
-		return pb.ActorState_ACTOR_STATE_DONE, nil
-	case MissionStateError:
-		return pb.ActorState_ACTOR_STATE_ERROR, nil
-	case MissionStateIdle:
-		return pb.ActorState_ACTOR_STATE_IDLE, nil
-	case MissionStateOnTheWay:
-		return pb.ActorState_ACTOR_STATE_ON_THE_WAY, nil
-	default:
-		return pb.ActorState_ACTOR_STATE_ASSIGNED, fmt.Errorf("unknown actor state")
-	}
 }

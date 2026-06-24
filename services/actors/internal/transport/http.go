@@ -1,4 +1,4 @@
-package client
+package transport
 
 import (
 	"bytes"
@@ -7,31 +7,7 @@ import (
 	"io"
 	"net/http"
 	"time"
-
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
-	pb "sensors/gen"
 )
-
-type ClientConfig struct {
-	HttpAddress string
-	HttpTimeout time.Duration
-
-	GrpcAddress string
-}
-
-type Client struct {
-	Http   HTTPClient
-	Grpc   GRPCClient
-	Logger *zap.Logger
-}
-
-type GRPCClient struct {
-	grpcConn *grpc.ClientConn
-	Grpc     pb.WorldServiceClient
-}
 
 type HTTPClient struct {
 	httpClient *http.Client
@@ -39,38 +15,18 @@ type HTTPClient struct {
 	Timeout    time.Duration
 }
 
-type Response struct {
-	StatusCode int
-	Body       []byte
-	Header     http.Header
-}
-
-func (c *GRPCClient) Close() error {
-	return c.grpcConn.Close()
-}
-
-func NewClient(cfg ClientConfig, logger *zap.Logger) (*Client, error) {
-	conn, err := grpc.NewClient(cfg.GrpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to gRPC: %w", err)
-	}
-
-	grpc := &GRPCClient{
-		grpcConn: conn,
-		Grpc:     pb.NewWorldServiceClient(conn),
-	}
-
-	http := &HTTPClient{
+func NewHTTPClient(cfg TransportConfig) *HTTPClient {
+	return &HTTPClient{
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 		BaseURL:    cfg.HttpAddress,
 		Timeout:    cfg.HttpTimeout,
 	}
+}
 
-	return &Client{
-		Logger: logger,
-		Http:   *http,
-		Grpc:   *grpc,
-	}, nil
+type Response struct {
+	StatusCode int
+	Body       []byte
+	Header     http.Header
 }
 
 func (c *HTTPClient) send(method string, path string, body any) (*Response, error) {

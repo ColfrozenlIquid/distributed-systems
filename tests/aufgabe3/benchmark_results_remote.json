@@ -1,0 +1,40 @@
+{
+  "benchmark_runs": [
+    {
+      "run_id": 1,
+      "timestamp": "2026-06-21T20:51:05Z",
+      "results": {
+        "http": {
+          "label": "HTTP REST",
+          "num_messages": 5000,
+          "elapsed_seconds": 196.632186999,
+          "msgs_per_sec": 25.428186892034255
+        },
+        "mqtt_qos_0": {
+          "label": "MQTT QoS 0",
+          "num_messages": 5000,
+          "elapsed_seconds": 0.431382881,
+          "msgs_per_sec": 11590.631478952917
+        },
+        "mqtt_qos_1": {
+          "label": "MQTT QoS 1",
+          "num_messages": 5000,
+          "elapsed_seconds": 76.225842506,
+          "msgs_per_sec": 65.59455213114151
+        },
+        "stream_grpc": {
+          "label": "gRPC Stream",
+          "num_messages": 5000,
+          "elapsed_seconds": 0.086194072,
+          "msgs_per_sec": 58008.629642187
+        },
+        "unary_grpc": {
+          "label": "gRPC Unary",
+          "num_messages": 5000,
+          "elapsed_seconds": 93.362277494,
+          "msgs_per_sec": 53.55482036437392
+        }
+      }
+    }
+  ]
+}

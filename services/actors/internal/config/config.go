@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"shared"
 	"time"
 
 	"github.com/spf13/viper"
@@ -15,6 +16,7 @@ type ActorConfig struct {
 	YPosition               uint32
 	BaseStationEndpoint     string
 	WorldSimulationEndpoint string
+	MQTTConfig              *shared.MqttConfig
 }
 
 func LoadConfig() (*ActorConfig, error) {
@@ -25,10 +27,15 @@ func LoadConfig() (*ActorConfig, error) {
 	v.SetDefault("ACTOR_POSITION_X", 0)
 	v.SetDefault("ACTOR_POSITION_Y", 0)
 
-	for _, key := range []string{"ACTOR_ID", "ACTOR_TYPE", "ACTOR_BASE_STATION_HOST", "ACTOR_WORLD_SIMULATION_HOST"} {
+	for _, key := range []string{"ACTOR_ID", "ACTOR_TYPE", "CONTROL_CENTER_URL", "WORLD_SIMULATION_HOST_AND_PORT"} {
 		if v.GetString(key) == "" {
 			return nil, fmt.Errorf("missing required env var: %s", key)
 		}
+	}
+
+	mqttConfig, err := shared.LoadMqttConfig(v)
+	if err != nil {
+		return nil, fmt.Errorf("mqtt config missing: %w", err)
 	}
 
 	return &ActorConfig{
@@ -37,7 +44,8 @@ func LoadConfig() (*ActorConfig, error) {
 		IntervalMs:              time.Duration(v.GetInt("ACTOR_INTERVAL_MS")) * time.Millisecond,
 		XPosition:               v.GetUint32("ACTOR_POSITION_X"),
 		YPosition:               v.GetUint32("ACTOR_POSITION_Y"),
-		BaseStationEndpoint:     v.GetString("ACTOR_BASE_STATION_HOST"),
-		WorldSimulationEndpoint: v.GetString("ACTOR_WORLD_SIMULATION_HOST"),
+		BaseStationEndpoint:     v.GetString("CONTROL_CENTER_URL"),
+		WorldSimulationEndpoint: v.GetString("WORLD_SIMULATION_HOST_AND_PORT"),
+		MQTTConfig:              mqttConfig,
 	}, nil
 }

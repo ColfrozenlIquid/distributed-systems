@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "./proto";
+
+service PerformanceService {
+  rpc ActorTelemetryStream(stream ActorTelemetryStreamRequest) returns (ActorTelemetryStreamResponse);
+
+  rpc ActorTelemetry(ActorTelemetryRequest) returns (ActorTelemetryResponse);
+}
+
+message ActorTelemetryStreamRequest {
+  string actor_id = 1;
+  int32 pos_x = 2;
+  int32 pos_y = 3;
+  uint64 timestamp = 4;
+}
+
+message ActorTelemetryStreamResponse {}
+
+message ActorTelemetryRequest {
+  string actor_id = 1;
+  int32 pos_x = 2;
+  int32 pos_y = 3;
+  uint64 timestamp = 4;
+}
+
+message ActorTelemetryResponse {}

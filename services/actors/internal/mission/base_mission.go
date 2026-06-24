@@ -4,11 +4,15 @@ package mission
 import (
 	pb "actors/gen"
 	"actors/internal/actor"
+	"actors/internal/transport"
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"shared"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type BaseMission struct {
@@ -18,17 +22,19 @@ type BaseMission struct {
 	Priority     MissionPriority
 	Duration     time.Duration
 	MissionTimer *time.Timer
-	State        MissionState
+	State        shared.MissionState
 	simulation   pb.WorldServiceClient
 	actor        actor.Actor
-	channel      chan<- *pb.AssignMissionResponse
+	mqtt         *transport.MQTTClient
+	logger       *zap.Logger
 }
 
 func NewBaseMission(
 	cfg MissionConfig,
-	ch chan<- *pb.AssignMissionResponse,
 	simulation pb.WorldServiceClient,
 	actor actor.Actor,
+	mqtt *transport.MQTTClient,
+	logger *zap.Logger,
 ) BaseMission {
 	return BaseMission{
 		Id:          cfg.Id,
@@ -36,15 +42,15 @@ func NewBaseMission(
 		Destination: shared.Position{X: cfg.Position.X, Y: cfg.Position.Y},
 		Priority:    cfg.Priority,
 		Duration:    time.Duration(rand.Intn(10)+1) * time.Second,
-		State:       MissionStateAssigned,
+		State:       shared.MissionStateAssigned,
 		simulation:  simulation,
 		actor:       actor,
-		channel:     ch,
+		mqtt:        mqtt,
+		logger:      logger,
 	}
 }
 
 func (b *BaseMission) RunMission(ctx context.Context) error {
-	defer close(b.channel)
 	ticker := time.NewTicker(b.actor.Interval())
 	defer ticker.Stop()
 	for {
@@ -61,55 +67,50 @@ func (b *BaseMission) RunMission(ctx context.Context) error {
 
 func (b *BaseMission) missionUpdate() error {
 	switch b.State {
-	case MissionStateAssigned:
-		if err := b.send(b.State); err != nil {
+	case shared.MissionStateAssigned:
+		if err := b.send(); err != nil {
 			return err
 		}
 		if !b.actor.AtPosition(b.Destination) {
-			b.State = MissionStateOnTheWay
+			b.State = shared.MissionStateOnTheWay
 			b.actor.MoveToLocation(b.Destination)
 		} else {
-			b.State = MissionStateBusy
+			b.State = shared.MissionStateBusy
 		}
 
-	case MissionStateOnTheWay:
-		if err := b.send(b.State); err != nil {
+	case shared.MissionStateOnTheWay:
+		if err := b.send(); err != nil {
 			return err
 		}
 		if b.actor.AtPosition(b.Destination) {
-			b.State = MissionStateBusy
+			b.State = shared.MissionStateBusy
 		}
 
-	case MissionStateBusy:
+	case shared.MissionStateBusy:
 		b.actor.ExecuteMission()
 		b.startTimer()
 		select {
 		case <-b.MissionTimer.C:
 			b.actor.CompleteTask()
 			b.MissionTimer = nil
-			b.State = MissionStateDone
+			b.State = shared.MissionStateCompleted
 		default:
-			if err := b.send(b.State); err != nil {
+			if err := b.send(); err != nil {
 				return err
 			}
 		}
 
-	case MissionStateDone:
-		if err := b.send(b.State); err != nil {
+	case shared.MissionStateCompleted:
+		if err := b.send(); err != nil {
 			return err
 		}
 		return fmt.Errorf("mission done")
 
-	case MissionStateError:
-		if err := b.send(b.State); err != nil {
+	case shared.MissionStateFailed:
+		if err := b.send(); err != nil {
 			return err
 		}
 		return fmt.Errorf("mission error")
-
-	case MissionStateIdle:
-		if err := b.send(b.State); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -120,15 +121,17 @@ func (b *BaseMission) startTimer() {
 	}
 }
 
-func (b *BaseMission) send(state MissionState) error {
-	actorState, err := MissionStateToProto(state)
-	if err != nil {
-		return err
+func (b *BaseMission) send() error {
+	// retain = false, Qos = 1
+	missionUpdate := shared.MissionUpdate{
+		MissionID: b.Id,
+		ActorID:   b.actor.Id(),
+		State:     b.State,
+		Timestamp: time.Now(),
 	}
-	b.channel <- &pb.AssignMissionResponse{
-		MissionId:       &pb.MissionId{Uuid: b.Id},
-		CurrentPosition: &pb.Position{X: uint32(b.actor.Position().X), Y: uint32(b.actor.Position().Y)},
-		State:           actorState,
-	}
-	return nil
+
+	payload, _ := json.Marshal(missionUpdate)
+	token := b.mqtt.MQTT.Publish(shared.MissionUpdateTopic(b.Id), byte(1), false, payload)
+	token.Wait()
+	return token.Error()
 }

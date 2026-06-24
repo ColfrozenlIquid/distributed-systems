@@ -1,12 +1,12 @@
 package main
 
 import (
+	"context"
 	"control-center/internal/client"
 	"control-center/internal/config"
 	"control-center/internal/model"
 	"control-center/internal/routes"
 	"log"
-	"os"
 	"os/signal"
 	"syscall"
 	"vshttp"
@@ -30,21 +30,24 @@ func main() {
 		logger.Fatal("failed to create control-center clients", zap.Error(err))
 	}
 	defer client.WorldClient.Close()
+	defer client.MqttClient.Disconnect(250)
 
 	state := model.NewState(client.WorldClient.WorldServiceClient)
 
 	router := vshttp.NewRouter()
 	routes.Routes(router, state, client.ActorClient)
 
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+	go state.StartReactiveMessageProcessing(ctx, client.MqttClient)
+
 	server, err := vshttp.Serve(":8080", router)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 	defer server.Close()
-	log.Println("Server started on :8080")
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
+	log.Println("Server started on :8080")
+	<-ctx.Done()
 	log.Println("Server gracefully stopped")
 }

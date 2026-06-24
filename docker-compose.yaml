@@ -1,9 +1,6 @@
 name: vs-praktikum
 
-x-sensor-base: &sensor-base
-  build:
-    context: .
-    dockerfile: ./services/sensors/Dockerfile
+x-sensor-actor-base: &sensor-actor-base
   depends_on:
     world-simulation:
       condition: service_healthy
@@ -11,6 +8,26 @@ x-sensor-base: &sensor-base
     control-center:
       condition: service_healthy
       restart: true
+    mqtt-broker:
+      condition: service_healthy
+
+x-common-env: &common-env
+  CONTROL_CENTER_URL: "http://control-center:8080"
+  WORLD_SIMULATION_HOST_AND_PORT: "world-simulation:50051"
+  MQTT_BROKER_HOST: "mqtt-broker"
+  MQTT_BROKER_PORT: "1883"
+
+x-sensor-base: &sensor-base
+  <<: *sensor-actor-base
+  build:
+    context: .
+    dockerfile: ./services/sensors/Dockerfile
+
+x-actor-base: &actor-base
+  <<: *sensor-actor-base
+  build:
+    context: .
+    dockerfile: ./services/actors/Dockerfile
 
 services:
   world-simulation:
@@ -35,17 +52,36 @@ services:
     ports:
       - "8080:8080"
     environment:
-      CONTROL_CENTER_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
     depends_on:
       world-simulation:
         condition: service_healthy
         restart: true
+      mqtt-broker:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 2s
       timeout: 1s
       retries: 5
       start_period: 2s
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2.1.2-alpine
+    container_name: mqtt-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-i", "healthcheck", "-C", "1", "-W", "2"]
+      interval: 5s
+      timeout: 3s
+      retries: 4
+      start_period: 3s
 
   sensor-1:
     <<: *sensor-base
@@ -56,8 +92,7 @@ services:
       SENSOR_INTERVAL_MS: "100"
       SENSOR_POSITION_X: "3"
       SENSOR_POSITION_Y: "3"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
 
   sensor-2:
     <<: *sensor-base
@@ -68,8 +103,7 @@ services:
       SENSOR_INTERVAL_MS: "100"
       SENSOR_POSITION_X: "18"
       SENSOR_POSITION_Y: "3"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
 
   sensor-3:
     <<: *sensor-base
@@ -80,8 +114,7 @@ services:
       SENSOR_INTERVAL_MS: "100"
       SENSOR_POSITION_X: "18"
       SENSOR_POSITION_Y: "18"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
 
   sensor-4:
     <<: *sensor-base
@@ -92,8 +125,7 @@ services:
       SENSOR_INTERVAL_MS: "100"
       SENSOR_POSITION_X: "3"
       SENSOR_POSITION_Y: "18"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
 
   sensor-5:
     <<: *sensor-base
@@ -104,8 +136,7 @@ services:
       SENSOR_INTERVAL_MS: "100"
       SENSOR_POSITION_X: "9"
       SENSOR_POSITION_Y: "7"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
 
   sensor-6:
     <<: *sensor-base
@@ -116,8 +147,7 @@ services:
       SENSOR_INTERVAL_MS: "100"
       SENSOR_POSITION_X: "9"
       SENSOR_POSITION_Y: "16"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
 
   sensor-7:
     <<: *sensor-base
@@ -128,8 +158,7 @@ services:
       SENSOR_INTERVAL_MS: "1000"
       SENSOR_POSITION_X: "7"
       SENSOR_POSITION_Y: "7"
-      SENSOR_BASE_STATION_HOST: "http://control-center:8080"
-      SENSOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
+      <<: *common-env
 
   # sensor-2:
   #   build:
@@ -153,6 +182,7 @@ services:
   #       restart: true
 
   actor-1:
+    <<: *actor-base
     build:
       context: .
       dockerfile: ./services/actors/Dockerfile
@@ -163,17 +193,10 @@ services:
       ACTOR_INTERVAL_MS: "1000"
       ACTOR_POSITION_X: "10"
       ACTOR_POSITION_Y: "10"
-      ACTOR_BASE_STATION_HOST: "http://control-center:8080"
-      ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
-    depends_on:
-      world-simulation:
-        condition: service_healthy
-        restart: true
-      control-center:
-        condition: service_healthy
-        restart: true
+      <<: *common-env
 
   actor-2:
+    <<: *actor-base
     build:
       context: .
       dockerfile: ./services/actors/Dockerfile
@@ -184,17 +207,10 @@ services:
       ACTOR_INTERVAL_MS: "1000"
       ACTOR_POSITION_X: "10"
       ACTOR_POSITION_Y: "3"
-      ACTOR_BASE_STATION_HOST: "http://control-center:8080"
-      ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
-    depends_on:
-      world-simulation:
-        condition: service_healthy
-        restart: true
-      control-center:
-        condition: service_healthy
-        restart: true
+      <<: *common-env
 
   actor-3:
+    <<: *actor-base
     build:
       context: .
       dockerfile: ./services/actors/Dockerfile
@@ -205,12 +221,8 @@ services:
       ACTOR_INTERVAL_MS: "1000"
       ACTOR_POSITION_X: "1"
       ACTOR_POSITION_Y: "1"
-      ACTOR_BASE_STATION_HOST: "http://control-center:8080"
-      ACTOR_WORLD_SIMULATION_HOST: "world-simulation:50051"
-    depends_on:
-      world-simulation:
-        condition: service_healthy
-        restart: true
-      control-center:
-        condition: service_healthy
-        restart: true
+      <<: *common-env
+
+volumes:
+  mosquitto-data:
+  mosquitto-log:
