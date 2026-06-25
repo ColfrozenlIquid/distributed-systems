@@ -141,22 +141,20 @@ func runFanoutPublisher(cfg *shared.MqttConfig, n int) {
 	}
 	defer client.Disconnect(250)
 
-	topic := shared.ActorTelemetryTopic("actor-1")
-
 	// Capture the first-message timestamp before the loop so it's the same
 	// for every payload in this run.
 	firstSentAt := uint64(time.Now().UnixNano())
 
 	for i := 0; i < fanoutNumMessages; i++ {
-		body, _ := json.Marshal(fanoutWirePayload{
+		params := shared.ActorTelemetryParams("actor-1", fanoutWirePayload{
 			ActorID:   "actor-1",
 			PosX:      int32(i),
 			PosY:      int32(i * 2),
 			Timestamp: uint64(time.Now().UnixNano()),
 			SentAt:    firstSentAt, // constant across the whole run
 		})
-		token := client.Publish(topic, 1, false, body)
-		token.Wait()
+		params.QoS = 1
+		_ = shared.MqttPublish(client, params)
 	}
 	log.Printf("[fanout n=%d] publisher: sent %d messages", n, fanoutNumMessages)
 }

@@ -1,13 +1,10 @@
 package shared
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
 
-// Topic-Templates
-const (
-	topicTileReading    = "tiles/%d/%d/readings/%s"
-	topicActorStatus    = "actors/%s/status"
-	topicActorTelemetry = "actors/%s/telemetry"
-	topicMissionUpdate  = "missions/%s/updates"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 type TopicSubscription string
@@ -24,10 +21,6 @@ const (
 	SubAllMissions       = "missions/+/updates"
 )
 
-func (s TopicSubscription) QoSLevel() byte {
-	return TopicSubscriptionsWithQoSLevels()[s]
-}
-
 func TopicSubscriptionsWithQoSLevels() map[TopicSubscription]byte {
 	return map[TopicSubscription]byte{
 		SubAllTileReadings:   0,
@@ -37,20 +30,55 @@ func TopicSubscriptionsWithQoSLevels() map[TopicSubscription]byte {
 	}
 }
 
-// Builder-Functions for each topic
-
-func TileReadingTopic(x, y uint32, sensorType SensorType) string {
-	return fmt.Sprintf(topicTileReading, x, y, sensorType)
+type PublishParams struct {
+	Topic    string
+	QoS      byte
+	Retained bool
+	Payload  interface{}
 }
 
-func ActorTelemetryTopic(actorID string) string {
-	return fmt.Sprintf(topicActorTelemetry, actorID)
+func MqttPublish(client mqtt.Client, params PublishParams) error {
+	payload, err := json.Marshal(params.Payload)
+	if err != nil {
+		return err
+	}
+	token := client.Publish(params.Topic, params.QoS, params.Retained, payload)
+	token.Wait()
+	return token.Error()
 }
 
-func ActorStatusTopic(actorID string) string {
-	return fmt.Sprintf(topicActorStatus, actorID)
+func TileReadingParams(x, y uint32, sensorType SensorType, payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    fmt.Sprintf("tiles/%d/%d/readings/%s", x, y, sensorType),
+		QoS:      0,
+		Retained: false,
+		Payload:  payload,
+	}
 }
 
-func MissionUpdateTopic(missionID string) string {
-	return fmt.Sprintf(topicMissionUpdate, missionID)
+func ActorTelemetryParams(actorID string, payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    fmt.Sprintf("actors/%s/telemetry", actorID),
+		QoS:      0,
+		Retained: false,
+		Payload:  payload,
+	}
+}
+
+func ActorStatusParams(actorID string, payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    fmt.Sprintf("actors/%s/status", actorID),
+		QoS:      1,
+		Retained: true,
+		Payload:  payload,
+	}
+}
+
+func MissionUpdateParams(missionID string, payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    fmt.Sprintf("missions/%s/updates", missionID),
+		QoS:      1,
+		Retained: false,
+		Payload:  payload,
+	}
 }

@@ -6,7 +6,6 @@ import (
 	"actors/internal/actor"
 	"actors/internal/transport"
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"shared"
@@ -122,16 +121,11 @@ func (b *BaseMission) startTimer() {
 }
 
 func (b *BaseMission) send() error {
-	// retain = false, Qos = 1
 	missionUpdate := shared.MissionUpdate{
 		MissionID: b.Id,
 		ActorID:   b.actor.Id(),
 		State:     b.State,
 		Timestamp: time.Now(),
 	}
-
-	payload, _ := json.Marshal(missionUpdate)
-	token := b.mqtt.MQTT.Publish(shared.MissionUpdateTopic(b.Id), byte(1), false, payload)
-	token.Wait()
-	return token.Error()
+	return shared.MqttPublish(b.mqtt.MQTT, shared.MissionUpdateParams(b.Id, missionUpdate))
 }

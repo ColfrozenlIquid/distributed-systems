@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -102,27 +101,12 @@ func (s *App) Reading(reading float32) error {
 		},
 		Value: reading,
 	}
-	payload, _ := json.Marshal(sensorReading)
 
-	// Replaced with MQTT Publish
-	// resp, err := s.client.Http.Post("/reading", payload)
-	// if err != nil {
-	// 	return fmt.Errorf("post sensor reading: %w", err)
-	// }
-
-	// if resp.StatusCode != http.StatusNoContent {
-	// 	s.logger.Error("sensor reading failed", zap.Any("response", resp))
-	// }
-
-	// Retain = false, QoS = 0
-	token := s.transport.Mqtt.MQTT.Publish(
-		shared.TileReadingTopic(s.sensor.Position().X, s.sensor.Position().Y, shared.SensorType(s.sensor.Type())),
-		byte(0),
-		false,
-		payload,
-	)
-	token.Wait()
-	return token.Error()
+	return shared.MqttPublish(s.transport.Mqtt.MQTT,
+		shared.TileReadingParams(s.sensor.Position().X,
+			s.sensor.Position().Y,
+			shared.SensorType(s.sensor.Type()),
+			sensorReading))
 }
 
 func (s *App) Run(ctx context.Context, sensor sensor.Sensor, endpoint string) {

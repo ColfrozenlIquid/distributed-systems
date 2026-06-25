@@ -151,18 +151,13 @@ func spawnProducers(cfg *shared.MqttConfig, fb *faninBenchmark) {
 			}
 			defer client.Disconnect(250)
 
-			// Each producer publishes to its own unique actor topic so the
-			// broker's topic routing is exercised, and all land under the
-			// wildcard the subscriber uses.
-			topic := shared.ActorTelemetryTopic(fmt.Sprintf("actor-%d", producerID))
-
 			// Wait at the gate so all producers start publishing at the
 			// same instant, maximising concurrent inbound pressure.
 			<-startGate
 
 			firstSentAt := uint64(time.Now().UnixNano())
 			for j := 0; j < faninNumMessages; j++ {
-				body, _ := json.Marshal(faninWirePayload{
+				params := shared.ActorTelemetryParams(fmt.Sprintf("actor-%d", producerID), faninWirePayload{
 					ActorID:    fmt.Sprintf("actor-%d", producerID),
 					ProducerID: producerID,
 					PosX:       int32(j),
@@ -170,8 +165,8 @@ func spawnProducers(cfg *shared.MqttConfig, fb *faninBenchmark) {
 					Timestamp:  uint64(time.Now().UnixNano()),
 					SentAt:     firstSentAt,
 				})
-				token := client.Publish(topic, 1, false, body)
-				token.Wait()
+				params.QoS = 1
+				_ = shared.MqttPublish(client, params)
 			}
 			log.Printf("[fanin n=%d] producer-%d: sent %d messages",
 				fb.numProducers, producerID, faninNumMessages)
