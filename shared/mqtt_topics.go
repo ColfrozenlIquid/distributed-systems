@@ -19,6 +19,11 @@ const (
 	SubAllActorStatus    = "actors/+/status"
 	SubAllActorTelemetry = "actors/+/telemetry"
 	SubAllMissions       = "missions/+/updates"
+	SubAllRicartPresence = "ricart/presence/+"
+	SubAllRicartRequest  = "ricart/request"
+	SubAllRicartReply    = "ricart/reply/+"
+	SubAllRicartCsEnter  = "ricart/cs/enter"
+	SubAllRicartCsExit   = "ricart/cs/exit"
 )
 
 func TopicSubscriptionsWithQoSLevels() map[TopicSubscription]byte {
@@ -27,6 +32,11 @@ func TopicSubscriptionsWithQoSLevels() map[TopicSubscription]byte {
 		SubAllActorStatus:    1,
 		SubAllActorTelemetry: 0,
 		SubAllMissions:       1,
+		SubAllRicartPresence: 1,
+		SubAllRicartRequest:  2,
+		SubAllRicartReply:    2,
+		SubAllRicartCsEnter:  1,
+		SubAllRicartCsExit:   1,
 	}
 }
 
@@ -77,6 +87,51 @@ func ActorStatusParams(actorID string, payload interface{}) PublishParams {
 func MissionUpdateParams(missionID string, payload interface{}) PublishParams {
 	return PublishParams{
 		Topic:    fmt.Sprintf("missions/%s/updates", missionID),
+		QoS:      1,
+		Retained: false,
+		Payload:  payload,
+	}
+}
+
+func RicartPresenceParams(actorID string, payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    fmt.Sprintf("ricart/presence/%s", actorID),
+		QoS:      1,
+		Retained: true,
+		Payload:  payload,
+	}
+}
+
+func RicartRequestParams(payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    "ricart/request",
+		QoS:      2,
+		Retained: false,
+		Payload:  payload,
+	}
+}
+
+func RicartReplyParams(targetActorID string, payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    fmt.Sprintf("ricart/reply/%s", targetActorID),
+		QoS:      2,
+		Retained: false,
+		Payload:  payload,
+	}
+}
+
+func RicartCsEnterParams(payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    "ricart/cs/enter",
+		QoS:      1,
+		Retained: false,
+		Payload:  payload,
+	}
+}
+
+func RicartCsExitParams(payload interface{}) PublishParams {
+	return PublishParams{
+		Topic:    "ricart/cs/exit",
 		QoS:      1,
 		Retained: false,
 		Payload:  payload,
