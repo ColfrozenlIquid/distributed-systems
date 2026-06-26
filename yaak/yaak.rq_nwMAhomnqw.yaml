@@ -1,0 +1,33 @@
+type: http_request
+model: http_request
+id: rq_nwMAhomnqw
+createdAt: 2026-06-26T16:21:46.998874
+updatedAt: 2026-06-26T16:22:03.095465
+workspaceId: wk_XFprmkwA7A
+folderId: fl_5D9MP2NwY4
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers: []
+method: GET
+name: Get Ricart Status
+sortPriority: 3333.3333333333335
+url: ${[ baseUrl ]}/ricart/status
+urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0
