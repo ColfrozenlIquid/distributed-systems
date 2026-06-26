@@ -32,6 +32,11 @@ func TopicSubscriptionsWithQoSLevels() map[TopicSubscription]byte {
 		SubAllActorStatus:    1,
 		SubAllActorTelemetry: 0,
 		SubAllMissions:       1,
+	}
+}
+
+func RicartSubscriptionsWithQoSLevels() map[TopicSubscription]byte {
+	return map[TopicSubscription]byte{
 		SubAllRicartPresence: 1,
 		SubAllRicartRequest:  2,
 		SubAllRicartReply:    2,
