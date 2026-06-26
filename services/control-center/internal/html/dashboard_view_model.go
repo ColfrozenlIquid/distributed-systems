@@ -23,6 +23,7 @@ type DashboardPageData struct {
 	Height      int
 	Tiles       [][]DashboardTile
 	Summary     DashboardSummary
+	Ricart      RicartPanelData
 	Sensors     []SensorListItem
 	Actors      []ActorListItem
 	Readings    []ReadingListItem
@@ -61,6 +62,9 @@ type DashboardTile struct {
 	ReadingTone         string `json:"reading_tone"`
 	HasIncident         bool   `json:"has_incident"`
 	IncidentLabel       string `json:"incident_label"`
+	RicartLabel         string `json:"ricart_label"`
+	RicartTone          string `json:"ricart_tone"`
+	RicartHint          string `json:"ricart_hint"`
 }
 
 type SensorListItem struct {
@@ -107,11 +111,12 @@ type DashboardMapData struct {
 	UpdatedAt string          `json:"updated_at"`
 }
 
-func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World) DashboardPageData {
+func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World, ricart model.RicartSnapshot) DashboardPageData {
 	latestReadings := latestReadingsByPosition(status.Readings)
 	incidents := incidentsByPosition(status.Incidents)
 	sensorsByTile := sensorsByPosition(status.Sensors)
 	actorsByTile := actorsByPosition(status.Actors)
+	ricartBadge := RicartTileBadgeFromSnapshot(ricart)
 
 	rows := make([][]DashboardTile, 0, len(island.Tiles))
 	flatTiles := make([]DashboardTile, 0, island.Width*island.Height)
@@ -132,7 +137,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 			sensor, hasSensor := sensorsByTile[key]
 			actor, hasActor := actorsByTile[key]
 
-			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, actor, hasActor, reading, hasReading, incident, hasIncident)
+			tileView := NewDashboardTile(x, y, tile, sensor, hasSensor, actor, hasActor, reading, hasReading, incident, hasIncident, ricartBadge)
 			if tileView.Terrain == "land" {
 				summary.LandTiles++
 			} else {
@@ -161,6 +166,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 		Height:      island.Height,
 		Tiles:       rows,
 		Summary:     summary,
+		Ricart:      NewRicartPanelData(ricart),
 		Sensors:     sensorListItems(status.Sensors),
 		Actors:      actorListItems(status.Actors),
 		Readings:    readingListItems(status.Readings),
@@ -172,6 +178,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 			{Label: "Sensor", Class: "legend-sensor"},
 			{Label: "Actor", Class: "legend-actor"},
 			{Label: "Critical incident", Class: "legend-incident"},
+			{Label: "Bridge access", Class: "legend-ricart"},
 		},
 		MapData: DashboardMapData{
 			Width:     island.Width,
@@ -182,7 +189,7 @@ func NewDashboardPageData(status model.SystemStatusSnapshot, island *model.World
 	}
 }
 
-func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, actor model.Actor, hasActor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool) DashboardTile {
+func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, hasSensor bool, actor model.Actor, hasActor bool, reading shared.SensorReading, hasReading bool, incident shared.SensorIncident, hasIncident bool, ricart RicartTileBadge) DashboardTile {
 	terrain := terrainLabel(tile.Terrain)
 	infra := infrastructureLabel(tile.Infrastructure)
 	short := infrastructureShortLabel(tile.Infrastructure)
@@ -223,6 +230,11 @@ func NewDashboardTile(x int, y int, tile model.Tile, sensor shared.SensorInfo, h
 		view.HasIncident = true
 		view.IncidentLabel = incidentLabel(incident.Incident)
 	}
+	if tile.Infrastructure == pb.InfrastructureType_INFRASTRUCTURE_TYPE_BRIDGE && ricart.Label != "" {
+		view.RicartLabel = ricart.Label
+		view.RicartTone = ricart.Tone
+		view.RicartHint = ricart.Hint
+	}
 	return view
 }
 
@@ -240,6 +252,9 @@ func tileAttributes(tile DashboardTile) templ.Attributes {
 		"data-actor":          tile.ActorLabel,
 		"data-actor-id":       tile.ActorID,
 		"data-actor-state":    tile.ActorState,
+		"data-ricart-label":   tile.RicartLabel,
+		"data-ricart-tone":    tile.RicartTone,
+		"data-ricart-hint":    tile.RicartHint,
 		"title":               tile.Label,
 	}
 }
