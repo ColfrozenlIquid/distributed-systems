@@ -26,6 +26,7 @@ type BaseMission struct {
 	actor        actor.Actor
 	mqtt         *transport.MQTTClient
 	logger       *zap.Logger
+	resume       chan struct{}
 }
 
 func NewBaseMission(
@@ -99,6 +100,19 @@ func (b *BaseMission) missionUpdate() error {
 			}
 		}
 
+	case shared.MissionStateParked:
+		if b.resume == nil {
+			break
+		}
+
+		select {
+		case <-b.resume:
+			b.resume = nil
+			b.State = shared.MissionStateOnTheWay
+		default:
+			// Do nothing
+		}
+
 	case shared.MissionStateCompleted:
 		if err := b.send(); err != nil {
 			return err
@@ -112,6 +126,19 @@ func (b *BaseMission) missionUpdate() error {
 		return fmt.Errorf("mission error")
 	}
 	return nil
+}
+
+func (b *BaseMission) Park() {
+	if b.resume == nil {
+		b.resume = make(chan struct{})
+	}
+	b.State = shared.MissionStateParked
+}
+
+func (b *BaseMission) Resume() {
+	if b.resume == nil {
+		close(b.resume)
+	}
 }
 
 func (b *BaseMission) startTimer() {

@@ -12,18 +12,24 @@ import (
 	"go.uber.org/zap"
 )
 
+const MINIMUM_FUEL_ALERT float64 = 40.0
+
 type BaseActor struct {
-	id          string
-	actorType   string
-	position    shared.Position
-	interval    time.Duration
-	destination shared.Position
-	path        []shared.Position
-	state       ActorState
-	movableType pb.MovableType
-	simulation  pb.WorldServiceClient
-	mqtt        *transport.MQTTClient
-	logger      *zap.Logger
+	id            string
+	actorType     string
+	position      shared.Position
+	interval      time.Duration
+	destination   shared.Position
+	path          []shared.Position
+	state         ActorState
+	movableType   pb.MovableType
+	simulation    pb.WorldServiceClient
+	mqtt          *transport.MQTTClient
+	logger        *zap.Logger
+	fuelCapacity  float64 // Maximum fuel capacity
+	fuel          float64 // Current fuel capacity
+	fuelDrainRate float64 // Fuel drain rate per second
+	lastUpdate    time.Time
 }
 
 func NewBaseActor(
@@ -40,17 +46,28 @@ func NewBaseActor(
 			X: cfg.XPosition,
 			Y: cfg.YPosition,
 		},
-		interval:    cfg.IntervalMs,
-		state:       ActorStateIdle,
-		simulation:  simulation,
-		movableType: movableType,
-		mqtt:        mqtt,
-		logger:      logger,
+		interval:      cfg.IntervalMs,
+		state:         ActorStateIdle,
+		simulation:    simulation,
+		movableType:   movableType,
+		mqtt:          mqtt,
+		logger:        logger,
+		fuel:          cfg.FuelCapacity,
+		fuelCapacity:  cfg.FuelCapacity,
+		fuelDrainRate: cfg.FuelDrainRate,
 	}
 }
 
 func (a *BaseActor) MovableType() pb.MovableType {
 	return a.movableType
+}
+
+func (a *BaseActor) Fuel() float64 {
+	return a.fuel
+}
+
+func (a *BaseActor) FuelCapacity() float64 {
+	return a.fuelCapacity
 }
 
 func (a *BaseActor) Type() string {
@@ -118,12 +135,19 @@ func (a *BaseActor) calculatePathToDestination(destination shared.Position) erro
 }
 
 func (a *BaseActor) Update(ctx context.Context) {
+	now := time.Now()
+	dt := now.Sub(a.lastUpdate).Seconds()
+	a.lastUpdate = now
+
 	switch a.state {
 	case ActorStateBlocked:
 		a.send(shared.ActorStateError, "actor blocked")
+	case ActorStateRefueling:
+		a.send(shared.ActorStateRefueling, "")
 	case ActorStateDone:
 		a.state = ActorStateIdle
 	case ActorStateIdle:
+		a.drainFuel(0.2, dt)
 		a.send(shared.ActorStateIdle, "")
 	case ActorStateWorking:
 		a.send(shared.ActorStateOnAMission, "")
@@ -134,6 +158,26 @@ func (a *BaseActor) Update(ctx context.Context) {
 		a.logger.Debug("unknown actor state ")
 		a.send(shared.ActorStateError, "unknown actor state")
 	}
+
+	a.logger.Info("Current fuel", zap.Float64("fuel", a.fuel))
+}
+
+func (a *BaseActor) drainFuel(rate float64, dt float64) {
+	a.fuel -= a.fuelDrainRate * rate
+
+	if a.fuel < MINIMUM_FUEL_ALERT {
+		// Trigger refueling
+		a.logger.Warn("refueling should occur")
+	}
+
+	if a.fuel < 0 {
+		a.fuel = 0
+		a.state = ActorStateBlocked
+	}
+}
+
+func (a *BaseActor) drainFuelAmount() {
+	a.fuel -= 20
 }
 
 func (a *BaseActor) send(state shared.ActorState, reason string) error {
