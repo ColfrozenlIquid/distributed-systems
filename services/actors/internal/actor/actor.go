@@ -51,4 +51,5 @@ const (
 	ActorStateDone
 	ActorStateWorking
 	ActorStateRefueling
+	ActorStateMovingToRefueling
 )

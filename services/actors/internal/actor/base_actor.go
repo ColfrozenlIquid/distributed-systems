@@ -15,21 +15,22 @@ import (
 const MINIMUM_FUEL_ALERT float64 = 40.0
 
 type BaseActor struct {
-	id            string
-	actorType     string
-	position      shared.Position
-	interval      time.Duration
-	destination   shared.Position
-	path          []shared.Position
-	state         ActorState
-	movableType   pb.MovableType
-	simulation    pb.WorldServiceClient
-	mqtt          *transport.MQTTClient
-	logger        *zap.Logger
-	fuelCapacity  float64 // Maximum fuel capacity
-	fuel          float64 // Current fuel capacity
-	fuelDrainRate float64 // Fuel drain rate per second
-	lastUpdate    time.Time
+	id               string
+	actorType        string
+	position         shared.Position
+	interval         time.Duration
+	destination      shared.Position
+	path             []shared.Position
+	state            ActorState
+	movableType      pb.MovableType
+	simulation       pb.WorldServiceClient
+	mqtt             *transport.MQTTClient
+	logger           *zap.Logger
+	fuelCapacity     float64 // Maximum fuel capacity
+	fuel             float64 // Current fuel capacity
+	fuelDrainRate    float64 // Fuel drain rate per second
+	lastUpdate       time.Time
+	chargingStations []shared.Position
 }
 
 func NewBaseActor(
@@ -46,15 +47,16 @@ func NewBaseActor(
 			X: cfg.XPosition,
 			Y: cfg.YPosition,
 		},
-		interval:      cfg.IntervalMs,
-		state:         ActorStateIdle,
-		simulation:    simulation,
-		movableType:   movableType,
-		mqtt:          mqtt,
-		logger:        logger,
-		fuel:          cfg.FuelCapacity,
-		fuelCapacity:  cfg.FuelCapacity,
-		fuelDrainRate: cfg.FuelDrainRate,
+		interval:         cfg.IntervalMs,
+		state:            ActorStateIdle,
+		simulation:       simulation,
+		movableType:      movableType,
+		mqtt:             mqtt,
+		logger:           logger,
+		fuel:             cfg.FuelCapacity,
+		fuelCapacity:     cfg.FuelCapacity,
+		fuelDrainRate:    cfg.FuelDrainRate,
+		chargingStations: cfg.ChargingStations,
 	}
 }
 
@@ -134,6 +136,30 @@ func (a *BaseActor) calculatePathToDestination(destination shared.Position) erro
 	return nil
 }
 
+func (a *BaseActor) attemptRefueling() error {
+	// Wait until refueling is allowed via Ricart Agrawala
+	// Return the selected charging station that is being competed for
+
+	if err := a.calculatePathToDestination(a.chargingStations[0]); err != nil { // switch this out with the selected charging station
+		return fmt.Errorf("calculate path to charging station: %w", err)
+	}
+
+	a.state = ActorStateMovingToRefueling
+
+}
+
+func (a *BaseActor) refuelVehicle() {
+	for {
+		if a.fuel+5.0 < a.fuelCapacity {
+			a.fuel += 5.0
+		} else {
+			a.fuel = a.fuelCapacity
+			a.state = ActorStateIdle
+			break
+		}
+	}
+}
+
 func (a *BaseActor) Update(ctx context.Context) {
 	now := time.Now()
 	dt := now.Sub(a.lastUpdate).Seconds()
@@ -143,6 +169,10 @@ func (a *BaseActor) Update(ctx context.Context) {
 	case ActorStateBlocked:
 		a.send(shared.ActorStateError, "actor blocked")
 	case ActorStateRefueling:
+		a.refuelVehicle()
+		a.send(shared.ActorStateRefueling, "")
+	case ActorStateMovingToRefueling:
+		a.move()
 		a.send(shared.ActorStateRefueling, "")
 	case ActorStateDone:
 		a.state = ActorStateIdle
@@ -166,7 +196,9 @@ func (a *BaseActor) drainFuel(rate float64, dt float64) {
 	a.fuel -= a.fuelDrainRate * rate
 
 	if a.fuel < MINIMUM_FUEL_ALERT {
-		// Trigger refueling
+		if err := a.attemptRefueling(); err != nil {
+			a.logger.Error("error while refueling")
+		}
 		a.logger.Warn("refueling should occur")
 	}
 
