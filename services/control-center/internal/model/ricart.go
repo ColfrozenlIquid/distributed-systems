@@ -128,6 +128,7 @@ func (s *RicartStatus) HandlePresence(presence shared.RicartPresence) {
 	previousResourceID := participant.ResourceID
 	participant.Online = presence.Online
 	participant.LastSeen = presence.Timestamp
+	participant.State = shared.RicartActorStateIdle
 	participant.LastEvent = presenceEventLabel(presence.Online)
 
 	if presence.Online {
@@ -313,6 +314,10 @@ func (s *RicartStatus) handleCSStateLocked(event shared.RicartCsEvent, state sha
 func (s *RicartStatus) Snapshot() RicartSnapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	return s.snapshotLocked()
+}
+
+func (s *RicartStatus) snapshotLocked() RicartSnapshot {
 
 	participants := make([]RicartParticipantState, 0, len(s.actors))
 	for _, participant := range s.actors {
@@ -389,7 +394,8 @@ func (s *RicartStatus) publishSnapshotLocked() {
 	if s.updates == nil {
 		return
 	}
-	s.updates.Next(s.Snapshot())
+	snapshot := s.snapshotLocked()
+	s.updates.Next(snapshot)
 }
 
 func (r *RicartResource) refreshResourceStateLocked() {
