@@ -256,11 +256,25 @@ func (n *RicartNode) runMaintenance(ctx context.Context) {
 			return
 		case <-ticker.C:
 			_ = n.publishPresence(true)
+			if request := n.pendingRequest(); request != nil {
+				_ = n.publishRequest(*request)
+			}
 			if n.reapDeadPeers() {
 				n.enterCS()
 			}
 		}
 	}
+}
+
+func (n *RicartNode) pendingRequest() *RicartRequest {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if n.state != RicartActorStateWanting || len(n.pendingReplies) == 0 {
+		return nil
+	}
+
+	return new(n.requestMessageLocked())
 }
 
 func (n *RicartNode) reapDeadPeers() bool {

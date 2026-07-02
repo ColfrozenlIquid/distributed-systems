@@ -229,10 +229,10 @@ services:
     container_name: actor-3
     environment:
       ACTOR_ID: "actor-3"
-      ACTOR_TYPE: "water_vehicle"
+      ACTOR_TYPE: "rescue_vehicle"
       ACTOR_INTERVAL_MS: "1000"
-      ACTOR_POSITION_X: "1"
-      ACTOR_POSITION_Y: "1"
+      ACTOR_POSITION_X: "8"
+      ACTOR_POSITION_Y: "3"
       <<: *common-env
 
 volumes:

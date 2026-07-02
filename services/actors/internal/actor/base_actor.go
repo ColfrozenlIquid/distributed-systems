@@ -245,8 +245,9 @@ func (a *BaseActor) Update(ctx context.Context) {
 
 	switch a.state {
 	case ActorStateBlocked:
-		a.send(shared.ActorStateError, "actor blocked")
+		a.recoverFromFuelOutage()
 	case ActorStateWaitingForRefueling:
+		a.drainFuelWhileWaitingForRefueling(0.2, dt)
 		a.send(shared.ActorStateRefueling, "waiting for charging station")
 	case ActorStateRefueling:
 		a.refuelVehicle()
@@ -289,8 +290,33 @@ func (a *BaseActor) drainFuel(rate float64, dt float64) {
 
 	if a.fuel < 0 {
 		a.fuel = 0
+		if a.refuelRequested {
+			return
+		}
 		a.state = ActorStateBlocked
 	}
+}
+
+func (a *BaseActor) drainFuelWhileWaitingForRefueling(rate float64, dt float64) {
+	a.fuel -= a.fuelDrainRate * rate * dt
+	if a.fuel < 0 {
+		a.fuel = 0
+	}
+}
+
+func (a *BaseActor) recoverFromFuelOutage() {
+	if a.fuel > 0 {
+		a.state = ActorStateIdle
+		a.send(shared.ActorStateIdle, "")
+		return
+	}
+
+	if err := a.attemptRefueling(); err != nil {
+		a.logger.Error("error while recovering from fuel outage", zap.Error(err))
+		a.send(shared.ActorStateError, "actor blocked")
+		return
+	}
+	a.send(shared.ActorStateRefueling, "waiting for charging station")
 }
 
 func (a *BaseActor) drainFuelAmount() {
