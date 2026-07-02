@@ -38,7 +38,7 @@ services:
     ports:
       - "50051:50051"
     healthcheck:
-      test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+      test: [ "CMD", "/grpc_health_probe", "-addr=:50051" ]
       interval: 2s
       timeout: 1s
       retries: 5
@@ -60,7 +60,7 @@ services:
       mqtt-broker:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/health" ]
       interval: 2s
       timeout: 1s
       retries: 5
@@ -207,33 +207,33 @@ services:
       ACTOR_POSITION_Y: "10"
       <<: *common-env
 
-  # actor-2:
-  #   <<: *actor-base
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/actors/Dockerfile
-  #   container_name: actor-2
-  #   environment:
-  #     ACTOR_ID: "actor-2"
-  #     ACTOR_TYPE: "vibration_vehicle"
-  #     ACTOR_INTERVAL_MS: "1000"
-  #     ACTOR_POSITION_X: "10"
-  #     ACTOR_POSITION_Y: "3"
-  #     <<: *common-env
+  actor-2:
+    <<: *actor-base
+    build:
+      context: .
+      dockerfile: ./services/actors/Dockerfile
+    container_name: actor-2
+    environment:
+      ACTOR_ID: "actor-2"
+      ACTOR_TYPE: "vibration_vehicle"
+      ACTOR_INTERVAL_MS: "1000"
+      ACTOR_POSITION_X: "10"
+      ACTOR_POSITION_Y: "3"
+      <<: *common-env
 
-  # actor-3:
-  #   <<: *actor-base
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/actors/Dockerfile
-  #   container_name: actor-3
-  #   environment:
-  #     ACTOR_ID: "actor-3"
-  #     ACTOR_TYPE: "water_vehicle"
-  #     ACTOR_INTERVAL_MS: "1000"
-  #     ACTOR_POSITION_X: "1"
-  #     ACTOR_POSITION_Y: "1"
-  #     <<: *common-env
+  actor-3:
+    <<: *actor-base
+    build:
+      context: .
+      dockerfile: ./services/actors/Dockerfile
+    container_name: actor-3
+    environment:
+      ACTOR_ID: "actor-3"
+      ACTOR_TYPE: "water_vehicle"
+      ACTOR_INTERVAL_MS: "1000"
+      ACTOR_POSITION_X: "1"
+      ACTOR_POSITION_Y: "1"
+      <<: *common-env
 
 volumes:
   mosquitto-data:
