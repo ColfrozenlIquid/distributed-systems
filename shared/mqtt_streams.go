@@ -16,12 +16,30 @@ type Streams struct {
 	missionUpdates   ro.Subject[MissionUpdate]
 }
 
+type RicartStreams struct {
+	presence ro.Subject[RicartPresence]
+	requests ro.Subject[RicartRequest]
+	replies  ro.Subject[RicartReply]
+	csEnter  ro.Subject[RicartCsEvent]
+	csExit   ro.Subject[RicartCsEvent]
+}
+
 func NewStreams() *Streams {
 	return &Streams{
 		sensorReadings:   ro.NewPublishSubject[SensorReading](),
 		actorStatus:      ro.NewPublishSubject[ActorStatus](),
 		actorTelemetries: ro.NewPublishSubject[ActorTelemetry](),
 		missionUpdates:   ro.NewPublishSubject[MissionUpdate](),
+	}
+}
+
+func NewRicartStreams() *RicartStreams {
+	return &RicartStreams{
+		presence: ro.NewPublishSubject[RicartPresence](),
+		requests: ro.NewPublishSubject[RicartRequest](),
+		replies:  ro.NewPublishSubject[RicartReply](),
+		csEnter:  ro.NewPublishSubject[RicartCsEvent](),
+		csExit:   ro.NewPublishSubject[RicartCsEvent](),
 	}
 }
 
@@ -39,6 +57,26 @@ func (s *Streams) ActorTelemetries() ro.Observable[ActorTelemetry] {
 
 func (s *Streams) MissionUpdates() ro.Observable[MissionUpdate] {
 	return s.missionUpdates
+}
+
+func (s *RicartStreams) Presence() ro.Observable[RicartPresence] {
+	return s.presence
+}
+
+func (s *RicartStreams) Requests() ro.Observable[RicartRequest] {
+	return s.requests
+}
+
+func (s *RicartStreams) Replies() ro.Observable[RicartReply] {
+	return s.replies
+}
+
+func (s *RicartStreams) CSEnters() ro.Observable[RicartCsEvent] {
+	return s.csEnter
+}
+
+func (s *RicartStreams) CSExits() ro.Observable[RicartCsEvent] {
+	return s.csExit
 }
 
 func (s *Streams) Subscribe(client mqtt.Client) error {
@@ -61,6 +99,23 @@ func (s *Streams) Subscribe(client mqtt.Client) error {
 	return nil
 }
 
+func (s *RicartStreams) Subscribe(client mqtt.Client) error {
+	addRoute(client, SubAllRicartPresence, s.presence)
+	addRoute(client, SubAllRicartRequest, s.requests)
+	addRoute(client, SubAllRicartReply, s.replies)
+	addRoute(client, SubAllRicartCsEnter, s.csEnter)
+	addRoute(client, SubAllRicartCsExit, s.csExit)
+
+	topics := RicartSubscriptionsWithQoSLevels()
+	filters := lo.MapKeys(topics, func(_ byte, k TopicSubscription) string {
+		return k.String()
+	})
+
+	token := client.SubscribeMultiple(filters, nil)
+	token.Wait()
+	return token.Error()
+}
+
 func addRoute[T any](client mqtt.Client, topic string, subject ro.Subject[T]) {
 	client.AddRoute(topic, func(_ mqtt.Client, msg mqtt.Message) {
 		var payload T
@@ -77,4 +132,14 @@ func (s *Streams) Unsubscribe(client mqtt.Client) {
 	client.Unsubscribe(SubAllActorStatus)
 	client.Unsubscribe(SubAllActorTelemetry)
 	client.Unsubscribe(SubAllMissions)
+}
+
+func (s *RicartStreams) Unsubscribe(client mqtt.Client) {
+	client.Unsubscribe(
+		SubAllRicartPresence,
+		SubAllRicartRequest,
+		SubAllRicartReply,
+		SubAllRicartCsEnter,
+		SubAllRicartCsExit,
+	)
 }
