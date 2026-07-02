@@ -2,7 +2,7 @@ type: http_request
 model: http_request
 id: rq_BYLTjycAjV
 createdAt: 2026-06-05T17:25:27.283839
-updatedAt: 2026-06-22T11:20:50.518083
+updatedAt: 2026-06-23T05:43:57.726608
 workspaceId: wk_XFprmkwA7A
 folderId: fl_5D9MP2NwY4
 authentication: {}
@@ -14,7 +14,7 @@ headers: []
 method: POST
 name: Assign Mission
 sortPriority: 7000.0
-url: ${[ baseUrl ]}/incidents/sensor-1-3/mission
+url: ${[ baseUrl ]}/incidents/sensor-5-vibration:1782193004/mission
 urlParameters: []
 settingSendCookies:
   enabled: false
