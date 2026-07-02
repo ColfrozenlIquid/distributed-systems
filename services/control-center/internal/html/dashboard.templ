@@ -15,6 +15,7 @@ templ DashboardPage(props DashboardPageData) {
 				<nav class="dashboard-actions" aria-label="Dashboard actions">
 					<a class="dashboard-link" href="/map" aria-current="page">Map</a>
 					<a class="dashboard-link" href="/status">Status JSON</a>
+					<a class="dashboard-link" href="/ricart/status">Ricart JSON</a>
 				</nav>
 			</header>
 			<div class="dashboard-grid">
@@ -59,21 +60,25 @@ templ MapTile(tile DashboardTile) {
 		type="button"
 		role="gridcell"
 		aria-pressed="false"
-		class={
-			"map-tile",
-			templ.KV("is-land", tile.Terrain == "land"),
-			templ.KV("is-water", tile.Terrain == "water"),
-			templ.KV("has-infrastructure", tile.HasInfrastructure),
+			class={
+				"map-tile",
+				templ.KV("is-land", tile.Terrain == "land"),
+				templ.KV("is-water", tile.Terrain == "water"),
+				templ.KV("has-infrastructure", tile.HasInfrastructure),
 			templ.KV("has-sensor", tile.HasSensor),
 			templ.KV("has-actor", tile.HasActor),
-			templ.KV("has-incident", tile.HasIncident),
-			templ.KV("reading-warning", tile.ReadingTone == "warning"),
-			templ.KV("reading-critical", tile.ReadingTone == "critical"),
-		}
-		{ tileAttributes(tile)... }
+					templ.KV("has-incident", tile.HasIncident),
+					templ.KV("reading-warning", tile.ReadingTone == "warning"),
+					templ.KV("reading-critical", tile.ReadingTone == "critical"),
+					templ.KV("ricart-active", tile.RicartLabel != ""),
+			}
+			{ tileAttributes(tile)... }
 	>
 		if tile.HasInfrastructure {
 			<span aria-hidden="true">{ tile.InfrastructureShort }</span>
+		}
+		if tile.RicartLabel != "" {
+			<span class={ "tile-ricart", templ.KV("tile-ricart-critical", tile.RicartTone == "critical"), templ.KV("tile-ricart-warning", tile.RicartTone == "warning") } title={ tile.RicartHint }>{ tile.RicartLabel }</span>
 		}
 		if tile.ReadingLabel != "" {
 			<span class="tile-reading">{ tile.ReadingLabel }</span>
@@ -92,13 +97,14 @@ templ Legend(items []LegendItem) {
 	</dl>
 }
 
-templ SidePanel(props DashboardPageData) {
-	<aside class="side-panel" aria-label="System overview" data-testid="side-panel">
-		@SummaryCards(props.Summary)
-		@ReadingsFeed(props.Readings)
-		@IncidentsFeed(props.Incidents)
-		@SensorsFeed(props.Sensors)
-		@ActorsFeed(props.Actors)
+	templ SidePanel(props DashboardPageData) {
+		<aside class="side-panel" aria-label="System overview" data-testid="side-panel">
+			@SummaryCards(props.Summary)
+			@RicartFeed(props.Ricart)
+			@ReadingsFeed(props.Readings)
+			@IncidentsFeed(props.Incidents)
+			@SensorsFeed(props.Sensors)
+			@ActorsFeed(props.Actors)
 	</aside>
 }
 
@@ -109,6 +115,98 @@ templ SummaryCards(summary DashboardSummary) {
 		@MetricCard("Sensors", fmt.Sprintf("%d", summary.SensorCount))
 		@MetricCard("Actors", fmt.Sprintf("%d", summary.ActorCount))
 		@MetricCard("Incidents", fmt.Sprintf("%d", summary.IncidentCount))
+	</section>
+}
+
+templ RicartFeed(data RicartPanelData) {
+	<section class="feed-card ricart-card" aria-label="Ricart-Agrawala status" data-testid="ricart-feed">
+		<div class="ricart-header">
+			<div>
+				<h2 class="feed-title">Bridge access</h2>
+				<p class="ricart-subtitle">Observed from MQTT on the control-center</p>
+			</div>
+			<span class={ "ricart-state-pill", templ.KV("ricart-state-pill-critical", data.Bridge.Tone == "critical"), templ.KV("ricart-state-pill-warning", data.Bridge.Tone == "warning"), templ.KV("ricart-state-pill-normal", data.Bridge.Tone == "normal") }>
+				{ data.Bridge.State }
+			</span>
+		</div>
+		<div class="ricart-grid">
+			<div class="ricart-metrics">
+				@MetricCard("Online", fmt.Sprintf("%d", data.Overview.OnlineCount))
+				@MetricCard("Wanting", fmt.Sprintf("%d", data.Overview.WantingCount))
+				@MetricCard("In CS", fmt.Sprintf("%d", data.Overview.InCSCount))
+				@MetricCard("Requests", fmt.Sprintf("%d", data.Overview.ActiveRequestCount))
+			</div>
+			<div class="ricart-bridge-card">
+				<div class="ricart-resource-title">{ data.Bridge.Label }</div>
+				<div class="ricart-resource-line">holder { data.Bridge.Holder }</div>
+				if data.Bridge.Waiting != "" {
+					<div class="ricart-resource-line">waiting { data.Bridge.Waiting }</div>
+				}
+				if data.Bridge.Requesters != "" {
+					<div class="ricart-resource-line">requesters { data.Bridge.Requesters }</div>
+				}
+				<div class="ricart-resource-line">logical clock { data.Bridge.LastLogicalClk }</div>
+			</div>
+		</div>
+		<div class="ricart-columns">
+			<div>
+				<h3 class="ricart-column-title">Actors</h3>
+				<ul class="ricart-list">
+					for _, participant := range data.Participants {
+						<li class="ricart-list-item" data-testid={ "ricart-participant-" + participant.ActorID }>
+							<div>
+								<div class="feed-primary">{ participant.ActorID }</div>
+								<div class="feed-secondary">{ participant.State }</div>
+								<div class="ricart-list-meta">
+									if participant.ResourceID != "" {
+										<span>resource { participant.ResourceID }</span>
+									}
+									if participant.RequestClock != "" {
+										<span>clock { participant.RequestClock }</span>
+									}
+								</div>
+							</div>
+							<div class="ricart-list-aside">
+								if participant.Online {
+									<span class="ricart-online">online</span>
+								} else {
+									<span class="ricart-offline">offline</span>
+								}
+								<time class="feed-time">{ participant.LastSeen }</time>
+							</div>
+						</li>
+					}
+				</ul>
+			</div>
+			<div>
+				<h3 class="ricart-column-title">Recent events</h3>
+				<ul class="feed-list">
+					for _, event := range data.Events {
+						<li class="feed-item ricart-event-item">
+							<div>
+								<div class="feed-primary">{ event.Kind }</div>
+								<div class="feed-secondary">
+									{ event.ActorID }
+									if event.PeerID != "" {
+										{ " · " }{ event.PeerID }
+									}
+									if event.ResourceID != "" {
+										{ " · " }{ event.ResourceID }
+									}
+								</div>
+								if event.Detail != "" {
+									<div class="ricart-detail">{ event.Detail }</div>
+								}
+							</div>
+							<div class="feed-actions">
+								<span class="ricart-clock">{ event.LogicalClock }</span>
+								<time class="feed-time">{ event.Timestamp }</time>
+							</div>
+						</li>
+					}
+				</ul>
+			</div>
+		</div>
 	</section>
 }
 

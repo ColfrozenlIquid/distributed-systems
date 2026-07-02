@@ -169,6 +169,7 @@ templ DashboardAssets() {
 			.legend-sensor { background: var(--sensor); }
 			.legend-actor { background: var(--actor); }
 			.legend-incident { background: var(--critical); }
+			.legend-ricart { background: var(--normal); }
 
 			.world-map {
 				display: grid;
@@ -265,6 +266,35 @@ templ DashboardAssets() {
 				text-overflow: ellipsis;
 			}
 
+			.map-tile.ricart-active {
+				box-shadow: inset 0 0 0 3px var(--normal);
+			}
+
+			.tile-ricart {
+				position: absolute;
+				top: 2px;
+				right: 2px;
+				padding: 1px 3px;
+				border-radius: 3px;
+				font-size: .52rem;
+				font-weight: 800;
+				color: #fff;
+				background: var(--normal);
+				box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
+				max-width: calc(100% - 4px);
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			.tile-ricart-warning {
+				background: var(--warning);
+			}
+
+			.tile-ricart-critical {
+				background: var(--critical);
+			}
+
 			.side-panel {
 				padding: 14px;
 				display: grid;
@@ -293,6 +323,153 @@ templ DashboardAssets() {
 				color: var(--muted);
 				font-size: .82rem;
 				margin-top: 2px;
+			}
+
+			.ricart-card {
+				display: grid;
+				gap: 12px;
+			}
+
+			.ricart-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: start;
+				gap: 12px;
+			}
+
+			.ricart-subtitle {
+				margin: 2px 0 0;
+				color: var(--muted);
+				font-size: .82rem;
+			}
+
+			.ricart-state-pill {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				padding: 4px 9px;
+				border-radius: 999px;
+				font-size: .72rem;
+				font-weight: 800;
+				text-transform: uppercase;
+				letter-spacing: .04em;
+				color: #fff;
+			}
+
+			.ricart-state-pill-normal { background: var(--normal); }
+			.ricart-state-pill-warning { background: var(--warning); }
+			.ricart-state-pill-critical { background: var(--critical); }
+
+			.ricart-grid {
+				display: grid;
+				grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+				gap: 10px;
+			}
+
+			.ricart-metrics {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 10px;
+			}
+
+			.ricart-bridge-card {
+				border: 1px solid var(--line);
+				border-radius: 8px;
+				padding: 12px;
+				background: linear-gradient(180deg, #f8faf8 0%, #ffffff 100%);
+			}
+
+			.ricart-resource-title {
+				font-weight: 800;
+				text-transform: uppercase;
+				letter-spacing: .04em;
+				font-size: .8rem;
+			}
+
+			.ricart-resource-line {
+				color: var(--muted);
+				font-size: .82rem;
+				margin-top: 4px;
+			}
+
+			.ricart-columns {
+				display: grid;
+				grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+				gap: 12px;
+			}
+
+			.ricart-column-title {
+				margin: 0 0 8px;
+				font-size: .9rem;
+			}
+
+			.ricart-list {
+				list-style: none;
+				padding: 0;
+				margin: 0;
+				display: grid;
+				gap: 8px;
+			}
+
+			.ricart-list-item {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) auto;
+				gap: 8px;
+				padding-top: 8px;
+				border-top: 1px solid var(--line);
+			}
+
+			.ricart-list-item:first-child {
+				border-top: 0;
+				padding-top: 0;
+			}
+
+			.ricart-list-meta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 6px 10px;
+				color: var(--muted);
+				font-size: .75rem;
+				margin-top: 2px;
+			}
+
+			.ricart-list-aside {
+				display: grid;
+				justify-items: end;
+				gap: 4px;
+			}
+
+			.ricart-online,
+			.ricart-offline {
+				display: inline-flex;
+				padding: 1px 7px;
+				border-radius: 999px;
+				font-size: .7rem;
+				font-weight: 800;
+				text-transform: uppercase;
+			}
+
+			.ricart-online { background: #e8f5ee; color: var(--normal); }
+			.ricart-offline { background: #f5f3f4; color: #8c4a4a; }
+
+			.ricart-event-item {
+				align-items: start;
+			}
+
+			.ricart-detail {
+				color: var(--muted);
+				font-size: .76rem;
+				margin-top: 2px;
+			}
+
+			.ricart-clock {
+				display: inline-flex;
+				padding: 1px 7px;
+				border-radius: 999px;
+				background: #eef2ff;
+				color: #3730a3;
+				font-size: .72rem;
+				font-weight: 800;
 			}
 
 			.feed-title {
@@ -395,6 +572,17 @@ templ DashboardAssets() {
 				.dashboard-header {
 					display: grid;
 					align-items: start;
+				}
+
+				.ricart-grid,
+				.ricart-columns,
+				.ricart-header {
+					grid-template-columns: 1fr;
+					flex-direction: column;
+				}
+
+				.ricart-metrics {
+					grid-template-columns: 1fr 1fr;
 				}
 			}
 		</style>
