@@ -21,12 +21,14 @@ type VibrationVehicle struct {
 }
 
 func NewVibrationVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, mqtt *transport.MQTTClient) *VibrationVehicle {
-	return &VibrationVehicle{
+	vehicle := &VibrationVehicle{
 		cfg:        cfg,
 		simulation: simulation,
 		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND, mqtt),
 		logger:     logger,
 	}
+	vehicle.BaseActor.StartRicart()
+	return vehicle
 }
 
 func (v *VibrationVehicle) ExecuteMission() {

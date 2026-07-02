@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ Actor = (*VibrationVehicle)(nil)
+var _ Actor = (*WaterVehicle)(nil)
 
 type WaterVehicle struct {
 	cfg        config.ActorConfig
@@ -21,12 +21,14 @@ type WaterVehicle struct {
 }
 
 func NewWaterVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, mqtt *transport.MQTTClient) *WaterVehicle {
-	return &WaterVehicle{
+	vehicle := &WaterVehicle{
 		cfg:        cfg,
 		simulation: simulation,
 		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_WATER, mqtt),
 		logger:     logger,
 	}
+	vehicle.BaseActor.StartRicart()
+	return vehicle
 }
 
 func (w *WaterVehicle) ExecuteMission() {
