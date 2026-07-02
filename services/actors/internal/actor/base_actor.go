@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"shared"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -15,22 +16,29 @@ import (
 const MINIMUM_FUEL_ALERT float64 = 40.0
 
 type BaseActor struct {
-	id               string
-	actorType        string
-	position         shared.Position
-	interval         time.Duration
-	destination      shared.Position
-	path             []shared.Position
-	state            ActorState
-	movableType      pb.MovableType
-	simulation       pb.WorldServiceClient
-	mqtt             *transport.MQTTClient
-	logger           *zap.Logger
-	fuelCapacity     float64 // Maximum fuel capacity
-	fuel             float64 // Current fuel capacity
-	fuelDrainRate    float64 // Fuel drain rate per second
-	lastUpdate       time.Time
-	chargingStations []shared.Position
+	mu                sync.Mutex
+	id                string
+	actorType         string
+	position          shared.Position
+	interval          time.Duration
+	destination       shared.Position
+	path              []shared.Position
+	state             ActorState
+	movableType       pb.MovableType
+	simulation        pb.WorldServiceClient
+	mqtt              *transport.MQTTClient
+	logger            *zap.Logger
+	fuelCapacity      float64 // Maximum fuel capacity
+	fuel              float64 // Current fuel capacity
+	fuelDrainRate     float64 // Fuel drain rate per second
+	lastUpdate        time.Time
+	chargingStations  []shared.Position
+	chargingStation   shared.Position
+	ricartNode        *shared.RicartNode
+	refuelRequested   bool
+	resumeState       ActorState
+	resumeDestination shared.Position
+	resumePath        []shared.Position
 }
 
 func NewBaseActor(
@@ -56,8 +64,26 @@ func NewBaseActor(
 		fuel:             cfg.FuelCapacity,
 		fuelCapacity:     cfg.FuelCapacity,
 		fuelDrainRate:    cfg.FuelDrainRate,
+		lastUpdate:       time.Now(),
 		chargingStations: cfg.ChargingStations,
 	}
+}
+
+func (a *BaseActor) StartRicart() {
+	if len(a.chargingStations) == 0 {
+		a.logger.Warn("ricart disabled: no charging stations configured")
+		return
+	}
+
+	a.chargingStation = a.chargingStations[0]
+	resourceID := shared.ChargingStationResourceID(a.chargingStation)
+	streams := shared.NewRicartStreams()
+	node := shared.NewRicartNode(a.id, shared.ActorType(a.actorType), resourceID, a.mqtt.MQTT, a.enterRefuelingCriticalSection)
+	if err := node.Start(context.Background(), streams); err != nil {
+		a.logger.Error("start ricart node", zap.Error(err))
+		return
+	}
+	a.ricartNode = node
 }
 
 func (a *BaseActor) MovableType() pb.MovableType {
@@ -102,6 +128,11 @@ func (a *BaseActor) move() {
 		a.logger.Info("actor arrived at destination")
 		return
 	}
+	if len(a.path) == 0 {
+		a.logger.Warn("actor has no path to destination", zap.Any("destination", a.destination))
+		a.state = ActorStateBlocked
+		return
+	}
 	a.position = a.path[0]
 	a.path = a.path[1:]
 }
@@ -137,30 +168,77 @@ func (a *BaseActor) calculatePathToDestination(destination shared.Position) erro
 }
 
 func (a *BaseActor) attemptRefueling() error {
-	// Wait until refueling is allowed via Ricart Agrawala
-	// Return the selected charging station that is being competed for
+	if a.refuelRequested ||
+		a.state == ActorStateWaitingForRefueling ||
+		a.state == ActorStateMovingToRefueling ||
+		a.state == ActorStateRefueling {
+		return nil
+	}
 
-	if err := a.calculatePathToDestination(a.chargingStations[0]); err != nil { // switch this out with the selected charging station
+	if a.ricartNode == nil {
+		return fmt.Errorf("ricart node is not available")
+	}
+	if len(a.chargingStations) == 0 {
+		return fmt.Errorf("no charging stations configured")
+	}
+
+	a.chargingStation = a.chargingStations[0]
+	a.resumeState = a.state
+	a.resumeDestination = a.destination
+	a.resumePath = append([]shared.Position(nil), a.path...)
+
+	if err := a.calculatePathToDestination(a.chargingStation); err != nil {
 		return fmt.Errorf("calculate path to charging station: %w", err)
 	}
 
-	a.state = ActorStateMovingToRefueling
+	a.refuelRequested = true
+	a.state = ActorStateWaitingForRefueling
 
+	return a.ricartNode.RequestCS()
+}
+
+func (a *BaseActor) enterRefuelingCriticalSection() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if !a.refuelRequested || a.state != ActorStateWaitingForRefueling {
+		return
+	}
+	a.state = ActorStateMovingToRefueling
 }
 
 func (a *BaseActor) refuelVehicle() {
-	for {
-		if a.fuel+5.0 < a.fuelCapacity {
-			a.fuel += 5.0
-		} else {
-			a.fuel = a.fuelCapacity
-			a.state = ActorStateIdle
-			break
+	if a.fuel+5.0 < a.fuelCapacity {
+		a.fuel += 5.0
+		return
+	}
+
+	a.fuel = a.fuelCapacity
+	a.refuelRequested = false
+	if a.ricartNode != nil {
+		if err := a.ricartNode.ReleaseCS(); err != nil {
+			a.logger.Error("release ricart critical section", zap.Error(err))
 		}
 	}
+	a.restoreStateAfterRefueling()
+}
+
+func (a *BaseActor) restoreStateAfterRefueling() {
+	a.destination = a.resumeDestination
+	a.path = append([]shared.Position(nil), a.resumePath...)
+	if a.resumeState == ActorStateWaitingForRefueling ||
+		a.resumeState == ActorStateMovingToRefueling ||
+		a.resumeState == ActorStateRefueling {
+		a.state = ActorStateIdle
+		return
+	}
+	a.state = a.resumeState
 }
 
 func (a *BaseActor) Update(ctx context.Context) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	now := time.Now()
 	dt := now.Sub(a.lastUpdate).Seconds()
 	a.lastUpdate = now
@@ -168,11 +246,16 @@ func (a *BaseActor) Update(ctx context.Context) {
 	switch a.state {
 	case ActorStateBlocked:
 		a.send(shared.ActorStateError, "actor blocked")
+	case ActorStateWaitingForRefueling:
+		a.send(shared.ActorStateRefueling, "waiting for charging station")
 	case ActorStateRefueling:
 		a.refuelVehicle()
 		a.send(shared.ActorStateRefueling, "")
 	case ActorStateMovingToRefueling:
 		a.move()
+		if a.position == a.chargingStation {
+			a.state = ActorStateRefueling
+		}
 		a.send(shared.ActorStateRefueling, "")
 	case ActorStateDone:
 		a.state = ActorStateIdle
@@ -180,8 +263,10 @@ func (a *BaseActor) Update(ctx context.Context) {
 		a.drainFuel(0.2, dt)
 		a.send(shared.ActorStateIdle, "")
 	case ActorStateWorking:
+		a.drainFuel(1, dt)
 		a.send(shared.ActorStateOnAMission, "")
 	case ActorStateMoving:
+		a.drainFuel(1, dt)
 		a.move()
 		a.send(shared.ActorStateOnAMission, "")
 	default:
@@ -193,11 +278,11 @@ func (a *BaseActor) Update(ctx context.Context) {
 }
 
 func (a *BaseActor) drainFuel(rate float64, dt float64) {
-	a.fuel -= a.fuelDrainRate * rate
+	a.fuel -= a.fuelDrainRate * rate * dt
 
 	if a.fuel < MINIMUM_FUEL_ALERT {
 		if err := a.attemptRefueling(); err != nil {
-			a.logger.Error("error while refueling")
+			a.logger.Error("error while refueling", zap.Error(err))
 		}
 		a.logger.Warn("refueling should occur")
 	}
