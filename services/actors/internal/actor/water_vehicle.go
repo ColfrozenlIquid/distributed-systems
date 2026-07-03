@@ -32,12 +32,15 @@ func NewWaterVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, l
 }
 
 func (w *WaterVehicle) ExecuteMission() {
-	w.BaseActor.state = ActorStateWorking
+	w.BaseActor.BeginMissionWork()
 }
 
 func (w *WaterVehicle) CompleteTask() {
+	if !w.BaseActor.CanCompleteMission() {
+		return
+	}
 	w.performTask()
-	w.BaseActor.state = ActorStateDone
+	w.BaseActor.MarkMissionDone()
 }
 
 func (w *WaterVehicle) performTask() error {

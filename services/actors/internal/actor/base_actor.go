@@ -36,6 +36,7 @@ type BaseActor struct {
 	chargingStation   shared.Position
 	ricartNode        *shared.RicartNode
 	refuelRequested   bool
+	refuelingAccess   bool
 	resumeState       ActorState
 	resumeDestination shared.Position
 	resumePath        []shared.Position
@@ -115,7 +116,18 @@ func (a *BaseActor) Position() shared.Position {
 }
 
 func (a *BaseActor) MoveToLocation(destination shared.Position) {
-	a.calculatePathToDestination(destination)
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if a.isRefuelingFlow() {
+		return
+	}
+
+	if err := a.calculatePathToDestination(destination); err != nil {
+		a.logger.Error("calculate mission path", zap.Error(err))
+		a.state = ActorStateBlocked
+		return
+	}
 	a.state = ActorStateMoving
 }
 
@@ -168,10 +180,7 @@ func (a *BaseActor) calculatePathToDestination(destination shared.Position) erro
 }
 
 func (a *BaseActor) attemptRefueling() error {
-	if a.refuelRequested ||
-		a.state == ActorStateWaitingForRefueling ||
-		a.state == ActorStateMovingToRefueling ||
-		a.state == ActorStateRefueling {
+	if a.refuelRequested || a.isRefuelingFlow() {
 		return nil
 	}
 
@@ -202,8 +211,16 @@ func (a *BaseActor) enterRefuelingCriticalSection() {
 	defer a.mu.Unlock()
 
 	if !a.refuelRequested || a.state != ActorStateWaitingForRefueling {
+		if a.ricartNode != nil {
+			go func() {
+				if err := a.ricartNode.ReleaseCS(); err != nil {
+					a.logger.Error("release stale ricart critical section", zap.Error(err))
+				}
+			}()
+		}
 		return
 	}
+	a.refuelingAccess = true
 	a.state = ActorStateMovingToRefueling
 }
 
@@ -215,11 +232,7 @@ func (a *BaseActor) refuelVehicle() {
 
 	a.fuel = a.fuelCapacity
 	a.refuelRequested = false
-	if a.ricartNode != nil {
-		if err := a.ricartNode.ReleaseCS(); err != nil {
-			a.logger.Error("release ricart critical section", zap.Error(err))
-		}
-	}
+	a.releaseRefuelingAccess()
 	a.restoreStateAfterRefueling()
 }
 
@@ -233,6 +246,33 @@ func (a *BaseActor) restoreStateAfterRefueling() {
 		return
 	}
 	a.state = a.resumeState
+}
+
+func (a *BaseActor) BeginMissionWork() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if a.isRefuelingFlow() {
+		return
+	}
+	a.state = ActorStateWorking
+}
+
+func (a *BaseActor) CanCompleteMission() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return !a.isRefuelingFlow()
+}
+
+func (a *BaseActor) MarkMissionDone() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if a.isRefuelingFlow() {
+		return
+	}
+	a.state = ActorStateDone
 }
 
 func (a *BaseActor) Update(ctx context.Context) {
@@ -254,6 +294,12 @@ func (a *BaseActor) Update(ctx context.Context) {
 		a.send(shared.ActorStateRefueling, "")
 	case ActorStateMovingToRefueling:
 		a.move()
+		if a.state == ActorStateBlocked {
+			a.refuelRequested = false
+			a.releaseRefuelingAccess()
+			a.send(shared.ActorStateError, "could not reach charging station")
+			return
+		}
 		if a.position == a.chargingStation {
 			a.state = ActorStateRefueling
 		}
@@ -301,6 +347,24 @@ func (a *BaseActor) drainFuelWhileWaitingForRefueling(rate float64, dt float64) 
 	a.fuel -= a.fuelDrainRate * rate * dt
 	if a.fuel < 0 {
 		a.fuel = 0
+	}
+}
+
+func (a *BaseActor) isRefuelingFlow() bool {
+	return a.state == ActorStateWaitingForRefueling ||
+		a.state == ActorStateMovingToRefueling ||
+		a.state == ActorStateRefueling
+}
+
+func (a *BaseActor) releaseRefuelingAccess() {
+	if !a.refuelingAccess {
+		return
+	}
+	a.refuelingAccess = false
+	if a.ricartNode != nil {
+		if err := a.ricartNode.ReleaseCS(); err != nil {
+			a.logger.Error("release ricart critical section", zap.Error(err))
+		}
 	}
 }
 

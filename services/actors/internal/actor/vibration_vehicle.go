@@ -32,12 +32,15 @@ func NewVibrationVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClien
 }
 
 func (v *VibrationVehicle) ExecuteMission() {
-	v.BaseActor.state = ActorStateWorking
+	v.BaseActor.BeginMissionWork()
 }
 
 func (v *VibrationVehicle) CompleteTask() {
+	if !v.BaseActor.CanCompleteMission() {
+		return
+	}
 	v.performTask()
-	v.BaseActor.state = ActorStateDone
+	v.BaseActor.MarkMissionDone()
 }
 
 func (v *VibrationVehicle) performTask() error {
