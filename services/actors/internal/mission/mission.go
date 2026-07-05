@@ -60,7 +60,7 @@ func NewMission(
 	case MissionTypeStabilizeVibration:
 		return &StabilizeVibrationMission{base}, nil
 	default:
-		return nil, fmt.Errorf("unknown mission type: %s", missionType)
+		return nil, fmt.Errorf("unknown mission type: %v", missionType)
 	}
 }
 
