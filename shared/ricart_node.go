@@ -145,7 +145,7 @@ func (n *RicartNode) RequestCS() error {
 	return nil
 }
 
-func (n *RicartNode) ReleaseCS() (int, error) { // <-- return k now
+func (n *RicartNode) ReleaseCS() (int, error) {
 	n.mu.Lock()
 	if n.state != RicartActorStateInCS {
 		n.mu.Unlock()
@@ -162,7 +162,7 @@ func (n *RicartNode) ReleaseCS() (int, error) { // <-- return k now
 	exitEvent := n.csEventLocked()
 	n.mu.Unlock()
 
-	k := len(deferred) // <-- number of peers that were waiting
+	k := len(deferred)
 
 	var wg sync.WaitGroup
 	errs := make([]error, len(deferred))
@@ -185,7 +185,7 @@ func (n *RicartNode) ReleaseCS() (int, error) { // <-- return k now
 	if err := MqttPublish(n.mqttClient, RicartCsExitParams(exitEvent)); err != nil && firstErr == nil {
 		firstErr = err
 	}
-	return k, firstErr // <-- return it here
+	return k, firstErr
 }
 
 func (n *RicartNode) handlePresence(msg RicartPresence) {

@@ -16,6 +16,7 @@ type CSEvent struct {
 	NodeID string    `json:"node_id"`
 	Type   string    `json:"type"`
 	TS     time.Time `json:"ts"`
+	K      int       `json:"k"` // <-- ADD
 }
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 	defer f.Close()
 	w := csv.NewWriter(f)
 	defer w.Flush()
-	_ = w.Write([]string{"release_node", "release_ts", "enter_node", "enter_ts", "sync_delay_ms", "recv_delay_ms"})
+	_ = w.Write([]string{"release_node", "release_ts", "enter_node", "enter_ts", "sync_delay_ms", "recv_delay_ms", "k"})
 
 	var mu sync.Mutex
 	var lastRelease *CSEvent
@@ -68,21 +69,12 @@ func main() {
 			lastReleaseRecvTS = recvTS
 		case "enter":
 			if lastRelease == nil {
-				return // first entry of the run, no prior release to pair with
+				return
 			}
-			// sync_delay: uses each node's own embedded timestamp.
-			//   Valid only if node clocks are tightly synced (true by
-			//   default for containers sharing one Docker host clock).
-			// recv_delay: uses the collector's own wall clock for both
-			//   messages, so it's immune to inter-node clock skew, at
-			//   the cost of including this collector's own receive-path
-			//   jitter symmetrically on both readings.
 			syncDelay := evt.TS.Sub(lastRelease.TS)
 			recvDelay := recvTS.Sub(lastReleaseRecvTS)
-
-			log.Printf("HANDOFF: %s -> %s | sync_delay=%v recv_delay=%v",
-				lastRelease.NodeID, evt.NodeID, syncDelay, recvDelay)
-
+			log.Printf("HANDOFF: %s -> %s | sync_delay=%v recv_delay=%v k=%d",
+				lastRelease.NodeID, evt.NodeID, syncDelay, recvDelay, lastRelease.K)
 			_ = w.Write([]string{
 				lastRelease.NodeID,
 				lastRelease.TS.Format(time.RFC3339Nano),
@@ -90,9 +82,9 @@ func main() {
 				evt.TS.Format(time.RFC3339Nano),
 				fmt.Sprintf("%.3f", float64(syncDelay.Microseconds())/1000.0),
 				fmt.Sprintf("%.3f", float64(recvDelay.Microseconds())/1000.0),
+				fmt.Sprintf("%d", lastRelease.K), // <-- new column
 			})
 			w.Flush()
-
 			lastRelease = nil
 		}
 	}

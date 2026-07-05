@@ -55,11 +55,10 @@ services:
         BUILD_TARGET: proxy-setup
     container_name: proxy-setup
     environment:
-      - NUM_NODES=20
+      - NUM_NODES=10
       - BROKER_ADDR=mqtt-broker:1883
       - TOXIPROXY_HOST=toxiproxy
-      - SCENARIO=skewed
-      - SLOW_NODE=node-3
+      - SCENARIO=chaos
     depends_on:
       mqtt-broker:
         condition: service_healthy
@@ -122,59 +121,59 @@ services:
       - MQTT_BROKER_PORT=21003
       - RESOURCE_ID=charging-station
 
-  # node-4:
-  #   <<: *node-build
-  #   container_name: node-4
-  #   environment:
-  #     - NODE_ID=node-4
-  #     - MQTT_BROKER_HOST=toxiproxy
-  #     - MQTT_BROKER_PORT=21004
-  #     - RESOURCE_ID=charging-station
+  node-4:
+    <<: *node-build
+    container_name: node-4
+    environment:
+      - NODE_ID=node-4
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21004
+      - RESOURCE_ID=charging-station
 
-  # node-5:
-  #   <<: *node-build
-  #   container_name: node-5
-  #   environment:
-  #     - NODE_ID=node-5
-  #     - MQTT_BROKER_HOST=toxiproxy
-  #     - MQTT_BROKER_PORT=21005
-  #     - RESOURCE_ID=charging-station
+  node-5:
+    <<: *node-build
+    container_name: node-5
+    environment:
+      - NODE_ID=node-5
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21005
+      - RESOURCE_ID=charging-station
 
-  # node-6:
-  #   <<: *node-build
-  #   container_name: node-6
-  #   environment:
-  #     - NODE_ID=node-6
-  #     - MQTT_BROKER_HOST=toxiproxy
-  #     - MQTT_BROKER_PORT=21006
-  #     - RESOURCE_ID=charging-station
+  node-6:
+    <<: *node-build
+    container_name: node-6
+    environment:
+      - NODE_ID=node-6
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21006
+      - RESOURCE_ID=charging-station
 
-  # node-7:
-  #   <<: *node-build
-  #   container_name: node-7
-  #   environment:
-  #     - NODE_ID=node-7
-  #     - MQTT_BROKER_HOST=toxiproxy
-  #     - MQTT_BROKER_PORT=21007
-  #     - RESOURCE_ID=charging-station
+  node-7:
+    <<: *node-build
+    container_name: node-7
+    environment:
+      - NODE_ID=node-7
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21007
+      - RESOURCE_ID=charging-station
 
-  # node-8:
-  #   <<: *node-build
-  #   container_name: node-8
-  #   environment:
-  #     - NODE_ID=node-8
-  #     - MQTT_BROKER_HOST=toxiproxy
-  #     - MQTT_BROKER_PORT=21008
-  #     - RESOURCE_ID=charging-station
+  node-8:
+    <<: *node-build
+    container_name: node-8
+    environment:
+      - NODE_ID=node-8
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21008
+      - RESOURCE_ID=charging-station
 
-  # node-9:
-  #   <<: *node-build
-  #   container_name: node-9
-  #   environment:
-  #     - NODE_ID=node-9
-  #     - MQTT_BROKER_HOST=toxiproxy
-  #     - MQTT_BROKER_PORT=21009
-  #     - RESOURCE_ID=charging-station
+  node-9:
+    <<: *node-build
+    container_name: node-9
+    environment:
+      - NODE_ID=node-9
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21009
+      - RESOURCE_ID=charging-station
 
   # node-10:
   #   <<: *node-build
