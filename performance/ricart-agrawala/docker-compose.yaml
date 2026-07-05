@@ -1,0 +1,274 @@
+x-node-build: &node-build
+  build:
+    context: ../..
+    dockerfile: performance/ricart-agrawala/Dockerfile
+    args:
+      BUILD_TARGET: node
+  depends_on:
+    proxy-setup:
+      condition: service_completed_successfully
+  networks: [meshnet]
+  restart: unless-stopped
+
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto:2.1.2-alpine
+    container_name: mqtt-perf
+    restart: unless-stopped
+    networks: [meshnet]
+    ports:
+      - "1883:1883"
+    volumes:
+      - ../../mosquitto:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-i",
+          "healthcheck",
+          "-C",
+          "1",
+          "-W",
+          "2",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 4
+      start_period: 3s
+
+  toxiproxy:
+    image: shopify/toxiproxy:latest
+    container_name: toxiproxy
+    ports: ["8474:8474"]
+    networks: [meshnet]
+
+  proxy-setup:
+    build:
+      context: ../..
+      dockerfile: performance/ricart-agrawala/Dockerfile
+      args:
+        BUILD_TARGET: proxy-setup
+    container_name: proxy-setup
+    environment:
+      - NUM_NODES=20
+      - BROKER_ADDR=mqtt-broker:1883
+      - TOXIPROXY_HOST=toxiproxy
+      - SCENARIO=skewed
+      - SLOW_NODE=node-3
+    depends_on:
+      mqtt-broker:
+        condition: service_healthy
+      toxiproxy:
+        condition: service_started
+    networks: [meshnet]
+    restart: "no"
+
+  collector:
+    build:
+      context: ../..
+      dockerfile: performance/ricart-agrawala/Dockerfile
+      args:
+        BUILD_TARGET: collector
+    container_name: collector
+    environment:
+      - MQTT_BROKER_URL=tcp://mqtt-broker:1883
+      - METRICS_CSV_PATH=/data/sync_delay.csv
+    volumes:
+      - ./metrics:/data
+    depends_on:
+      mqtt-broker:
+        condition: service_healthy
+    networks: [meshnet]
+    restart: unless-stopped
+
+  node-0:
+    <<: *node-build
+    container_name: node-0
+    environment:
+      - NODE_ID=node-0
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21000
+      - RESOURCE_ID=charging-station
+
+  node-1:
+    <<: *node-build
+    container_name: node-1
+    environment:
+      - NODE_ID=node-1
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21001
+      - RESOURCE_ID=charging-station
+
+  node-2:
+    <<: *node-build
+    container_name: node-2
+    environment:
+      - NODE_ID=node-2
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21002
+      - RESOURCE_ID=charging-station
+
+  node-3:
+    <<: *node-build
+    container_name: node-3
+    environment:
+      - NODE_ID=node-3
+      - MQTT_BROKER_HOST=toxiproxy
+      - MQTT_BROKER_PORT=21003
+      - RESOURCE_ID=charging-station
+
+  # node-4:
+  #   <<: *node-build
+  #   container_name: node-4
+  #   environment:
+  #     - NODE_ID=node-4
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21004
+  #     - RESOURCE_ID=charging-station
+
+  # node-5:
+  #   <<: *node-build
+  #   container_name: node-5
+  #   environment:
+  #     - NODE_ID=node-5
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21005
+  #     - RESOURCE_ID=charging-station
+
+  # node-6:
+  #   <<: *node-build
+  #   container_name: node-6
+  #   environment:
+  #     - NODE_ID=node-6
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21006
+  #     - RESOURCE_ID=charging-station
+
+  # node-7:
+  #   <<: *node-build
+  #   container_name: node-7
+  #   environment:
+  #     - NODE_ID=node-7
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21007
+  #     - RESOURCE_ID=charging-station
+
+  # node-8:
+  #   <<: *node-build
+  #   container_name: node-8
+  #   environment:
+  #     - NODE_ID=node-8
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21008
+  #     - RESOURCE_ID=charging-station
+
+  # node-9:
+  #   <<: *node-build
+  #   container_name: node-9
+  #   environment:
+  #     - NODE_ID=node-9
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21009
+  #     - RESOURCE_ID=charging-station
+
+  # node-10:
+  #   <<: *node-build
+  #   container_name: node-10
+  #   environment:
+  #     - NODE_ID=node-10
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21010
+  #     - RESOURCE_ID=charging-station
+
+  # node-11:
+  #   <<: *node-build
+  #   container_name: node-11
+  #   environment:
+  #     - NODE_ID=node-11
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21011
+  #     - RESOURCE_ID=charging-station
+
+  # node-12:
+  #   <<: *node-build
+  #   container_name: node-12
+  #   environment:
+  #     - NODE_ID=node-12
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21012
+  #     - RESOURCE_ID=charging-station
+
+  # node-13:
+  #   <<: *node-build
+  #   container_name: node-13
+  #   environment:
+  #     - NODE_ID=node-13
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21013
+  #     - RESOURCE_ID=charging-station
+
+  # node-14:
+  #   <<: *node-build
+  #   container_name: node-14
+  #   environment:
+  #     - NODE_ID=node-14
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21014
+  #     - RESOURCE_ID=charging-station
+
+  # node-15:
+  #   <<: *node-build
+  #   container_name: node-15
+  #   environment:
+  #     - NODE_ID=node-15
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21015
+  #     - RESOURCE_ID=charging-station
+
+  # node-16:
+  #   <<: *node-build
+  #   container_name: node-16
+  #   environment:
+  #     - NODE_ID=node-16
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21016
+  #     - RESOURCE_ID=charging-station
+
+  # node-17:
+  #   <<: *node-build
+  #   container_name: node-17
+  #   environment:
+  #     - NODE_ID=node-17
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21017
+  #     - RESOURCE_ID=charging-station
+
+  # node-18:
+  #   <<: *node-build
+  #   container_name: node-18
+  #   environment:
+  #     - NODE_ID=node-18
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21018
+  #     - RESOURCE_ID=charging-station
+
+  # node-19:
+  #   <<: *node-build
+  #   container_name: node-19
+  #   environment:
+  #     - NODE_ID=node-19
+  #     - MQTT_BROKER_HOST=toxiproxy
+  #     - MQTT_BROKER_PORT=21019
+  #     - RESOURCE_ID=charging-station
+
+volumes:
+  mosquitto-data:
+  mosquitto-log:
+
+networks:
+  meshnet:
