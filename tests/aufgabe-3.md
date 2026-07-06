@@ -29,14 +29,7 @@ liegt bei `> 80`, daher muss ein Vorfall entstehen.
 Aus dem Repository-Wurzelverzeichnis:
 
 ```bash
-docker compose up -d --build
-docker run --rm \
-  --network vs-praktikum_default \
-  -v "$PWD/tests/aufgabe1:/tests" \
-  -w /tests \
-  -e CONTROL_CENTER_URL=http://control-center:8080 \
-  golang:1.26.2-alpine \
-  go test -v -run TestRegistrationCriticalReadingAndDashboard .
+make aufgabe1-functional
 ```
 
 ### Ergebnisse
@@ -79,14 +72,7 @@ p95-Antwortzeit unter `200 ms`.
 Aus dem Repository-Wurzelverzeichnis:
 
 ```bash
-docker compose up -d --build
-docker run --rm \
-  --network vs-praktikum_default \
-  -v "$PWD/tests/aufgabe1:/tests" \
-  -w /tests \
-  -e CONTROL_CENTER_URL=http://control-center:8080 \
-  golang:1.26.2-alpine \
-  go test -v -run TestStatusEndpointAvailabilityAndLatency .
+make aufgabe1-nonfunctional
 ```
 
 ### Ergebnisse
@@ -129,10 +115,7 @@ Es wird geprüft, ob die Leitstelle bei einem kritischen Wasserstand einen Incid
 ### Durchführung
 Repository-Wurzel:
 ```shell
-make docker-compose-up-build
-```
-```shell
-docker run --rm --network vs-praktikum_default -v "$PWD/tests/aufgabe2:/tests" -w /tests -e CONTROL_CENTER_URL=http://control-center:8080 golang:1.26.2-alpine go test -v -run TestAssignWaterIncidentMissionViaGRPC .
+make aufgabe2-functional
 ```
 
 ### Ergebnisse
@@ -181,15 +164,7 @@ Actor-Telemetrie auf `actors/<actor-id>/telemetry`.
 Aus dem Repository-Wurzelverzeichnis:
 
 ```bash
-docker compose up -d --build
-docker run --rm \
-  --network vs-praktikum_default \
-  -v "$PWD/tests/aufgabe3:/tests" \
-  -w /tests \
-  -e CONTROL_CENTER_URL=http://control-center:8080 \
-  -e MQTT_BROKER_URL=tcp://mqtt-broker:1883 \
-  golang:1.26.2-alpine \
-  go test -v -run TestMQTTSensorAndActorMessagesReachControlCenter .
+make aufgabe3-functional
 ```
 
 ### Ergebnisse

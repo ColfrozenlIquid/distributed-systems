@@ -29,14 +29,7 @@ liegt bei `> 80`, daher muss ein Vorfall entstehen.
 Aus dem Repository-Wurzelverzeichnis:
 
 ```bash
-docker compose up -d --build
-docker run --rm \
-  --network vs-praktikum_default \
-  -v "$PWD/tests/aufgabe1:/tests" \
-  -w /tests \
-  -e CONTROL_CENTER_URL=http://control-center:8080 \
-  golang:1.26.2-alpine \
-  go test -v -run TestRegistrationCriticalReadingAndDashboard .
+make aufgabe1-functional
 ```
 
 ### Ergebnisse
@@ -86,14 +79,7 @@ p95-Antwortzeit unter `200 ms`.
 Aus dem Repository-Wurzelverzeichnis:
 
 ```bash
-docker compose up -d --build
-docker run --rm \
-  --network vs-praktikum_default \
-  -v "$PWD/tests/aufgabe1:/tests" \
-  -w /tests \
-  -e CONTROL_CENTER_URL=http://control-center:8080 \
-  golang:1.26.2-alpine \
-  go test -v -run TestStatusEndpointAvailabilityAndLatency .
+make aufgabe1-nonfunctional
 ```
 
 ### Ergebnisse

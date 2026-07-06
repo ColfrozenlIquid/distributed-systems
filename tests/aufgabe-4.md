@@ -16,14 +16,8 @@ Container, Konfiguration, Testdaten:
 * Beobachtung und Bewertung erfolgen über `GET /ricart/status` am Control-Center.
 
 ### Durchführung
-```bash
-docker run --rm --network vs-praktikum_default \
-  -v "$PWD/tests/aufgabe4:/tests" \
-  -w /tests \
-  -e CONTROL_CENTER_URL=http://control-center:8080 \
-  -e MQTT_BROKER_URL=tcp://mqtt-broker:1883 \
-  golang:1.26.2-alpine \
-  go test -v -run TestRicartAgrawalaMutualExclusionAndLogicalClocks .
+```shell
+make aufgabe4-functional
 ```
 
 Der Test wartet auf `/health`, verbindet drei MQTT-Teilnehmer, meldet sie per Presence online, startet konkurrierende Critical-Section-Requests und liest anschließend `/ricart/status`, bis alle erwarteten Events vorhanden sind.
