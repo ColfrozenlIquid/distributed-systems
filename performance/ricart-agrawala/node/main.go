@@ -42,11 +42,10 @@ type CSEvent struct {
 	NodeID string    `json:"node_id"`
 	Type   string    `json:"type"` // "enter" | "release"
 	TS     time.Time `json:"ts"`
-	K      int       `json:"k"` // <-- ADD: only meaningful for "release"
 }
 
-func publishEvent(client mqtt.Client, nodeID, evtType string, k int) { // <-- add k param
-	evt := CSEvent{NodeID: nodeID, Type: evtType, TS: time.Now(), K: k}
+func publishEvent(client mqtt.Client, nodeID, evtType string) {
+	evt := CSEvent{NodeID: nodeID, Type: evtType, TS: time.Now()}
 	payload, _ := json.Marshal(evt)
 	token := client.Publish("cs/events", 1, false, payload)
 	token.Wait()
@@ -63,18 +62,18 @@ func runNode(ctx context.Context, id string, resourceId string) {
 
 	var node *shared.RicartNode
 	node = shared.NewRicartNode(id, shared.RescueVehicleActor, resourceId, client, func() {
-		publishEvent(client, id, "enter", 0) // <-- k unused on enter, pass 0
+		publishEvent(client, id, "enter") // <-- k unused on enter, pass 0
 		holdTime := time.Duration(500) * time.Millisecond
 		log.Printf("%s: ENTERED CRITICAL section, holding for %v", id, holdTime)
 		time.Sleep(holdTime)
 		log.Printf("%s: releasing critical section", id)
 
-		k, err := node.ReleaseCS() // <-- capture k
+		err := node.ReleaseCS()
 		if err != nil {
 			log.Printf("%s: release error: %v", id, err)
 		}
-		log.Printf("%s: RELEASING with k=%d waiters", id, k)
-		publishEvent(client, id, "release", k) // <-- pass k through
+		log.Printf("%s: RELEASING", id)
+		publishEvent(client, id, "release")
 
 		requestAgain <- struct{}{}
 	})
