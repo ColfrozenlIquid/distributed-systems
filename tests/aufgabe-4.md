@@ -69,11 +69,16 @@ Die Performance-Messung wurde gegen den Docker-Compose-Stack im Ordner `performa
 Es wird erwartet, dass das Szenario `chaos` die höchsten Handoff-Latenzen zeigt, `uniform` im Mittelfeld liegt und `fast` die niedrigsten Werte liefert. Zusätzlich sollten die Messwerte im groben Rahmen der theoretischen Schranken liegen, die sich aus einer vollständig parallelen bzw. vollständig seriellen Ausführung der Nachrichtenübertragung ergeben.
 
 #### Tatsächliches Ergebnis
+
 Die Messungen zeigen eine deutlich höhere Streuung im Szenario `chaos` sowie klar niedrigere Latenzen in `fast` und `uniform`. Die Verteilungen liegen nicht nur unter der Worst-Case-Schranke, sondern machen sichtbar, dass die Handoff-Latenz stark von Szenario und Contention abhängt.
 
-Alle Knoten im Test versuchen aggressiv auf eine limitierte Ressource zuzugreifen. Ziel ist zu verifizieren ob das System eine hohe Last an Synchronisierungsnachrichten verwalten kann. Die Kommunikationskomplexitaet des Algorithmus liegt bei `2(n-1)` wobei die `REPLY` und `PRESENCE` Nachrichten gemessen mit fast 90% des Datenverkehrs dominieren.
+Alle Knoten im Test versuchen aggressiv auf eine limitierte Ressource zuzugreifen. Ziel ist zu verifizieren, ob das System eine hohe Last an Synchronisierungsnachrichten verwalten kann.
 
-Zu erkennen ist dass die Synchronisationslatenzen mit zunehmenden Teilnehmerknoten wachsen. Jedoch ist dieses im TEst nicht so eindeutig wie zuerst vermutet. `Uniform 20` und `Uniform 64` haben nahezu identische `mean` und `median` Werte aufgewiesen. `Chaos 20` und `Chaos 64` spiegeln jedoch ein ganz anderes Ergebnis. Hier ist klar zu erkennen dass der Synchronisierungsaufwand bei mehreren Knoten mit unberechenbarer Latenz und Jitter mit der Teilnehmeranzahl zunimmt.
+Die **logische Nachrichtenkomplexität** des zugrunde liegenden Algorithmus (Ricart-Agrawala-artig) liegt bei `2(N−1)` Nachrichten pro einzelnem Critical-Section-Request eines Knotens (`N−1` REQUESTs + `N−1` REPLYs). Diese Größe ist getrennt zu betrachten von der **Gesamtzahl der MQTT-Pakete**, die weiter unten für den Worst Case gemessen wird, in dem alle `N` Knoten gleichzeitig einen Request stellen — dort addiert sich zusätzlich der CS-ENTER/EXIT-Verkehr sowie der QoS-Protokoll-Overhead (PUBREC/PUBREL/PUBCOMP bzw. PUBACK).
+
+In diesem Worst-Case-Szenario dominieren `REQUEST` und `REPLY` den Datenverkehr: Bei N=64 machen beide Typen zusammen rund **67 %** der insgesamt übertragenen MQTT-Pakete aus (32.256 von 48.384 Paketen), `CS ENTER`/`CS EXIT` zusammen die restlichen ca. 33 %.
+
+Zu erkennen ist, dass die Synchronisationslatenzen mit zunehmender Teilnehmerzahl wachsen. Jedoch ist dies im Test nicht so eindeutig wie zuerst vermutet: `Uniform 20` und `Uniform 64` weisen nahezu identische `mean`- und `median`-Werte auf. `Chaos 20` und `Chaos 64` zeigen dagegen ein ganz anderes Bild — hier ist klar zu erkennen, dass der Synchronisierungsaufwand bei unberechenbarer Latenz und Jitter mit der Teilnehmeranzahl deutlich zunimmt.
 
 | Type | Publishes | Deliveries | QoS | Packets/delivery |
 |---|---|---|---|---|
@@ -81,45 +86,45 @@ Zu erkennen ist dass die Synchronisationslatenzen mit zunehmenden Teilnehmerknot
 | REPLY    | `N(N−1)`   | `N(N−1)` | 2 | 4 |
 | CS ENTER | `N`        | `N(N−1)` | 1 | 2 |
 | CS EXIT  | `N`        | `N(N−1)` | 1 | 2 |
- 
+
 **Total MQTT packets = `12 × N × (N−1)`**
 
-- `REQUEST` und `ENTER/EXIT` werden in MQTT broadcast (1 publish → N−1 deliveries).
-- `REPLY` ist point-to-point (1 publish → 1 delivery), aber mit `N(N−1)` reply Nachrichten (jeder Knoten antwortet einem anderen genau einmal).
-- QoS 2 kostet 4 MQTT Pakete pro delivery (`PUBLISH`, `PUBREC`, `PUBREL`, `PUBCOMP`); QoS 1 kostet 2 (`PUBLISH`, `PUBACK`).
+- `REQUEST` und `ENTER/EXIT` werden per MQTT broadcastet (1 Publish → N−1 Deliveries).
+- `REPLY` ist Point-to-Point (1 Publish → 1 Delivery), aber mit `N(N−1)` Reply-Nachrichten insgesamt, da im Worst Case jeder Knoten jedem anderen genau einmal antwortet.
+- QoS 2 kostet 4 MQTT-Pakete pro Delivery (`PUBLISH`, `PUBREC`, `PUBREL`, `PUBCOMP`); QoS 1 kostet 2 (`PUBLISH`, `PUBACK`).
+- Alle Tabellen unten gehen vom **Worst Case** aus, dass alle `N` Knoten gleichzeitig einen CS-Request stellen — daher `N(N−1)` statt `N−1` Deliveries pro Nachrichtentyp.
 
 ---
- 
+
 ## N = 10
- 
+
 | Type | Publishes | Deliveries | Packets |
 |---|---|---|---|
 | REQUEST  | 10 | 90 | 360 |
 | REPLY    | 90 | 90 | 360 |
 | CS ENTER | 10 | 90 | 180 |
 | CS EXIT  | 10 | 90 | 180 |
-| **Total** |  |  | **1,080** |
- 
+| **Total** |  |  | **1.080** |
+
 ## N = 20
- 
+
 | Type | Publishes | Deliveries | Packets |
 |---|---|---|---|
-| REQUEST  | 20  | 380 | 1,520 |
-| REPLY    | 380 | 380 | 1,520 |
+| REQUEST  | 20  | 380 | 1.520 |
+| REPLY    | 380 | 380 | 1.520 |
 | CS ENTER | 20  | 380 | 760 |
 | CS EXIT  | 20  | 380 | 760 |
-| **Total** |  |  | **4,560** |
- 
+| **Total** |  |  | **4.560** |
+
 ## N = 64
- 
+
 | Type | Publishes | Deliveries | Packets |
 |---|---|---|---|
-| REQUEST  | 64    | 4,032 | 16,128 |
-| REPLY    | 4,032 | 4,032 | 16,128 |
-| CS ENTER | 64    | 4,032 | 8,064 |
-| CS EXIT  | 64    | 4,032 | 8,064 |
-| **Total** |  |  | **48,384** |
-
+| REQUEST  | 64    | 4.032 | 16.128 |
+| REPLY    | 4.032 | 4.032 | 16.128 |
+| CS ENTER | 64    | 4.032 | 8.064 |
+| CS EXIT  | 64    | 4.032 | 8.064 |
+| **Total** |  |  | **48.384** |
 
 
 ![](../performance/ricart-agrawala/sync_delay_vs_theoretical.png)
