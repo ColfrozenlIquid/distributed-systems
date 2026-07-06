@@ -73,7 +73,53 @@ Die Messungen zeigen eine deutlich höhere Streuung im Szenario `chaos` sowie kl
 
 Alle Knoten im Test versuchen aggressiv auf eine limitierte Ressource zuzugreifen. Ziel ist zu verifizieren ob das System eine hohe Last an Synchronisierungsnachrichten verwalten kann. Die Kommunikationskomplexitaet des Algorithmus liegt bei `2(n-1)` wobei die `REPLY` und `PRESENCE` Nachrichten gemessen mit fast 90% des Datenverkehrs dominieren.
 
-Zu erkennen ist dass die Synchronisationslatenzen mit zunehmenden Teilnehmerknoten wachsen. Jedoch ist dieses im TEst nicht so eindeutig wie zuerst vermutet. `Uniform 20` und `Uniform 64` haben nahezu identische `mean` und `median` Werte aufgewiesen. `Chaos 20` und `Chaos 64` spiegeln jedoch ein ganz anderes Ergebnis. Hier ist klar zu erkennen dass der Synchronisierungsaufwand bei mehreren Knoten mit unberechenbarer Latenz und Jitter mit der Teilnehmeranzahl zunimmt. 
+Zu erkennen ist dass die Synchronisationslatenzen mit zunehmenden Teilnehmerknoten wachsen. Jedoch ist dieses im TEst nicht so eindeutig wie zuerst vermutet. `Uniform 20` und `Uniform 64` haben nahezu identische `mean` und `median` Werte aufgewiesen. `Chaos 20` und `Chaos 64` spiegeln jedoch ein ganz anderes Ergebnis. Hier ist klar zu erkennen dass der Synchronisierungsaufwand bei mehreren Knoten mit unberechenbarer Latenz und Jitter mit der Teilnehmeranzahl zunimmt.
+
+| Type | Publishes | Deliveries | QoS | Packets/delivery |
+|---|---|---|---|---|
+| REQUEST  | `N`        | `N(N−1)` | 2 | 4 |
+| REPLY    | `N(N−1)`   | `N(N−1)` | 2 | 4 |
+| CS ENTER | `N`        | `N(N−1)` | 1 | 2 |
+| CS EXIT  | `N`        | `N(N−1)` | 1 | 2 |
+ 
+**Total MQTT packets = `12 × N × (N−1)`**
+
+- `REQUEST` und `ENTER/EXIT` werden in MQTT broadcast (1 publish → N−1 deliveries).
+- `REPLY` ist point-to-point (1 publish → 1 delivery), aber mit `N(N−1)` reply Nachrichten (jeder Knoten antwortet einem anderen genau einmal).
+- QoS 2 kostet 4 MQTT Pakete pro delivery (`PUBLISH`, `PUBREC`, `PUBREL`, `PUBCOMP`); QoS 1 kostet 2 (`PUBLISH`, `PUBACK`).
+
+---
+ 
+## N = 10
+ 
+| Type | Publishes | Deliveries | Packets |
+|---|---|---|---|
+| REQUEST  | 10 | 90 | 360 |
+| REPLY    | 90 | 90 | 360 |
+| CS ENTER | 10 | 90 | 180 |
+| CS EXIT  | 10 | 90 | 180 |
+| **Total** |  |  | **1,080** |
+ 
+## N = 20
+ 
+| Type | Publishes | Deliveries | Packets |
+|---|---|---|---|
+| REQUEST  | 20  | 380 | 1,520 |
+| REPLY    | 380 | 380 | 1,520 |
+| CS ENTER | 20  | 380 | 760 |
+| CS EXIT  | 20  | 380 | 760 |
+| **Total** |  |  | **4,560** |
+ 
+## N = 64
+ 
+| Type | Publishes | Deliveries | Packets |
+|---|---|---|---|
+| REQUEST  | 64    | 4,032 | 16,128 |
+| REPLY    | 4,032 | 4,032 | 16,128 |
+| CS ENTER | 64    | 4,032 | 8,064 |
+| CS EXIT  | 64    | 4,032 | 8,064 |
+| **Total** |  |  | **48,384** |
+
 
 
 ![](../performance/ricart-agrawala/sync_delay_vs_theoretical.png)
