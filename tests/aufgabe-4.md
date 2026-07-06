@@ -57,8 +57,9 @@ Es wird gemessen, wie schnell die kritische Section zwischen mehreren Ricart-Agr
 ### Setup
 * Docker-Compose-Stack `performance/ricart-agrawala/docker-compose.yaml` mit `mqtt-broker`, `toxiproxy`, `proxy-setup`, `collector` und den `node-*`-Containern.
 * Der Collector schreibt die Messwerte nach `performance/ricart-agrawala/metrics/` und erfasst pro Handoff `sync_delay_ms`, `recv_delay_ms` und `k`.
-* Die Messreihen umfassen die Szenarien `uniform`, `fast` und `chaos` jeweils mit 10 und 20 Knoten.
+* Die Messreihen umfassen die Szenarien `uniform`, `fast` und `chaos` jeweils mit 10, 20 und 64 Knoten.
 * Alle Knoten konkurrieren um dieselbe Ressource `charging-station` und publizieren die Critical-Section-Ereignisse über `cs/events`.
+* Tests werden durch manuelles anpassen der Docker Compose durchgefuehrt
 
 ### Durchführung
 Die Performance-Messung wurde gegen den Docker-Compose-Stack im Ordner `performance/ricart-agrawala` ausgeführt. Die Rohdaten wurden als CSV-Dateien im Unterordner `metrics/` gespeichert und anschließend mit den Plot-Skripten visualisiert.
@@ -70,6 +71,9 @@ Es wird erwartet, dass das Szenario `chaos` die höchsten Handoff-Latenzen zeigt
 #### Tatsächliches Ergebnis
 Die Messungen zeigen eine deutlich höhere Streuung im Szenario `chaos` sowie klar niedrigere Latenzen in `fast` und `uniform`. Die Verteilungen liegen nicht nur unter der Worst-Case-Schranke, sondern machen sichtbar, dass die Handoff-Latenz stark von Szenario und Contention abhängt.
 
-![](../performance/ricart-agrawala/sync_delay_dashboard.png)
+Alle Knoten im Test versuchen aggressiv auf eine limitierte Ressource zuzugreifen. Ziel ist zu verifizieren ob das System eine hohe Last an Synchronisierungsnachrichten verwalten kann. Die Kommunikationskomplexitaet des Algorithmus liegt bei `2(n-1)` wobei die `REPLY` und `PRESENCE` Nachrichten gemessen mit fast 90% des Datenverkehrs dominieren.
+
+Zu erkennen ist dass die Synchronisationslatenzen mit zunehmenden Teilnehmerknoten wachsen. Jedoch ist dieses im TEst nicht so eindeutig wie zuerst vermutet. `Uniform 20` und `Uniform 64` haben nahezu identische `mean` und `median` Werte aufgewiesen. `Chaos 20` und `Chaos 64` spiegeln jedoch ein ganz anderes Ergebnis. Hier ist klar zu erkennen dass der Synchronisierungsaufwand bei mehreren Knoten mit unberechenbarer Latenz und Jitter mit der Teilnehmeranzahl zunimmt. 
+
 
 ![](../performance/ricart-agrawala/sync_delay_vs_theoretical.png)
