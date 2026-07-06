@@ -46,25 +46,30 @@ PASS
 ok  	aufgabe4tests	0.771s
 ```
 
-## Nicht-funktional: [Titel]
+## Nicht-funktional: Handoff-Latenz des Ricart-Agrawala-Protokolls
 **Ziel:**
+Es wird gemessen, wie schnell die kritische Section zwischen mehreren Ricart-Agrawala-Teilnehmern übergeben wird. Geprüft wird die Handoff-Latenz `sync_delay_ms` unter unterschiedlichen Netzszenarien sowie der Vergleich der beobachteten Werte mit den theoretischen Schranken des Protokolls.
 
-**Bewertung:** `PASS`, `FAIL` oder `BLOCKED`
+**Bewertung:** `PASS`
 
-**Versionsstand:** Commit `#`
+**Versionsstand:** Commit `e1912f3`
 
 ### Setup
-Container, Konfiguration, Testdaten
+* Docker-Compose-Stack `performance/ricart-agrawala/docker-compose.yaml` mit `mqtt-broker`, `toxiproxy`, `proxy-setup`, `collector` und den `node-*`-Containern.
+* Der Collector schreibt die Messwerte nach `performance/ricart-agrawala/metrics/` und erfasst pro Handoff `sync_delay_ms`, `recv_delay_ms` und `k`.
+* Die Messreihen umfassen die Szenarien `uniform`, `fast` und `chaos` jeweils mit 10 und 20 Knoten.
+* Alle Knoten konkurrieren um dieselbe Ressource `charging-station` und publizieren die Critical-Section-Ereignisse über `cs/events`.
 
 ### Durchführung
-
+Die Performance-Messung wurde gegen den Docker-Compose-Stack im Ordner `performance/ricart-agrawala` ausgeführt. Die Rohdaten wurden als CSV-Dateien im Unterordner `metrics/` gespeichert und anschließend mit den Plot-Skripten visualisiert.
 
 ### Ergebnisse
 #### Erwartetes Ergebnis
-
+Es wird erwartet, dass das Szenario `chaos` die höchsten Handoff-Latenzen zeigt, `uniform` im Mittelfeld liegt und `fast` die niedrigsten Werte liefert. Zusätzlich sollten die Messwerte im groben Rahmen der theoretischen Schranken liegen, die sich aus einer vollständig parallelen bzw. vollständig seriellen Ausführung der Nachrichtenübertragung ergeben.
 
 #### Tatsächliches Ergebnis
+Die Messungen zeigen eine deutlich höhere Streuung im Szenario `chaos` sowie klar niedrigere Latenzen in `fast` und `uniform`. Die Verteilungen liegen nicht nur unter der Worst-Case-Schranke, sondern machen sichtbar, dass die Handoff-Latenz stark von Szenario und Contention abhängt.
 
+![](../performance/ricart-agrawala/sync_delay_dashboard.png)
 
-#### Artefakte
-Logs, Screenshots oder Reports
+![](../performance/ricart-agrawala/sync_delay_vs_theoretical.png)
