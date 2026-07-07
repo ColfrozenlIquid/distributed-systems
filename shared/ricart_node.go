@@ -162,12 +162,24 @@ func (n *RicartNode) ReleaseCS() error {
 	exitEvent := n.csEventLocked()
 	n.mu.Unlock()
 
+	var wg sync.WaitGroup
+	errs := make([]error, len(deferred))
+	for i, id := range deferred {
+		wg.Add(1)
+		go func(i int, id string) {
+			defer wg.Done()
+			errs[i] = n.sendReply(id)
+		}(i, id)
+	}
+	wg.Wait()
+
 	var firstErr error
-	for _, id := range deferred {
-		if err := n.sendReply(id); err != nil && firstErr == nil {
+	for _, err := range errs {
+		if err != nil && firstErr == nil {
 			firstErr = err
 		}
 	}
+
 	if err := MqttPublish(n.mqttClient, RicartCsExitParams(exitEvent)); err != nil && firstErr == nil {
 		firstErr = err
 	}

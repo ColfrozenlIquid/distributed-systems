@@ -16,14 +16,8 @@ Container, Konfiguration, Testdaten:
 * Beobachtung und Bewertung erfolgen über `GET /ricart/status` am Control-Center.
 
 ### Durchführung
-```bash
-docker run --rm --network vs-praktikum_default \
-  -v "$PWD/tests/aufgabe4:/tests" \
-  -w /tests \
-  -e CONTROL_CENTER_URL=http://control-center:8080 \
-  -e MQTT_BROKER_URL=tcp://mqtt-broker:1883 \
-  golang:1.26.2-alpine \
-  go test -v -run TestRicartAgrawalaMutualExclusionAndLogicalClocks .
+```shell
+make aufgabe4-functional
 ```
 
 Der Test wartet auf `/health`, verbindet drei MQTT-Teilnehmer, meldet sie per Presence online, startet konkurrierende Critical-Section-Requests und liest anschließend `/ricart/status`, bis alle erwarteten Events vorhanden sind.
@@ -52,25 +46,85 @@ PASS
 ok  	aufgabe4tests	0.771s
 ```
 
-## Nicht-funktional: [Titel]
+## Nicht-funktional: Handoff-Latenz des Ricart-Agrawala-Protokolls
 **Ziel:**
+Es wird gemessen, wie schnell die kritische Section zwischen mehreren Ricart-Agrawala-Teilnehmern übergeben wird. Geprüft wird die Handoff-Latenz `sync_delay_ms` unter unterschiedlichen Netzszenarien sowie der Vergleich der beobachteten Werte mit den theoretischen Schranken des Protokolls.
 
-**Bewertung:** `PASS`, `FAIL` oder `BLOCKED`
+**Bewertung:** `PASS`
 
-**Versionsstand:** Commit `#`
+**Versionsstand:** Commit `e1912f3`
 
 ### Setup
-Container, Konfiguration, Testdaten
+* Docker-Compose-Stack `performance/ricart-agrawala/docker-compose.yaml` mit `mqtt-broker`, `toxiproxy`, `proxy-setup`, `collector` und den `node-*`-Containern.
+* Der Collector schreibt die Messwerte nach `performance/ricart-agrawala/metrics/` und erfasst pro Handoff `sync_delay_ms`, `recv_delay_ms` und `k`.
+* Die Messreihen umfassen die Szenarien `uniform`, `fast` und `chaos` jeweils mit 10, 20 und 64 Knoten.
+* Alle Knoten konkurrieren um dieselbe Ressource `charging-station` und publizieren die Critical-Section-Ereignisse über `cs/events`.
+* Tests werden durch manuelles anpassen der Docker Compose durchgefuehrt
 
 ### Durchführung
-
+Die Performance-Messung wurde gegen den Docker-Compose-Stack im Ordner `performance/ricart-agrawala` ausgeführt. Die Rohdaten wurden als CSV-Dateien im Unterordner `metrics/` gespeichert und anschließend mit den Plot-Skripten visualisiert.
 
 ### Ergebnisse
 #### Erwartetes Ergebnis
-
+Es wird erwartet, dass das Szenario `chaos` die höchsten Handoff-Latenzen zeigt, `uniform` im Mittelfeld liegt und `fast` die niedrigsten Werte liefert. Zusätzlich sollten die Messwerte im groben Rahmen der theoretischen Schranken liegen, die sich aus einer vollständig parallelen bzw. vollständig seriellen Ausführung der Nachrichtenübertragung ergeben.
 
 #### Tatsächliches Ergebnis
 
+Die Messungen zeigen eine deutlich höhere Streuung im Szenario `chaos` sowie klar niedrigere Latenzen in `fast` und `uniform`. Die Verteilungen liegen nicht nur unter der Worst-Case-Schranke, sondern machen sichtbar, dass die Handoff-Latenz stark von Szenario und Contention abhängt.
 
-#### Artefakte
-Logs, Screenshots oder Reports
+Alle Knoten im Test versuchen aggressiv auf eine limitierte Ressource zuzugreifen. Ziel ist zu verifizieren, ob das System eine hohe Last an Synchronisierungsnachrichten verwalten kann.
+
+Die **logische Nachrichtenkomplexität** des zugrunde liegenden Algorithmus (Ricart-Agrawala-artig) liegt bei `2(N−1)` Nachrichten pro einzelnem Critical-Section-Request eines Knotens (`N−1` REQUESTs + `N−1` REPLYs). Diese Größe ist getrennt zu betrachten von der **Gesamtzahl der MQTT-Pakete**, die weiter unten für den Worst Case gemessen wird, in dem alle `N` Knoten gleichzeitig einen Request stellen — dort addiert sich zusätzlich der CS-ENTER/EXIT-Verkehr sowie der QoS-Protokoll-Overhead (PUBREC/PUBREL/PUBCOMP bzw. PUBACK).
+
+In diesem Worst-Case-Szenario dominieren `REQUEST` und `REPLY` den Datenverkehr: Bei N=64 machen beide Typen zusammen rund **67 %** der insgesamt übertragenen MQTT-Pakete aus (32.256 von 48.384 Paketen), `CS ENTER`/`CS EXIT` zusammen die restlichen ca. 33 %.
+
+Zu erkennen ist, dass die Synchronisationslatenzen mit zunehmender Teilnehmerzahl wachsen. Jedoch ist dies im Test nicht so eindeutig wie zuerst vermutet: `Uniform 20` und `Uniform 64` weisen nahezu identische `mean`- und `median`-Werte auf. `Chaos 20` und `Chaos 64` zeigen dagegen ein ganz anderes Bild — hier ist klar zu erkennen, dass der Synchronisierungsaufwand bei unberechenbarer Latenz und Jitter mit der Teilnehmeranzahl deutlich zunimmt.
+
+| Type | Publishes | Deliveries | QoS | Packets/delivery |
+|---|---|---|---|---|
+| REQUEST  | `N`        | `N(N−1)` | 2 | 4 |
+| REPLY    | `N(N−1)`   | `N(N−1)` | 2 | 4 |
+| CS ENTER | `N`        | `N(N−1)` | 1 | 2 |
+| CS EXIT  | `N`        | `N(N−1)` | 1 | 2 |
+
+**Total MQTT packets = `12 × N × (N−1)`**
+
+- `REQUEST` und `ENTER/EXIT` werden per MQTT broadcastet (1 Publish → N−1 Deliveries).
+- `REPLY` ist Point-to-Point (1 Publish → 1 Delivery), aber mit `N(N−1)` Reply-Nachrichten insgesamt, da im Worst Case jeder Knoten jedem anderen genau einmal antwortet.
+- QoS 2 kostet 4 MQTT-Pakete pro Delivery (`PUBLISH`, `PUBREC`, `PUBREL`, `PUBCOMP`); QoS 1 kostet 2 (`PUBLISH`, `PUBACK`).
+- Alle Tabellen unten gehen vom **Worst Case** aus, dass alle `N` Knoten gleichzeitig einen CS-Request stellen — daher `N(N−1)` statt `N−1` Deliveries pro Nachrichtentyp.
+
+---
+
+## N = 10
+
+| Type | Publishes | Deliveries | Packets |
+|---|---|---|---|
+| REQUEST  | 10 | 90 | 360 |
+| REPLY    | 90 | 90 | 360 |
+| CS ENTER | 10 | 90 | 180 |
+| CS EXIT  | 10 | 90 | 180 |
+| **Total** |  |  | **1.080** |
+
+## N = 20
+
+| Type | Publishes | Deliveries | Packets |
+|---|---|---|---|
+| REQUEST  | 20  | 380 | 1.520 |
+| REPLY    | 380 | 380 | 1.520 |
+| CS ENTER | 20  | 380 | 760 |
+| CS EXIT  | 20  | 380 | 760 |
+| **Total** |  |  | **4.560** |
+
+## N = 64
+
+| Type | Publishes | Deliveries | Packets |
+|---|---|---|---|
+| REQUEST  | 64    | 4.032 | 16.128 |
+| REPLY    | 4.032 | 4.032 | 16.128 |
+| CS ENTER | 64    | 4.032 | 8.064 |
+| CS EXIT  | 64    | 4.032 | 8.064 |
+| **Total** |  |  | **48.384** |
+
+
+![](../performance/ricart-agrawala/sync_delay_vs_theoretical.png)
