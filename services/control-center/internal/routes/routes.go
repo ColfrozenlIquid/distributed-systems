@@ -45,11 +45,15 @@ func Routes(router *vshttp.Router, state *model.State, actors model.ActorMission
 	router.Get("/map", func(c *vshttp.Context) error {
 		c.Writer.Header().Replace("Content-Type", "text/html; charset=utf-8")
 		c.Writer.WriteHeader(vshttp.OK)
-		return html.DashboardPage(html.NewDashboardPageData(state.System().Snapshot(), state.World())).Render(context.Background(), c.Writer)
+		return html.DashboardPage(html.NewDashboardPageData(state.System().Snapshot(), state.World(), state.Ricart().Snapshot())).Render(context.Background(), c.Writer)
 	})
 
 	router.Get("/status", func(c *vshttp.Context) error {
 		return c.JSON(vshttp.OK, state.System().Snapshot())
+	})
+
+	router.Get("/ricart/status", func(c *vshttp.Context) error {
+		return c.JSON(vshttp.OK, state.Ricart().Snapshot())
 	})
 
 	router.Get("/status/incidents", func(c *vshttp.Context) error {
@@ -71,7 +75,7 @@ func Routes(router *vshttp.Router, state *model.State, actors model.ActorMission
 
 			// render current snapshot and extract the incident item to return
 			snapshot := state.System().Snapshot()
-			page := html.NewDashboardPageData(snapshot, state.World())
+			page := html.NewDashboardPageData(snapshot, state.World(), state.Ricart().Snapshot())
 
 			if idx := slices.IndexFunc(page.Incidents, func(i html.IncidentListItem) bool { return i.ID == incidentID }); idx >= 0 {
 				return html.IncidentItem(page.Incidents[idx]).Render(context.Background(), c.Writer)

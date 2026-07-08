@@ -28,7 +28,7 @@ type rescueVehicle struct {
 }
 
 func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, logger *zap.Logger, mqtt *transport.MQTTClient) *RescueVehicle {
-	return &RescueVehicle{
+	vehicle := &RescueVehicle{
 		simulation: simulation,
 		BaseActor:  NewBaseActor(cfg, simulation, logger, pb.MovableType_MOVABLE_TYPE_LAND, mqtt),
 		Actor: rescueVehicle{
@@ -37,15 +37,20 @@ func NewRescueVehicle(cfg config.ActorConfig, simulation pb.WorldServiceClient, 
 		},
 		logger: logger,
 	}
+	vehicle.BaseActor.StartRicart()
+	return vehicle
 }
 
 func (v *RescueVehicle) ExecuteMission() {
-	v.BaseActor.state = ActorStateWorking
+	v.BaseActor.BeginMissionWork()
 }
 
 func (v *RescueVehicle) CompleteTask() {
+	if !v.BaseActor.CanCompleteMission() {
+		return
+	}
 	v.performTask()
-	v.BaseActor.state = ActorStateDone
+	v.BaseActor.MarkMissionDone()
 }
 
 func (v *RescueVehicle) performTask() error {

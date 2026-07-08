@@ -38,7 +38,7 @@ services:
     ports:
       - "50051:50051"
     healthcheck:
-      test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+      test: [ "CMD", "/grpc_health_probe", "-addr=:50051" ]
       interval: 2s
       timeout: 1s
       retries: 5
@@ -60,7 +60,7 @@ services:
       mqtt-broker:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/health" ]
       interval: 2s
       timeout: 1s
       retries: 5
@@ -77,7 +77,19 @@ services:
       - mosquitto-data:/mosquitto/data
       - mosquitto-log:/mosquitto/log
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-i", "healthcheck", "-C", "1", "-W", "2"]
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-i",
+          "healthcheck",
+          "-C",
+          "1",
+          "-W",
+          "2",
+        ]
       interval: 5s
       timeout: 3s
       retries: 4
@@ -217,10 +229,10 @@ services:
     container_name: actor-3
     environment:
       ACTOR_ID: "actor-3"
-      ACTOR_TYPE: "water_vehicle"
+      ACTOR_TYPE: "rescue_vehicle"
       ACTOR_INTERVAL_MS: "1000"
-      ACTOR_POSITION_X: "1"
-      ACTOR_POSITION_Y: "1"
+      ACTOR_POSITION_X: "8"
+      ACTOR_POSITION_Y: "3"
       <<: *common-env
 
 volumes:

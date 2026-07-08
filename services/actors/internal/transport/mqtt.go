@@ -22,11 +22,13 @@ func NewMQTTClient(cfg TransportConfig) (*MQTTClient, error) {
 		Timestamp: time.Now(),
 	}
 	payload, _ := json.Marshal(lastActorStatus)
+
+	actorStatusParams := shared.ActorStatusParams(cfg.ClientId, lastActorStatus)
 	lwtConfig := &shared.MqttLwtConfig{
-		Topic:   shared.ActorStatusTopic(cfg.ClientId),
+		Topic:   actorStatusParams.Topic,
 		Payload: payload,
-		Qos:     1,
-		Retain:  true,
+		Qos:     actorStatusParams.QoS,
+		Retain:  actorStatusParams.Retained,
 	}
 
 	mqtt, err := shared.ConnectToMqttBroker(cfg.MQTTConfig, cfg.ClientId, true, lwtConfig)

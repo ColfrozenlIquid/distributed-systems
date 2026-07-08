@@ -18,6 +18,8 @@ type Actor interface {
 	Position() shared.Position
 	Type() string
 	MovableType() pb.MovableType
+	FuelCapacity() float64
+	Fuel() float64
 
 	MoveToLocation(destination shared.Position)
 	AtPosition(pos shared.Position) bool
@@ -48,4 +50,7 @@ const (
 	ActorStateBlocked
 	ActorStateDone
 	ActorStateWorking
+	ActorStateRefueling
+	ActorStateMovingToRefueling
+	ActorStateWaitingForRefueling
 )

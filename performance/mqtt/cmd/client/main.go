@@ -195,17 +195,14 @@ func runMQTTLoad(cfg *shared.MqttConfig) {
 	}
 	defer mqttClient.Disconnect(250)
 
-	topic := shared.ActorTelemetryTopic("actor-1")
 	for i := 0; i < numMessages; i++ {
-		body, _ := json.Marshal(wirePayload{
+		_ = shared.MqttPublish(mqttClient, shared.ActorTelemetryParams("actor-1", wirePayload{
 			ActorID:   "actor-1",
 			PosX:      int32(i),
 			PosY:      int32(i * 2),
 			Timestamp: uint64(time.Now().UnixNano()),
 			SentAt:    uint64(time.Now().UnixNano()),
-		})
-		token := mqttClient.Publish(topic, 0, false, body)
-		token.Wait()
+		}))
 		logProgress("mqtt", i, numMessages)
 	}
 	log.Printf("mqtt: sent %d messages", numMessages)

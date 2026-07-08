@@ -7,6 +7,7 @@ type ActorState string
 const (
 	ActorStateIdle       ActorState = "idle"
 	ActorStateOnAMission ActorState = "on_a_mission"
+	ActorStateRefueling  ActorState = "refueling"
 	ActorStateError      ActorState = "error"
 	ActorStateOffline    ActorState = "offline"
 )
@@ -17,6 +18,7 @@ const (
 	MissionStateAssigned  MissionState = "assigned"
 	MissionStateOnTheWay  MissionState = "on_the_way"
 	MissionStateBusy      MissionState = "busy"
+	MissionStateParked    MissionState = "parked"
 	MissionStateCompleted MissionState = "completed"
 	MissionStateFailed    MissionState = "failed"
 )

@@ -6,7 +6,6 @@ import (
 	"actors/internal/actor"
 	"actors/internal/transport"
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"shared"
@@ -27,6 +26,7 @@ type BaseMission struct {
 	actor        actor.Actor
 	mqtt         *transport.MQTTClient
 	logger       *zap.Logger
+	resume       chan struct{}
 }
 
 func NewBaseMission(
@@ -100,6 +100,19 @@ func (b *BaseMission) missionUpdate() error {
 			}
 		}
 
+	case shared.MissionStateParked:
+		if b.resume == nil {
+			break
+		}
+
+		select {
+		case <-b.resume:
+			b.resume = nil
+			b.State = shared.MissionStateOnTheWay
+		default:
+			// Do nothing
+		}
+
 	case shared.MissionStateCompleted:
 		if err := b.send(); err != nil {
 			return err
@@ -115,6 +128,19 @@ func (b *BaseMission) missionUpdate() error {
 	return nil
 }
 
+func (b *BaseMission) Park() {
+	if b.resume == nil {
+		b.resume = make(chan struct{})
+	}
+	b.State = shared.MissionStateParked
+}
+
+func (b *BaseMission) Resume() {
+	if b.resume == nil {
+		close(b.resume)
+	}
+}
+
 func (b *BaseMission) startTimer() {
 	if b.MissionTimer == nil {
 		b.MissionTimer = time.NewTimer(b.Duration)
@@ -122,16 +148,11 @@ func (b *BaseMission) startTimer() {
 }
 
 func (b *BaseMission) send() error {
-	// retain = false, Qos = 1
 	missionUpdate := shared.MissionUpdate{
 		MissionID: b.Id,
 		ActorID:   b.actor.Id(),
 		State:     b.State,
 		Timestamp: time.Now(),
 	}
-
-	payload, _ := json.Marshal(missionUpdate)
-	token := b.mqtt.MQTT.Publish(shared.MissionUpdateTopic(b.Id), byte(1), false, payload)
-	token.Wait()
-	return token.Error()
+	return shared.MqttPublish(b.mqtt.MQTT, shared.MissionUpdateParams(b.Id, missionUpdate))
 }
